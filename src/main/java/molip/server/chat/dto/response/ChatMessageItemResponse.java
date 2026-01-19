@@ -15,5 +15,4 @@ public record ChatMessageItemResponse(
     @Schema(description = "발신자 ID", example = "3") Long senderId,
     @Schema(description = "내용", example = "오늘 스터디 몇 시에 시작해?") String content,
     @Schema(description = "이미지 목록") List<ImageInfoResponse> images,
-    @Schema(description = "전송 시각", example = "2026-01-13T19:20:10+09:00")
-        OffsetDateTime sentAt) {}
+    @Schema(description = "전송 시각", example = "2026-01-13T19:20:10+09:00") OffsetDateTime sentAt) {}

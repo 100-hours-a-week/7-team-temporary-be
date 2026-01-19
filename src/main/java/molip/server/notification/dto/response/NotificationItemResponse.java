@@ -14,5 +14,4 @@ public record NotificationItemResponse(
     @Schema(description = "상태", example = "SENT") NotificationStatus status,
     @Schema(description = "예약 시간", example = "2026-01-13T18:19:50+09:00")
         OffsetDateTime scheduledAt,
-    @Schema(description = "발송 시간", example = "2026-01-13T18:20:00+09:00")
-        OffsetDateTime sentAt) {}
+    @Schema(description = "발송 시간", example = "2026-01-13T18:20:00+09:00") OffsetDateTime sentAt) {}

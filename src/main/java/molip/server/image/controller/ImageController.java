@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import molip.server.common.response.ServerResponse;
@@ -24,15 +25,15 @@ public class ImageController {
   @Operation(summary = "이미지 업로드 URL 발급")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "발급 성공",
         content = @Content(schema = @Schema(implementation = ImageUploadUrlResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "이미지 업로드 URL 발급 실패",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -44,19 +45,19 @@ public class ImageController {
 
   @Operation(summary = "이미지 조회 URL 발급")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "발급 성공",
         content = @Content(schema = @Schema(implementation = ImageGetUrlResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "이미지 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "이미지 조회 URL 발급 실패",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))

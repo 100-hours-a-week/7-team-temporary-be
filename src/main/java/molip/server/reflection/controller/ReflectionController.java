@@ -4,10 +4,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import molip.server.common.response.ServerResponse;
 import molip.server.common.response.PageResponse;
+import molip.server.common.response.ServerResponse;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
 import molip.server.reflection.dto.request.ReflectionUpdateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
@@ -34,31 +35,31 @@ public class ReflectionController {
   @Operation(summary = "회고 생성")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "생성 성공",
         content = @Content(schema = @Schema(implementation = ReflectionCreateResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "400",
         description = "이미지 조건 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "403",
         description = "수정 권한 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "일자 플랜 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "409",
         description = "이미 회고 작성됨",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -72,15 +73,15 @@ public class ReflectionController {
   @Operation(summary = "특정 일자 회고 작성 여부 조회")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "조회 성공",
         content = @Content(schema = @Schema(implementation = ReflectionExistResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "일자 플랜 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -94,19 +95,19 @@ public class ReflectionController {
   @Operation(summary = "로그인한 유저의 개인 회고 조회")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "조회 성공",
         content = @Content(schema = @Schema(implementation = PageResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "400",
         description = "페이지 정보 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -120,38 +121,39 @@ public class ReflectionController {
 
   @Operation(summary = "공개된 전체 회고 조회")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "조회 성공",
         content = @Content(schema = @Schema(implementation = PageResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "400",
         description = "페이지 정보 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
   })
   @GetMapping(value = "/reflections", params = "isOpen")
-  public ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getOpenReflections(
-      @RequestParam boolean isOpen,
-      @RequestParam(required = false, defaultValue = "1") int page,
-      @RequestParam(required = false, defaultValue = "10") int size) {
+  public ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>>
+      getOpenReflections(
+          @RequestParam boolean isOpen,
+          @RequestParam(required = false, defaultValue = "1") int page,
+          @RequestParam(required = false, defaultValue = "10") int size) {
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
   }
 
   @Operation(summary = "회고 상세 조회")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "조회 성공",
         content = @Content(schema = @Schema(implementation = ReflectionDetailResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "회고 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -165,24 +167,26 @@ public class ReflectionController {
   @Operation(summary = "회고 수정")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "수정 성공"),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
+        responseCode = "204",
+        description = "수정 성공"),
+    @ApiResponse(
         responseCode = "400",
         description = "이미지 조건 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "403",
         description = "수정 권한 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "회고 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -196,20 +200,22 @@ public class ReflectionController {
   @Operation(summary = "회고 좋아요 생성")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "생성 성공"),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
+        responseCode = "204",
+        description = "생성 성공"),
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "회고 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "409",
         description = "이미 좋아요 누름",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -222,16 +228,18 @@ public class ReflectionController {
   @Operation(summary = "회고 좋아요 삭제")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "삭제 성공"),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
+        responseCode = "204",
+        description = "삭제 성공"),
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "회고 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
@@ -244,19 +252,19 @@ public class ReflectionController {
   @Operation(summary = "회고 좋아요 여부 조회")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "200",
         description = "조회 성공",
         content = @Content(schema = @Schema(implementation = ReflectionLikeResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "404",
         description = "회고 없음",
         content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+    @ApiResponse(
         responseCode = "500",
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
