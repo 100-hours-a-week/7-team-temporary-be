@@ -12,9 +12,9 @@ import org.springframework.http.HttpHeaders;
 @OpenAPIDefinition(
     info =
         @Info(
-            title = "커뮤니티 서비스 API 명세서",
+            title = "MOLIP API 명세서",
             version = "v1.0.0",
-            description = "이 문서는 커뮤니티 서비스의 API 사용법을 설명합니다."))
+            description = "이 문서는 MOLIP의 API 사용법을 설명합니다."))
 @Configuration
 public class SwaggerConfig {
   @Bean
