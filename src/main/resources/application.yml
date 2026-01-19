@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/spring_community
+    driverClassName: com.mysql.cj.jdbc.Driver
+    username: ${LOCAL_MYSQL_USERNAME:root}
+    password: ${LOCAL_MYSQL_PASSWORD:00000000}
