@@ -54,7 +54,7 @@ public class ChatController implements ChatApi {
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
   }
 
-  @GetMapping(value = "/chat-rooms", params = "title")
+  @GetMapping(value = "/chat-rooms")
   @Override
   public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
       @RequestParam String title,
@@ -63,7 +63,7 @@ public class ChatController implements ChatApi {
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
   }
 
-  @GetMapping(value = "/chat-rooms/participants", params = "type")
+  @GetMapping(value = "/chat-rooms/participants")
   @Override
   public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> getMyChatRooms(
       @RequestParam ChatRoomType type,
@@ -91,7 +91,8 @@ public class ChatController implements ChatApi {
   @PatchMapping("/chat-rooms/participants/{participantId}")
   @Override
   public ResponseEntity<Void> updateParticipantCamera(
-      @PathVariable Long participantId, @RequestBody ChatRoomParticipantCameraUpdateRequest request) {
+      @PathVariable Long participantId,
+      @RequestBody ChatRoomParticipantCameraUpdateRequest request) {
     return ResponseEntity.noContent().build();
   }
 
@@ -102,9 +103,10 @@ public class ChatController implements ChatApi {
     return ResponseEntity.noContent().build();
   }
 
-    @PatchMapping("/chat-rooms/participants/{participantId}")
-    @Override
-    public ResponseEntity<Void> updateLastSeenMessage(Long participantId, UpdateLastReadMessageRequest request) {
-        return null;
-    }
+  @PatchMapping("/chat-rooms/participants/{participantId}/message")
+  @Override
+  public ResponseEntity<Void> updateLastSeenMessage(
+      Long participantId, UpdateLastReadMessageRequest request) {
+    return null;
+  }
 }

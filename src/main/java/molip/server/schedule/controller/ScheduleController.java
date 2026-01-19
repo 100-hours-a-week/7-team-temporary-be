@@ -104,8 +104,7 @@ public class ScheduleController implements ScheduleApi {
   @PatchMapping("/schedule/{scheduleId}/assignment-status")
   @Override
   public ResponseEntity<Void> updateAssignmentStatus(
-      @PathVariable Long scheduleId,
-      @RequestBody ScheduleAssignmentStatusUpdateRequest request) {
+      @PathVariable Long scheduleId, @RequestBody ScheduleAssignmentStatusUpdateRequest request) {
     return ResponseEntity.noContent().build();
   }
 }

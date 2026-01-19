@@ -46,10 +46,11 @@ public class ReflectionController implements ReflectionApi {
 
   @GetMapping(value = "/reflections", params = "isOpen")
   @Override
-  public ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getOpenReflections(
-      @RequestParam boolean isOpen,
-      @RequestParam(required = false, defaultValue = "1") int page,
-      @RequestParam(required = false, defaultValue = "10") int size) {
+  public ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>>
+      getOpenReflections(
+          @RequestParam boolean isOpen,
+          @RequestParam(required = false, defaultValue = "1") int page,
+          @RequestParam(required = false, defaultValue = "10") int size) {
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
   }
 

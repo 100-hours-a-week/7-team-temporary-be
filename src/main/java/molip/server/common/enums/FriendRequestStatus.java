@@ -4,5 +4,5 @@ public enum FriendRequestStatus {
   PENDING,
   ACCEPTED,
   REJECTED,
-    CANCELED
+  CANCELED
 }

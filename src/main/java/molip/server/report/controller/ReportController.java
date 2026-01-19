@@ -44,7 +44,9 @@ public class ReportController implements ReportApi {
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
   }
 
-  @GetMapping(value = "/reports/{reportId}/message/{messageId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  @GetMapping(
+      value = "/reports/{reportId}/message/{messageId}",
+      produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   @Override
   public ResponseEntity<SseEmitter> streamReportMessage(
       @PathVariable Long reportId, @PathVariable Long messageId) {

@@ -292,27 +292,28 @@ public interface ChatApi {
   @Operation(summary = "마지막으로 본 채팅 메시지 수정")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
-          @ApiResponse(responseCode = "204", description = "마지막으로 본 메시지 수정 성공"),
-          @ApiResponse(
-                  responseCode = "400",
-                  description = "필수 값 누락",
-                  content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-          @ApiResponse(
-                  responseCode = "401",
-                  description = "유효하지 않은 토큰",
-                  content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-          @ApiResponse(
-                  responseCode = "404",
-                  description = "참가자 없음",
-                  content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-          @ApiResponse(
-                  responseCode = "409",
-                  description = "lastSeenMessage 감소 불가",
-                  content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-          @ApiResponse(
-                  responseCode = "500",
-                  description = "서버 오류",
-                  content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    @ApiResponse(responseCode = "204", description = "마지막으로 본 메시지 수정 성공"),
+    @ApiResponse(
+        responseCode = "400",
+        description = "필수 값 누락",
+        content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "유효하지 않은 토큰",
+        content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "참가자 없음",
+        content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description = "lastSeenMessage 감소 불가",
+        content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "서버 오류",
+        content = @Content(schema = @Schema(implementation = ServerResponse.class)))
   })
-  ResponseEntity<Void> updateLastSeenMessage(Long participantId, UpdateLastReadMessageRequest request);
+  ResponseEntity<Void> updateLastSeenMessage(
+      Long participantId, UpdateLastReadMessageRequest request);
 }

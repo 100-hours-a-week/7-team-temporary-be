@@ -45,8 +45,7 @@ public class UserController implements UserApi {
 
   @GetMapping(value = "/users", params = "email")
   @Override
-  public ResponseEntity<ServerResponse<DuplicatedResponse>> checkEmail(
-      @RequestParam String email) {
+  public ResponseEntity<ServerResponse<DuplicatedResponse>> checkEmail(@RequestParam String email) {
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
   }
 

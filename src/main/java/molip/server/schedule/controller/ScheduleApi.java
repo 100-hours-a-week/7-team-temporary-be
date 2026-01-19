@@ -164,7 +164,8 @@ public interface ScheduleApi {
     @ApiResponse(
         responseCode = "202",
         description = "작업 생성",
-        content = @Content(schema = @Schema(implementation = ScheduleArrangementJobResponse.class))),
+        content =
+            @Content(schema = @Schema(implementation = ScheduleArrangementJobResponse.class))),
     @ApiResponse(
         responseCode = "400",
         description = "필수 값 누락",
@@ -195,7 +196,8 @@ public interface ScheduleApi {
     @ApiResponse(
         responseCode = "200",
         description = "조회 성공",
-        content = @Content(schema = @Schema(implementation = ScheduleArrangementJobResponse.class))),
+        content =
+            @Content(schema = @Schema(implementation = ScheduleArrangementJobResponse.class))),
     @ApiResponse(
         responseCode = "401",
         description = "유효하지 않은 토큰",
@@ -217,7 +219,8 @@ public interface ScheduleApi {
     @ApiResponse(
         responseCode = "200",
         description = "생성 성공",
-        content = @Content(schema = @Schema(implementation = ScheduleChildrenCreateResponse.class))),
+        content =
+            @Content(schema = @Schema(implementation = ScheduleChildrenCreateResponse.class))),
     @ApiResponse(
         responseCode = "400",
         description = "자식 일정 조건 오류",
