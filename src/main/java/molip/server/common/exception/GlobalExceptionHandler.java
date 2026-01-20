@@ -13,7 +13,7 @@ public class GlobalExceptionHandler {
 
     ex.printStackTrace();
 
-    ServerResponse<Object> body = ServerResponse.error(code, ex.getMessage());
+    ServerResponse<Object> body = ServerResponse.error(code);
 
     return ResponseEntity.status(code.getStatus()).body(body);
   }
@@ -23,8 +23,7 @@ public class GlobalExceptionHandler {
 
     ex.printStackTrace();
 
-    ServerResponse<Object> body =
-        ServerResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, ex.getMessage());
+    ServerResponse<Object> body = ServerResponse.error(ErrorCode.INTERNAL_SERVER_ERROR);
 
     return ResponseEntity.status(500).body(body);
   }
