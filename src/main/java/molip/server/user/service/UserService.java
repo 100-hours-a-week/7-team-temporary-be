@@ -9,7 +9,9 @@ import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.user.entity.Users;
+import molip.server.user.event.UserProfileImageLinkedEvent;
 import molip.server.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public Users registerUser(
@@ -33,15 +36,19 @@ public class UserService {
       Gender gender,
       LocalDate birth,
       FocusTimeZone focusTimeZone,
-      LocalTime dayEndTime) {
+      LocalTime dayEndTime,
+      String profileImageKey) {
     validateEmail(email);
     validatePassword(password);
     validateDuplicatedUser(email, nickname);
 
     String encodedPassword = passwordEncoder.encode(password);
 
-    return userRepository.save(
-        new Users(email, encodedPassword, nickname, gender, birth, focusTimeZone, dayEndTime));
+    Users savedUser =
+        userRepository.save(
+            new Users(email, encodedPassword, nickname, gender, birth, focusTimeZone, dayEndTime));
+    publishProfileImageEvent(savedUser.getId(), profileImageKey);
+    return savedUser;
   }
 
   private void validateEmail(String email) {
@@ -66,5 +73,15 @@ public class UserService {
     if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
       throw new BaseException(ErrorCode.EMAIL_CONFLICT);
     }
+    if (userRepository.existsByNicknameAndDeletedAtIsNull(nickname)) {
+      throw new BaseException(ErrorCode.NICKNAME_CONFLICT);
+    }
+  }
+
+  private void publishProfileImageEvent(Long userId, String profileImageKey) {
+    if (profileImageKey == null || profileImageKey.isBlank()) {
+      return;
+    }
+    eventPublisher.publishEvent(new UserProfileImageLinkedEvent(userId, profileImageKey));
   }
 }

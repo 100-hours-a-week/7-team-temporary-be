@@ -41,7 +41,8 @@ public class UserController implements UserApi {
             request.gender(),
             request.birth(),
             request.focusTimeZone(),
-            request.dayEndTime());
+            request.dayEndTime(),
+            request.profileImageKey());
 
     return ResponseEntity.ok(
         ServerResponse.success(SuccessCode.SIGNUP_SUCCESS, SignUpResponse.from(user.getId())));

@@ -14,7 +14,7 @@ public record ServerResponse<T>(
     return new ServerResponse<>(successCode.getStatusValue(), successCode.getMessage(), data);
   }
 
-  public static ServerResponse<Object> error(ErrorCode errorCode) {
+  public static ServerResponse<Void> error(ErrorCode errorCode) {
     return new ServerResponse<>(errorCode.getStatusValue(), errorCode.getMessage(), null);
   }
 }
