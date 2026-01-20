@@ -10,6 +10,7 @@ import molip.server.common.enums.ScheduleType;
 @Schema(description = "일정 항목")
 public record ScheduleItemResponse(
     @Schema(description = "일정 ID", example = "99") Long scheduleId,
+    @Schema(description = "부모 제목", example = "수업") String parentTitle,
     @Schema(description = "제목", example = "수업(고정)") String title,
     @Schema(description = "상태", example = "TODO") ScheduleStatus status,
     @Schema(description = "타입", example = "FIXED") ScheduleType type,
