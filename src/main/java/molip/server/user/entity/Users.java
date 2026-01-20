@@ -2,7 +2,7 @@ package molip.server.user.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,5 +33,22 @@ public class Users extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private FocusTimeZone focusTimeZone;
 
-  private LocalDateTime dayEndTime;
+  private LocalTime dayEndTime;
+
+  public Users(
+      String email,
+      String password,
+      String nickname,
+      Gender gender,
+      LocalDate birth,
+      FocusTimeZone focusTimeZone,
+      LocalTime dayEndTime) {
+    this.email = email;
+    this.password = password;
+    this.nickname = nickname;
+    this.gender = gender;
+    this.birth = birth;
+    this.focusTimeZone = focusTimeZone;
+    this.dayEndTime = dayEndTime;
+  }
 }

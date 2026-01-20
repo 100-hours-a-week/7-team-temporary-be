@@ -30,6 +30,11 @@ public class UserService {
     // TODO validation 코드 추가
     String encodedPassword = passwordEncoder.encode(password);
 
-    return null;
+    return userRepository.save(
+        new Users(email, encodedPassword, nickname, gender, birth, focusTimeZone, dayEndTime));
   }
+
+  private void validateEmail(String email) {}
+
+  private void validatePassword(String password) {}
 }
