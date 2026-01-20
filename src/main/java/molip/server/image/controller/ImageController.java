@@ -1,9 +1,11 @@
 package molip.server.image.controller;
 
+import lombok.RequiredArgsConstructor;
+import molip.server.common.SuccessCode;
 import molip.server.common.response.ServerResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.dto.response.ImageUploadUrlResponse;
-import org.springframework.http.HttpStatus;
+import molip.server.image.service.ImageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,17 +13,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 public class ImageController implements ImageApi {
+  private final ImageService imageService;
+
   @PostMapping("/images")
   @Override
   public ResponseEntity<ServerResponse<ImageUploadUrlResponse>> issueUploadUrl() {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    ImageUploadUrlResponse response = imageService.issueUploadUrl();
+    return ResponseEntity.ok(ServerResponse.success(SuccessCode.IMAGE_UPLOAD_URL_ISSUED, response));
   }
 
   @GetMapping("/images/{imageKey}")
   @Override
   public ResponseEntity<ServerResponse<ImageGetUrlResponse>> issueGetUrl(
       @PathVariable String imageKey) {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    ImageGetUrlResponse response = imageService.issueGetUrl(imageKey);
+    return ResponseEntity.ok(ServerResponse.success(SuccessCode.IMAGE_GET_URL_ISSUED, response));
   }
 }
