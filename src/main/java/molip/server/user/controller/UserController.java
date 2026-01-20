@@ -1,6 +1,7 @@
 package molip.server.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import molip.server.common.SuccessCode;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.user.dto.request.SignUpRequest;
@@ -32,7 +33,7 @@ public class UserController implements UserApi {
   @PostMapping("/users")
   @Override
   public ResponseEntity<ServerResponse<SignUpResponse>> signUp(@RequestBody SignUpRequest request) {
-    Users users =
+    Users user =
         userService.registerUser(
             request.email(),
             request.password(),
@@ -42,7 +43,8 @@ public class UserController implements UserApi {
             request.focusTimeZone(),
             request.dayEndTime());
 
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    return ResponseEntity.ok(
+        ServerResponse.success(SuccessCode.SIGNUP_SUCCESS, SignUpResponse.from(user.getId())));
   }
 
   @GetMapping("/users")
