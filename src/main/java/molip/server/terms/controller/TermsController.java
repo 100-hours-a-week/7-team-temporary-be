@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class TermsController implements TermsApi {
+
   @GetMapping("/terms")
   @Override
   public ResponseEntity<ServerResponse<PageResponse<TermsItemResponse>>> getTerms() {

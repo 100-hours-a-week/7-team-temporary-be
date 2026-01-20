@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class FriendController implements FriendApi {
+
   @PostMapping("/friend-requests/{targetUserId}")
   @Override
   public ResponseEntity<ServerResponse<FriendRequestResponse>> sendFriendRequest(

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class InMemoryTokenBlacklistStore implements TokenBlacklistStore {
+
   private final Map<Long, String> blackList;
 
   InMemoryTokenBlacklistStore() {

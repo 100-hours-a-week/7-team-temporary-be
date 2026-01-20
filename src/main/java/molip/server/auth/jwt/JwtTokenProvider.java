@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
+
   private final JwtUtil jwtUtil;
   private final CustomUserDetailsService userDetailsService;
   private final TokenBlacklistStore tokenBlacklistStore;

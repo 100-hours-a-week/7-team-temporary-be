@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class ServerApplication {
+
   void main(String[] args) {
     SpringApplication.run(ServerApplication.class, args);
   }

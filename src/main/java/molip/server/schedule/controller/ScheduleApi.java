@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Schedule", description = "일정 API")
 public interface ScheduleApi {
+
   @Operation(summary = "일정 생성")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({

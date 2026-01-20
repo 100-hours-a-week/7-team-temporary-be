@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ImageController implements ImageApi {
+
   @PostMapping("/images")
   @Override
   public ResponseEntity<ServerResponse<ImageUploadUrlResponse>> issueUploadUrl() {

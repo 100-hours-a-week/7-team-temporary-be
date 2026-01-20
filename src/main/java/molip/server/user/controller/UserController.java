@@ -1,5 +1,6 @@
 package molip.server.user.controller;
 
+import lombok.RequiredArgsConstructor;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.user.dto.request.SignUpRequest;
@@ -10,6 +11,8 @@ import molip.server.user.dto.response.DuplicatedResponse;
 import molip.server.user.dto.response.SignUpResponse;
 import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
+import molip.server.user.entity.Users;
+import molip.server.user.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,10 +24,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 public class UserController implements UserApi {
+
+  private final UserService userService;
+
   @PostMapping("/users")
   @Override
   public ResponseEntity<ServerResponse<SignUpResponse>> signUp(@RequestBody SignUpRequest request) {
+    Users users =
+        userService.registerUser(
+            request.email(),
+            request.password(),
+            request.nickname(),
+            request.gender(),
+            request.birth(),
+            request.focusTimeZone(),
+            request.dayEndTime());
+
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
   }
 

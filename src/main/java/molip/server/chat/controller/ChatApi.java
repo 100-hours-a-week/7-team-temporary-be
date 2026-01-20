@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Chat", description = "채팅 API")
 public interface ChatApi {
+
   @Operation(summary = "채팅방 생성")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({

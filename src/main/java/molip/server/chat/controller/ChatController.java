@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ChatController implements ChatApi {
+
   @PostMapping("/chat-rooms")
   @Override
   public ResponseEntity<ServerResponse<ChatRoomCreateResponse>> createChatRoom(

@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Friend", description = "친구 API")
 public interface FriendApi {
+
   @Operation(summary = "친구 요청 보내기")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
+
   private final Key key;
   private final long accessTokenExpirationMs;
   private final long refreshTokenExpirationMs;

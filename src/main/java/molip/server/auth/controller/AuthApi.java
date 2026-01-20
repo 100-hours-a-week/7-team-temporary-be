@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Auth", description = "인증/인가 API")
 public interface AuthApi {
+
   @Operation(summary = "로그인", description = "refreshToken은 쿠키로 전달됩니다.")
   @ApiResponses({
     @ApiResponse(

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ReflectionController implements ReflectionApi {
+
   @PostMapping("/day-plan/{dayPlanId}/reflection")
   @Override
   public ResponseEntity<ServerResponse<ReflectionCreateResponse>> createReflection(

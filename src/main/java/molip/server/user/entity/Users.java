@@ -14,6 +14,7 @@ import molip.server.common.enums.Gender;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 public class Users extends BaseEntity {
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;

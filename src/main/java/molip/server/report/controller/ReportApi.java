@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Tag(name = "Report", description = "리포트 API")
 public interface ReportApi {
+
   @Operation(summary = "특정 주간 리포트 조회")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({
