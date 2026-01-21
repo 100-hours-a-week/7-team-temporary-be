@@ -62,7 +62,7 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+    configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://stg.molip.com", "https://molip.com", "http://127.0.0.1:3000"));
 
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
