@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import molip.server.common.entity.BaseEntity;
+import molip.server.common.enums.ImageType;
 import molip.server.common.enums.UploadStatus;
 
 @Getter
@@ -30,12 +31,18 @@ public class Image extends BaseEntity {
   @Column(nullable = false, length = 20)
   private UploadStatus uploadStatus;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private ImageType imageType;
+
   @Column(nullable = false)
   private OffsetDateTime expiresAt;
 
-  public Image(String uploadKey, UploadStatus uploadStatus, OffsetDateTime expiresAt) {
+  public Image(
+      String uploadKey, UploadStatus uploadStatus, ImageType imageType, OffsetDateTime expiresAt) {
     this.uploadKey = uploadKey;
     this.uploadStatus = uploadStatus;
+    this.imageType = imageType;
     this.expiresAt = expiresAt;
   }
 

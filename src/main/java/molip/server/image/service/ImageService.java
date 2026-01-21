@@ -3,6 +3,7 @@ package molip.server.image.service;
 import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.enums.ImageType;
 import molip.server.common.enums.UploadStatus;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -22,18 +23,24 @@ public class ImageService {
   private final S3Service s3Service;
   private final ImageRepository imageRepository;
 
-  public ImageUploadUrlResponse issueUploadUrl() {
+  public ImageUploadUrlResponse issueUploadUrl(ImageType type) {
     String imageKey = UUID.randomUUID().toString();
-    PresignedUrlResult result = s3Service.createPutPresignedUrl(imageKey, DEFAULT_EXPIRATION);
-    imageRepository.save(new Image(imageKey, UploadStatus.PENDING, result.expiresAt()));
+    String objectKey = resolveObjectKey(type, imageKey);
+    PresignedUrlResult result = s3Service.createPutPresignedUrl(objectKey, DEFAULT_EXPIRATION);
+    imageRepository.save(new Image(imageKey, UploadStatus.PENDING, type, result.expiresAt()));
     return new ImageUploadUrlResponse(result.url(), result.expiresAt(), imageKey);
   }
 
-  public ImageGetUrlResponse issueGetUrl(String imageKey) {
+  public ImageGetUrlResponse issueGetUrl(ImageType type, String imageKey) {
     imageRepository
         .findByUploadKeyAndDeletedAtIsNull(imageKey)
         .orElseThrow(() -> new BaseException(ErrorCode.IMAGE_NOT_FOUND));
-    PresignedUrlResult result = s3Service.createGetPresignedUrl(imageKey, DEFAULT_EXPIRATION);
+    String objectKey = resolveObjectKey(type, imageKey);
+    PresignedUrlResult result = s3Service.createGetPresignedUrl(objectKey, DEFAULT_EXPIRATION);
     return new ImageGetUrlResponse(result.url(), result.expiresAt(), imageKey);
+  }
+
+  private String resolveObjectKey(ImageType type, String imageKey) {
+    return type.folder() + "/" + imageKey;
   }
 }
