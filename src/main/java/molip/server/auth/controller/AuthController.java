@@ -1,5 +1,6 @@
 package molip.server.auth.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AccessTokenResponse;
@@ -62,7 +63,10 @@ public class AuthController implements AuthApi {
 
   @DeleteMapping("/token")
   @Override
-  public ResponseEntity<Void> logout() {
+  public ResponseEntity<Void> logout(HttpServletRequest request) {
+    String accessToken = resolveToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+    authService.logout(accessToken);
+
     return ResponseEntity.noContent().build();
   }
 
@@ -70,5 +74,12 @@ public class AuthController implements AuthApi {
   @Override
   public ResponseEntity<ServerResponse<AccessTokenResponse>> refresh() {
     return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+  }
+
+  private String resolveToken(String authorization) {
+    if (authorization != null && authorization.startsWith("Bearer ")) {
+      return authorization.substring(7);
+    }
+    return null;
   }
 }

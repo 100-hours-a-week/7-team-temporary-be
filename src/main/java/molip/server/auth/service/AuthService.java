@@ -12,6 +12,7 @@ import molip.server.auth.dto.response.AuthResponse;
 import molip.server.auth.jwt.JwtUtil;
 import molip.server.auth.store.DeviceStore;
 import molip.server.auth.store.RefreshTokenStore;
+import molip.server.auth.store.TokenBlacklistStore;
 import molip.server.auth.store.TokenVersionStore;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -32,6 +33,7 @@ public class AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtUtil jwtUtil;
+  private final TokenBlacklistStore tokenBlacklistStore;
   private final TokenVersionStore tokenVersionStore;
   private final RefreshTokenStore refreshTokenStore;
   private final DeviceStore deviceStore;
@@ -72,6 +74,22 @@ public class AuthService {
         tokenVersion);
 
     return new AuthResponse(accessToken, refreshToken, resolvedDeviceId);
+  }
+
+  public void logout(String accessToken) {
+    Long userId = jwtUtil.extractUserId(accessToken);
+    if (userId == null) {
+      throw new BaseException(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
+    }
+
+    tokenBlacklistStore.add(userId, accessToken);
+    tokenVersionStore.increment(userId);
+
+    var deviceIds = deviceStore.listDevices(userId);
+    refreshTokenStore.deleteAll(userId, deviceIds);
+    deviceStore.clearDevices(userId);
+
+    log.info("Logout processed. userId={}", userId);
   }
 
   private void validateEmail(String email) {
