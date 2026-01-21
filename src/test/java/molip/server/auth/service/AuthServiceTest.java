@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -13,6 +14,7 @@ import molip.server.auth.dto.response.AuthResponse;
 import molip.server.auth.jwt.JwtUtil;
 import molip.server.auth.store.DeviceStore;
 import molip.server.auth.store.RefreshTokenStore;
+import molip.server.auth.store.TokenBlacklistStore;
 import molip.server.auth.store.TokenVersionStore;
 import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
@@ -33,6 +35,7 @@ class AuthServiceTest {
   @Mock private UserRepository userRepository;
   @Mock private PasswordEncoder passwordEncoder;
   @Mock private JwtUtil jwtUtil;
+  @Mock private TokenBlacklistStore tokenBlacklistStore;
   @Mock private TokenVersionStore tokenVersionStore;
   @Mock private RefreshTokenStore refreshTokenStore;
   @Mock private DeviceStore deviceStore;
@@ -123,5 +126,31 @@ class AuthServiceTest {
 
     // then
     assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_INVALID_CREDENTIALS);
+  }
+
+  @Test
+  void 로그아웃하면_블랙리스트와_토큰버전을_갱신한다() {
+    // given
+    given(jwtUtil.extractUserId("access")).willReturn(4L);
+    given(deviceStore.listDevices(4L)).willReturn(java.util.Set.of("device-1"));
+
+    // when
+    authService.logout("access");
+
+    // then
+    then(tokenBlacklistStore).should().add(4L, "access");
+    then(tokenVersionStore).should().increment(4L);
+  }
+
+  @Test
+  void 유효하지않은_토큰이면_로그아웃이_실패한다() {
+    // given
+    given(jwtUtil.extractUserId("access")).willReturn(null);
+
+    // when
+    BaseException exception = assertThrows(BaseException.class, () -> authService.logout("access"));
+
+    // then
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
   }
 }
