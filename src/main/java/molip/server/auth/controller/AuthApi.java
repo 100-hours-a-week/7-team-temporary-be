@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AccessTokenResponse;
 import molip.server.common.response.ServerResponse;
@@ -51,7 +52,7 @@ public interface AuthApi {
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
   })
-  ResponseEntity<Void> logout();
+  ResponseEntity<Void> logout(HttpServletRequest request);
 
   @Operation(summary = "토큰 재발급", description = "refreshToken은 쿠키로 전달됩니다.")
   @SecurityRequirement(name = "JWT")

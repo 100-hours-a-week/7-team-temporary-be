@@ -45,6 +45,11 @@ public class JwtUtil {
     return claims == null ? null : claims.get("userId", Long.class);
   }
 
+  public Long extractTokenVersion(String token) {
+    Claims claims = extractClaims(token);
+    return claims == null ? null : claims.get("tv", Long.class);
+  }
+
   public boolean isExpired(String token) {
     Claims claims = extractClaims(token);
     if (claims == null) {
