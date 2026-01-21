@@ -46,7 +46,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authorize ->
                 authorize
-                    .requestMatchers(HttpMethod.POST, "/users", "/images")
+                    .requestMatchers(HttpMethod.POST, "/users", "/images", "/token")
                     .permitAll()
                     .requestMatchers(
                         HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
@@ -65,7 +65,9 @@ public class SecurityConfig {
     configuration.setAllowedOrigins(
         List.of(
             "http://localhost:3000",
+            "http://stg.molip.today",
             "https://stg.molip.today",
+            "http://molip.today",
             "https://molip.today",
             "http://127.0.0.1:3000"));
 

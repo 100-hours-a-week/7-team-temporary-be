@@ -8,19 +8,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import molip.server.auth.dto.request.LoginRequest;
-import molip.server.auth.dto.response.TokenResponse;
+import molip.server.auth.dto.response.AccessTokenResponse;
 import molip.server.common.response.ServerResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 
 @Tag(name = "Auth", description = "인증/인가 API")
 public interface AuthApi {
 
-  @Operation(summary = "로그인", description = "refreshToken은 쿠키로 전달됩니다.")
+  @Operation(summary = "로그인", description = "refreshToken, deviceId는 쿠키로 전달됩니다.")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
         description = "로그인 성공",
-        content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+        content = @Content(schema = @Schema(implementation = AccessTokenResponse.class))),
     @ApiResponse(
         responseCode = "400",
         description = "필수 값 누락",
@@ -34,7 +35,8 @@ public interface AuthApi {
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
   })
-  ResponseEntity<ServerResponse<TokenResponse>> login(LoginRequest request);
+  ResponseEntity<ServerResponse<AccessTokenResponse>> login(
+      LoginRequest request, @CookieValue(name = "deviceId", required = false) String deviceId);
 
   @Operation(summary = "로그아웃", description = "전 디바이스 로그아웃")
   @SecurityRequirement(name = "JWT")
@@ -57,7 +59,7 @@ public interface AuthApi {
     @ApiResponse(
         responseCode = "200",
         description = "재발급 성공",
-        content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+        content = @Content(schema = @Schema(implementation = AccessTokenResponse.class))),
     @ApiResponse(
         responseCode = "400",
         description = "리프레시 토큰 누락",
@@ -71,5 +73,5 @@ public interface AuthApi {
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
   })
-  ResponseEntity<ServerResponse<TokenResponse>> refresh();
+  ResponseEntity<ServerResponse<AccessTokenResponse>> refresh();
 }

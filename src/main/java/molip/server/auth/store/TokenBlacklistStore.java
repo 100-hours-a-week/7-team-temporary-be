@@ -1,4 +1,4 @@
-package molip.server.auth.jwt;
+package molip.server.auth.store;
 
 public interface TokenBlacklistStore {
 

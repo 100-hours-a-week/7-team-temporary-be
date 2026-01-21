@@ -2,6 +2,7 @@ package molip.server.auth.jwt;
 
 import lombok.RequiredArgsConstructor;
 import molip.server.auth.jwt.userDetails.CustomUserDetailsService;
+import molip.server.auth.store.TokenBlacklistStore;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
