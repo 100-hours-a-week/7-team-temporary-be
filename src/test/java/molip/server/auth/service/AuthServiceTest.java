@@ -70,6 +70,35 @@ class AuthServiceTest {
   }
 
   @Test
+  void 디바이스아이디가_있으면_해당_값을_사용한다() {
+    // given
+    LoginRequest request = new LoginRequest("email@test.com", "Password1!");
+    Users user =
+        new Users(
+            "email@test.com",
+            "encoded",
+            "nick",
+            Gender.MALE,
+            LocalDate.of(1990, 1, 1),
+            FocusTimeZone.MORNING,
+            LocalTime.of(22, 40));
+    ReflectionTestUtils.setField(user, "id", 4L);
+
+    given(userRepository.findByEmailAndDeletedAtIsNull(request.email()))
+        .willReturn(Optional.of(user));
+    given(passwordEncoder.matches(request.password(), user.getPassword())).willReturn(true);
+    given(tokenVersionStore.getOrInit(user.getId())).willReturn(1L);
+    given(jwtUtil.createAccessToken(any(), any(), any(), any(), any())).willReturn("access");
+    given(jwtUtil.createRefreshToken(any(), any(), any(), any(), any())).willReturn("refresh");
+
+    // when
+    AuthResponse response = authService.login(request, "device-123");
+
+    // then
+    assertThat(response.deviceId()).isEqualTo("device-123");
+  }
+
+  @Test
   void 비밀번호가_일치하지않으면_예외를_반환한다() {
     // given
     LoginRequest request = new LoginRequest("email@test.com", "Password1!");

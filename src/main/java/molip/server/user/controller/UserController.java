@@ -1,6 +1,9 @@
 package molip.server.user.controller;
 
-import lombok.RequiredArgsConstructor;
+import java.time.Duration;
+import molip.server.auth.dto.request.LoginRequest;
+import molip.server.auth.dto.response.AuthResponse;
+import molip.server.auth.service.AuthService;
 import molip.server.common.SuccessCode;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
@@ -14,8 +17,12 @@ import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,14 +32,26 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequiredArgsConstructor
 public class UserController implements UserApi {
 
   private final UserService userService;
+  private final AuthService authService;
+  private final long refreshTokenExpirationMs;
+
+  public UserController(
+      UserService userService,
+      AuthService authService,
+      @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
+    this.userService = userService;
+    this.authService = authService;
+    this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+  }
 
   @PostMapping("/users")
   @Override
-  public ResponseEntity<ServerResponse<SignUpResponse>> signUp(@RequestBody SignUpRequest request) {
+  public ResponseEntity<ServerResponse<SignUpResponse>> signUp(
+      @RequestBody SignUpRequest request,
+      @CookieValue(name = "deviceId", required = false) String deviceId) {
     Users user =
         userService.registerUser(
             request.email(),
@@ -44,8 +63,30 @@ public class UserController implements UserApi {
             request.dayEndTime(),
             request.profileImageKey());
 
-    return ResponseEntity.ok(
-        ServerResponse.success(SuccessCode.SIGNUP_SUCCESS, SignUpResponse.from(user.getId())));
+    AuthResponse tokens =
+        authService.login(new LoginRequest(request.email(), request.password()), deviceId);
+    SignUpResponse response = SignUpResponse.from(user.getId(), tokens.accessToken());
+    ResponseCookie refreshCookie =
+        ResponseCookie.from("refreshToken", tokens.refreshToken())
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Lax")
+            .path("/token")
+            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+            .build();
+    ResponseCookie deviceCookie =
+        ResponseCookie.from("deviceId", tokens.deviceId())
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Lax")
+            .path("/token")
+            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+            .build();
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+        .header(HttpHeaders.SET_COOKIE, deviceCookie.toString())
+        .body(ServerResponse.success(SuccessCode.SIGNUP_SUCCESS, response));
   }
 
   @GetMapping("/users")
