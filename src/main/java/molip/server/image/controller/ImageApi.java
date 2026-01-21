@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import molip.server.common.enums.ImageType;
 import molip.server.common.response.ServerResponse;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 public interface ImageApi {
 
   @Operation(summary = "이미지 업로드 URL 발급")
+  @SecurityRequirement(name = "JWT")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
