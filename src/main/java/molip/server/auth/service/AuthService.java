@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import molip.server.auth.dto.request.LoginRequest;
-import molip.server.auth.dto.response.AuthTokens;
+import molip.server.auth.dto.response.AuthResponse;
 import molip.server.auth.jwt.JwtUtil;
 import molip.server.auth.store.DeviceStore;
 import molip.server.auth.store.RefreshTokenStore;
@@ -36,7 +36,7 @@ public class AuthService {
   private final RefreshTokenStore refreshTokenStore;
   private final DeviceStore deviceStore;
 
-  public AuthTokens login(LoginRequest request) {
+  public AuthResponse login(LoginRequest request, String deviceId) {
     validateEmail(request.email());
     validatePassword(request.password());
 
@@ -49,25 +49,29 @@ public class AuthService {
       throw new BaseException(ErrorCode.UNAUTHORIZED_INVALID_CREDENTIALS);
     }
 
-    String deviceId = UUID.randomUUID().toString();
+    String resolvedDeviceId = deviceId;
+    if (resolvedDeviceId == null || resolvedDeviceId.isBlank()) {
+      resolvedDeviceId = UUID.randomUUID().toString();
+    }
     String accessJti = UUID.randomUUID().toString();
     String refreshJti = UUID.randomUUID().toString();
     long tokenVersion = tokenVersionStore.getOrInit(user.getId());
 
     String accessToken =
-        jwtUtil.createAccessToken(user.getId(), "USER", tokenVersion, deviceId, accessJti);
+        jwtUtil.createAccessToken(user.getId(), "USER", tokenVersion, resolvedDeviceId, accessJti);
     String refreshToken =
-        jwtUtil.createRefreshToken(user.getId(), "USER", tokenVersion, deviceId, refreshJti);
+        jwtUtil.createRefreshToken(
+            user.getId(), "USER", tokenVersion, resolvedDeviceId, refreshJti);
 
-    refreshTokenStore.save(user.getId(), deviceId, hashRefreshToken(refreshToken));
-    deviceStore.addDevice(user.getId(), deviceId);
+    refreshTokenStore.save(user.getId(), resolvedDeviceId, hashRefreshToken(refreshToken));
+    deviceStore.addDevice(user.getId(), resolvedDeviceId);
     log.info(
         "Login tokens stored. userId={}, deviceId={}, tokenVersion={}",
         user.getId(),
-        deviceId,
+        resolvedDeviceId,
         tokenVersion);
 
-    return new AuthTokens(accessToken, refreshToken);
+    return new AuthResponse(accessToken, refreshToken, resolvedDeviceId);
   }
 
   private void validateEmail(String email) {
