@@ -3,6 +3,7 @@ package molip.server.auth.service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -74,6 +75,49 @@ public class AuthService {
         tokenVersion);
 
     return new AuthResponse(accessToken, refreshToken, resolvedDeviceId);
+  }
+
+  public AuthResponse reissue(String refreshToken) {
+    if (refreshToken == null || refreshToken.isBlank()) {
+      throw new BaseException(ErrorCode.INVALID_REQUEST_REFRESH_MISSING);
+    }
+
+    if (jwtUtil.isExpired(refreshToken)) {
+      throw new BaseException(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
+    }
+
+    Long userId = jwtUtil.extractUserId(refreshToken);
+    Long tokenVersion = jwtUtil.extractTokenVersion(refreshToken);
+    String deviceId = jwtUtil.extractDeviceId(refreshToken);
+    if (userId == null || tokenVersion == null || deviceId == null) {
+      throw new BaseException(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
+    }
+
+    if (tokenVersionStore.get(userId) != tokenVersion) {
+      throw new BaseException(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
+    }
+
+    String refreshHash = hashRefreshToken(refreshToken);
+    if (!refreshTokenStore.matches(userId, deviceId, refreshHash)) {
+      tokenVersionStore.increment(userId);
+      Set<String> deviceIds = deviceStore.listDevices(userId);
+      refreshTokenStore.deleteAll(userId, deviceIds);
+      deviceStore.clearDevices(userId);
+      throw new BaseException(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
+    }
+
+    String accessJti = UUID.randomUUID().toString();
+    String refreshJti = UUID.randomUUID().toString();
+    long currentVersion = tokenVersionStore.get(userId);
+
+    String newAccessToken =
+        jwtUtil.createAccessToken(userId, "USER", currentVersion, deviceId, accessJti);
+    String newRefreshToken =
+        jwtUtil.createRefreshToken(userId, "USER", currentVersion, deviceId, refreshJti);
+
+    refreshTokenStore.save(userId, deviceId, hashRefreshToken(newRefreshToken));
+
+    return new AuthResponse(newAccessToken, newRefreshToken, deviceId);
   }
 
   public void logout(String accessToken) {

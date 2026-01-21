@@ -129,6 +129,71 @@ class AuthServiceTest {
   }
 
   @Test
+  void 리프레시토큰_재발급에_성공하면_새_토큰을_반환한다() {
+    // given
+    given(jwtUtil.isExpired("refresh")).willReturn(false);
+    given(jwtUtil.extractUserId("refresh")).willReturn(4L);
+    given(jwtUtil.extractTokenVersion("refresh")).willReturn(1L);
+    given(jwtUtil.extractDeviceId("refresh")).willReturn("device-1");
+    given(tokenVersionStore.get(4L)).willReturn(1L);
+    given(refreshTokenStore.matches(any(), any(), any())).willReturn(true);
+    given(jwtUtil.createAccessToken(any(), any(), any(), any(), any())).willReturn("access-new");
+    given(jwtUtil.createRefreshToken(any(), any(), any(), any(), any())).willReturn("refresh-new");
+
+    // when
+    AuthResponse response = authService.reissue("refresh");
+
+    // then
+    assertThat(response.accessToken()).isEqualTo("access-new");
+    assertThat(response.refreshToken()).isEqualTo("refresh-new");
+  }
+
+  @Test
+  void 리프레시토큰이_없으면_예외를_반환한다() {
+    // given
+    String refreshToken = "";
+
+    // when
+    BaseException exception =
+        assertThrows(BaseException.class, () -> authService.reissue(refreshToken));
+
+    // then
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST_REFRESH_MISSING);
+  }
+
+  @Test
+  void 리프레시토큰이_만료되면_예외를_반환한다() {
+    // given
+    given(jwtUtil.isExpired("refresh")).willReturn(true);
+
+    // when
+    BaseException exception =
+        assertThrows(BaseException.class, () -> authService.reissue("refresh"));
+
+    // then
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
+  }
+
+  @Test
+  void 리프레시토큰이_재사용되면_예외를_반환한다() {
+    // given
+    given(jwtUtil.isExpired("refresh")).willReturn(false);
+    given(jwtUtil.extractUserId("refresh")).willReturn(4L);
+    given(jwtUtil.extractTokenVersion("refresh")).willReturn(1L);
+    given(jwtUtil.extractDeviceId("refresh")).willReturn("device-1");
+    given(tokenVersionStore.get(4L)).willReturn(1L);
+    given(refreshTokenStore.matches(any(), any(), any())).willReturn(false);
+    given(deviceStore.listDevices(4L)).willReturn(java.util.Set.of("device-1"));
+
+    // when
+    BaseException exception =
+        assertThrows(BaseException.class, () -> authService.reissue("refresh"));
+
+    // then
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_INVALID_TOKEN);
+  }
+
+  @Test
   void 로그아웃하면_블랙리스트와_토큰버전을_갱신한다() {
     // given
     given(jwtUtil.extractUserId("access")).willReturn(4L);

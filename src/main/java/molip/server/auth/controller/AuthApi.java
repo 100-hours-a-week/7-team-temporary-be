@@ -74,5 +74,6 @@ public interface AuthApi {
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
   })
-  ResponseEntity<ServerResponse<AccessTokenResponse>> refresh();
+  ResponseEntity<ServerResponse<AccessTokenResponse>> refresh(
+      @CookieValue(name = "refreshToken", required = false) String refreshToken);
 }
