@@ -50,6 +50,11 @@ public class JwtUtil {
     return claims == null ? null : claims.get("tv", Long.class);
   }
 
+  public String extractDeviceId(String token) {
+    Claims claims = extractClaims(token);
+    return claims == null ? null : claims.get("deviceId", String.class);
+  }
+
   public boolean isExpired(String token) {
     Claims claims = extractClaims(token);
     if (claims == null) {
