@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class NotificationController implements NotificationApi {
+
   @GetMapping("/notifications")
   @Override
   public ResponseEntity<ServerResponse<PageResponse<NotificationItemResponse>>> getNotifications(

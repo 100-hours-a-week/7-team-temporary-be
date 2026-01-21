@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Terms", description = "약관 API")
 public interface TermsApi {
+
   @Operation(summary = "활성화된 약관 전체 조회")
   @ApiResponses({
     @ApiResponse(

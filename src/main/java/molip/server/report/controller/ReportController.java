@@ -20,6 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 public class ReportController implements ReportApi {
+
   @GetMapping("/reports")
   @Override
   public ResponseEntity<ServerResponse<ReportResponse>> getReportByStartDate(

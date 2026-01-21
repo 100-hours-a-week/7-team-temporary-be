@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Notification", description = "알림 API")
 public interface NotificationApi {
+
   @Operation(summary = "유저 알림 조회")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({

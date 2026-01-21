@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Image", description = "이미지 API")
 public interface ImageApi {
+
   @Operation(summary = "이미지 업로드 URL 발급")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({

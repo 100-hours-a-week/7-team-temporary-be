@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "User", description = "유저 API")
 public interface UserApi {
+
   @Operation(summary = "회원가입")
   @ApiResponses({
     @ApiResponse(

@@ -24,11 +24,13 @@ public enum ErrorCode {
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "회원 정보를 찾을 수 없습니다."),
   INVALID_REQUEST_NICKNAME_REQUIRED(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "닉네임 검색어가 필요합니다."),
   INVALID_REQUEST_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "이메일이 필요합니다."),
+  INVALID_REQUEST_EMAIL_POLICY(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "이메일 형식이 올바르지 않습니다."),
   CONFLICT_INVALID_IMAGE_KEY(HttpStatus.CONFLICT, "CONFLICT", "잘못된 이미지 키 입니다. 다시 입력해주세요"),
   INVALID_REQUEST_PASSWORD_MISMATCH(
       HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "비밀번호 확인 값이 일치하지 않습니다."),
   INVALID_REQUEST_PASSWORD_TOO_LONG(
       HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST", "비밀번호 길이가 최대 길이를 초과했습니다."),
+  INVALID_REQUEST_PASSWORD_POLICY(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "비밀번호 형식이 올바르지 않습니다."),
 
   // Image
   IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "IMAGE_NOT_FOUND", "이미지를 찾을 수 없습니다."),

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ScheduleController implements ScheduleApi {
+
   @PostMapping("/day-plan/{dayPlanId}/schedule")
   @Override
   public ResponseEntity<ServerResponse<ScheduleCreateResponse>> createSchedule(

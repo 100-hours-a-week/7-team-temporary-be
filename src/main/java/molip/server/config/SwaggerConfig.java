@@ -17,6 +17,7 @@ import org.springframework.http.HttpHeaders;
             description = "이 문서는 MOLIP의 API 사용법을 설명합니다."))
 @Configuration
 public class SwaggerConfig {
+
   @Bean
   public OpenAPI customOpenAPI() {
     return new OpenAPI().components(new Components().addSecuritySchemes("JWT", bearerAuth()));

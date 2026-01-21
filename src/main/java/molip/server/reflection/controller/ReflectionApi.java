@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Reflection", description = "회고 API")
 public interface ReflectionApi {
+
   @Operation(summary = "회고 생성")
   @SecurityRequirement(name = "JWT")
   @ApiResponses({

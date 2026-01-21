@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AuthController implements AuthApi {
+
   @PostMapping("/token")
   @Override
   public ResponseEntity<ServerResponse<TokenResponse>> login(@RequestBody LoginRequest request) {
