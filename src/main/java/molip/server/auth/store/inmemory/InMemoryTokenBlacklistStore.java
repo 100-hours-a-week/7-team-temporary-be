@@ -1,7 +1,8 @@
-package molip.server.auth.jwt;
+package molip.server.auth.store.inmemory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import molip.server.auth.store.TokenBlacklistStore;
 import org.springframework.stereotype.Component;
 
 @Component
