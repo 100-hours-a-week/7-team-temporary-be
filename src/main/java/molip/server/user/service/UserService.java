@@ -40,7 +40,7 @@ public class UserService {
       String profileImageKey) {
     validateEmail(email);
     validatePassword(password);
-    validateDuplicatedUser(email, nickname);
+    validateDuplicatedEmail(email);
 
     String encodedPassword = passwordEncoder.encode(password);
 
@@ -64,17 +64,17 @@ public class UserService {
     if (password == null || password.isBlank()) {
       throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
     }
+    if (password.length() > 20) {
+      throw new BaseException(ErrorCode.INVALID_REQUEST_PASSWORD_TOO_LONG);
+    }
     if (!PASSWORD_PATTERN.matcher(password).matches()) {
       throw new BaseException(ErrorCode.INVALID_REQUEST_PASSWORD_POLICY);
     }
   }
 
-  private void validateDuplicatedUser(String email, String nickname) {
+  private void validateDuplicatedEmail(String email) {
     if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
       throw new BaseException(ErrorCode.EMAIL_CONFLICT);
-    }
-    if (userRepository.existsByNicknameAndDeletedAtIsNull(nickname)) {
-      throw new BaseException(ErrorCode.NICKNAME_CONFLICT);
     }
   }
 

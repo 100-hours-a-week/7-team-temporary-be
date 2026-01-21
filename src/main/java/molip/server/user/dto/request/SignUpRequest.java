@@ -15,8 +15,8 @@ public record SignUpRequest(
     @Schema(description = "닉네임", example = "nickname") String nickname,
     @Schema(description = "성별", example = "MALE") Gender gender,
     @Schema(description = "생년월일", example = "1990.01.01")
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-        @DateTimeFormat(pattern = "yyyy-MM-dd")
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy.MM.dd")
+        @DateTimeFormat(pattern = "yyyy.MM.dd")
         LocalDate birth,
     @Schema(description = "집중 시간대", example = "MORNING") FocusTimeZone focusTimeZone,
     @Schema(description = "하루 종료 기준", example = "22:40")
