@@ -10,7 +10,6 @@ import molip.server.common.SuccessCode;
 import molip.server.common.response.ServerResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -72,8 +71,34 @@ public class AuthController implements AuthApi {
 
   @PutMapping("/token")
   @Override
-  public ResponseEntity<ServerResponse<AccessTokenResponse>> refresh() {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+  public ResponseEntity<ServerResponse<AccessTokenResponse>> refresh(
+      @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+    AuthResponse tokens = authService.reissue(refreshToken);
+    AccessTokenResponse response = new AccessTokenResponse(tokens.accessToken());
+    ResponseCookie refreshCookie =
+        ResponseCookie.from("refreshToken", tokens.refreshToken())
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Lax")
+            .path("/token")
+            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+            .build();
+    ResponseCookie deviceCookie =
+        ResponseCookie.from("deviceId", tokens.deviceId())
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Lax")
+            .path("/token")
+            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+            .build();
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+    headers.add(HttpHeaders.SET_COOKIE, deviceCookie.toString());
+
+    return ResponseEntity.ok()
+        .headers(headers)
+        .body(ServerResponse.success(SuccessCode.TOKEN_REISSUE_SUCCESS, response));
   }
 
   private String resolveToken(String authorization) {
