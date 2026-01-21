@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AuthTokens;
 import molip.server.auth.jwt.JwtUtil;
@@ -20,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthService {
   private static final Pattern EMAIL_PATTERN =
@@ -59,6 +61,11 @@ public class AuthService {
 
     refreshTokenStore.save(user.getId(), deviceId, hashRefreshToken(refreshToken));
     deviceStore.addDevice(user.getId(), deviceId);
+    log.info(
+        "Login tokens stored. userId={}, deviceId={}, tokenVersion={}",
+        user.getId(),
+        deviceId,
+        tokenVersion);
 
     return new AuthTokens(accessToken, refreshToken);
   }
