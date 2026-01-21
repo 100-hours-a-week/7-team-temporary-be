@@ -18,11 +18,12 @@ import molip.server.user.dto.response.SignUpResponse;
 import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 
 @Tag(name = "User", description = "유저 API")
 public interface UserApi {
 
-  @Operation(summary = "회원가입")
+  @Operation(summary = "회원가입", description = "회원가입 성공 시 refreshToken, deviceId는 쿠키로 전달됩니다.")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -41,7 +42,8 @@ public interface UserApi {
         description = "서버 오류",
         content = @Content(schema = @Schema(implementation = ServerResponse.class)))
   })
-  ResponseEntity<ServerResponse<SignUpResponse>> signUp(SignUpRequest request);
+  ResponseEntity<ServerResponse<SignUpResponse>> signUp(
+      SignUpRequest request, @CookieValue(name = "deviceId", required = false) String deviceId);
 
   @Operation(summary = "회원 상세 정보 조회")
   @SecurityRequirement(name = "JWT")
