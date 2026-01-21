@@ -8,11 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class InMemoryTokenBlacklistStore implements TokenBlacklistStore {
 
-  private final Map<Long, String> blackList;
-
-  InMemoryTokenBlacklistStore() {
-    this.blackList = new ConcurrentHashMap<>();
-  }
+  private final Map<Long, String> blackList = new ConcurrentHashMap<>();
 
   @Override
   public void add(Long userId, String token) {
