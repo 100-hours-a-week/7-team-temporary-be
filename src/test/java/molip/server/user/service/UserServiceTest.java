@@ -27,6 +27,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
 class UserServiceTest {
   @Mock private UserRepository userRepository;
   @Mock private PasswordEncoder passwordEncoder;
