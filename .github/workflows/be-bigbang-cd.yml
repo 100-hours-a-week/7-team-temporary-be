@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build -x test --no-daemon
+          ./gradlew clean build -x spotlessJava --no-daemon
 
       - name: Package artifact
         shell: bash
@@ -76,28 +76,27 @@ jobs:
       - name: Upload artifact to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.BE_STAGING_HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.BE_STAGING_SSH_KEY }}
-          port: ${{ secrets.BE_SSH_PORT }}
+          host: ${{ secrets.HOST_STAGING }}
+          username: ${{ secrets.USER_STAGING }}
+          key: ${{ secrets.SSH_KEY_STAGING }}
+          port: ${{ secrets.PORT }}
           source: app.tar.gz
           target: /tmp
 
       - name: Deploy via SSH (staging)
         uses: appleboy/ssh-action@1.2.3
         with:
-          host: ${{ secrets.BE_STAGING_HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.BE_STAGING_SSH_KEY }}
-          port: ${{ secrets.BE_SSH_PORT }}
+          host: ${{ secrets.HOST_STAGING }}
+          username: ${{ secrets.USER_STAGING }}
+          key: ${{ secrets.SSH_KEY_STAGING }}
+          port: ${{ secrets.PORT }}
           script_stop: true
           script: |
             set -euo pipefail
 
-            APP_DIR="${{ secrets.BE_APP_DIR }}"
-            PM2_NAME="${{ secrets.BE_PM2_NAME }}"
-            PORT="${{ secrets.BE_PORT }}"
-            PROFILE="${{ secrets.BE_STAGING_PROFILE }}"
+            APP_DIR="${{ secrets.APP_DIR }}"
+            PM2_NAME="${{ secrets.PM2_NAME }}"
+            PORT="${{ secrets.PORT }}"
 
             RELEASE_ROOT="${APP_DIR}/releases"
             CURRENT_LINK="${APP_DIR}/current"
@@ -124,10 +123,8 @@ jobs:
               pm2 restart "${PM2_NAME}" --update-env
             else
               pm2 start "java" --name "${PM2_NAME}" -- \
-                -Xms256m -Xmx1024m \
                 -jar "${JAR_PATH}" \
                 --server.port="${PORT}" \
-                --spring.profiles.active="${PROFILE}"
             fi
 
             # 오래된 릴리즈 정리 (최근 3개만 유지)
