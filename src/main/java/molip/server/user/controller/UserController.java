@@ -95,7 +95,7 @@ public class UserController implements UserApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
-    @GetMapping(value = "/users", params = "nickname")
+    @GetMapping("/users/nickname")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<UserSearchItemResponse>>> searchByNickname(
             @RequestParam String nickname,
@@ -104,7 +104,7 @@ public class UserController implements UserApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
-    @GetMapping(value = "/users", params = "email")
+    @GetMapping("/users/email")
     @Override
     public ResponseEntity<ServerResponse<DuplicatedResponse>> checkEmail(
             @RequestParam String email) {
