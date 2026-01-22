@@ -78,7 +78,7 @@ jobs:
           host: ${{ secrets.HOST_STAGING }}
           username: ${{ secrets.USER_STAGING }}
           key: ${{ secrets.SSH_KEY_STAGING }}
-          port: ${{ secrets.PORT }}
+          port: 22
           source: app.tar.gz
           target: /tmp
 
@@ -88,14 +88,13 @@ jobs:
           host: ${{ secrets.HOST_STAGING }}
           username: ${{ secrets.USER_STAGING }}
           key: ${{ secrets.SSH_KEY_STAGING }}
-          port: ${{ secrets.PORT }}
+          port: 22
           script_stop: true
           script: |
             set -euo pipefail
 
             APP_DIR="${{ secrets.APP_DIR }}"
             PM2_NAME="${{ secrets.PM2_NAME }}"
-            PORT="${{ secrets.PORT }}"
 
             RELEASE_ROOT="${APP_DIR}/releases"
             CURRENT_LINK="${APP_DIR}/current"
