@@ -64,8 +64,7 @@ jobs:
     needs: build
 
     # PR merge 완료 된것들 (base가 release, head가 develop)
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'release/') && github.event.pull_request.head.ref == 'develop' }}
-
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/') }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
