@@ -83,7 +83,7 @@ jobs:
           target: /tmp
 
       - name: Deploy via SSH (staging)
-        uses: appleboy/ssh-action@1.2.3
+        uses: appleboy/ssh-action@1.0.0
         with:
           host: ${{ secrets.HOST_STAGING }}
           username: ${{ secrets.USER_STAGING }}
