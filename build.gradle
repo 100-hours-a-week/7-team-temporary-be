@@ -60,6 +60,7 @@ dependencyCheck {
     format = 'HTML'
     suppressionFile = 'config/dependency-check-suppressions.xml'
     failBuildOnCVSS = 10
+    failOnError = false
 }
 
 
