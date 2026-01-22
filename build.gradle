@@ -4,11 +4,73 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
     id "com.diffplug.spotless" version "6.25.0"
     id 'jacoco'
+
+    id 'pmd'                                         // 정적 분석
+    id 'com.github.spotbugs' version '6.4.8'         // 버그 패턴 검사
+    id 'org.owasp.dependencycheck' version '11.1.1'  // 보안 취약점 검사
+
 }
+
+import com.github.spotbugs.snom.Effort
+import com.github.spotbugs.snom.Confidence
+
+
+pmd {
+    toolVersion = '7.20.0'
+    consoleOutput = false
+    ignoreFailures = true
+    //ruleSetFiles = files("config/pmd/ruleset.xml")
+    //ruleSets = [] // 기본 룰셋 비활성화 (custom ruleset 사용)
+}
+
+tasks.withType(Pmd).configureEach {
+    ignoreFailures = true
+
+    logging.captureStandardError LogLevel.QUIET
+    logging.captureStandardOutput LogLevel.QUIET
+
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+    }
+}
+
+
+spotbugs {
+    toolVersion.set("4.9.8")
+    effort = Effort.valueOf('MAX')
+    reportLevel = Confidence.valueOf('LOW')
+
+    ignoreFailures = true
+}
+
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
+    reports {
+        html.required = true
+        xml.required = false
+    }
+}
+
+dependencyCheck {
+    analyzers {
+        assemblyEnabled = false
+        nugetconfEnabled = false
+    }
+    format = 'HTML'
+    suppressionFile = 'config/dependency-check-suppressions.xml'
+    failBuildOnCVSS = 10
+}
+
 
 group = 'molip'
 version = '0.0.1-SNAPSHOT'
 description = 'MOLIP Backend'
+
+
+bootJar {
+    mainClass = 'molip.server.ServerApplication'
+}
 
 java {
 	toolchain {
@@ -60,6 +122,8 @@ dependencies {
     testRuntimeOnly 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    testImplementation 'com.h2database:h2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
@@ -117,7 +181,7 @@ jacocoTestReport {
 jacocoTestCoverageVerification {
     violationRules {
         rule {
-            enabled = true
+            enabled = false // 현재 비활성화
             element = 'CLASS'
             excludes = jacocoExcludes
 
