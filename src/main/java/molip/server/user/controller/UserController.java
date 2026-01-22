@@ -34,103 +34,104 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class UserController implements UserApi {
 
-  private final UserService userService;
-  private final AuthService authService;
-  private final long refreshTokenExpirationMs;
+    private final UserService userService;
+    private final AuthService authService;
+    private final long refreshTokenExpirationMs;
 
-  public UserController(
-      UserService userService,
-      AuthService authService,
-      @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
-    this.userService = userService;
-    this.authService = authService;
-    this.refreshTokenExpirationMs = refreshTokenExpirationMs;
-  }
+    public UserController(
+            UserService userService,
+            AuthService authService,
+            @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
+        this.userService = userService;
+        this.authService = authService;
+        this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+    }
 
-  @PostMapping("/users")
-  @Override
-  public ResponseEntity<ServerResponse<SignUpResponse>> signUp(
-      @RequestBody SignUpRequest request,
-      @CookieValue(name = "deviceId", required = false) String deviceId) {
-    Users user =
-        userService.registerUser(
-            request.email(),
-            request.password(),
-            request.nickname(),
-            request.gender(),
-            request.birth(),
-            request.focusTimeZone(),
-            request.dayEndTime(),
-            request.profileImageKey());
+    @PostMapping("/users")
+    @Override
+    public ResponseEntity<ServerResponse<SignUpResponse>> signUp(
+            @RequestBody SignUpRequest request,
+            @CookieValue(name = "deviceId", required = false) String deviceId) {
+        Users user =
+                userService.registerUser(
+                        request.email(),
+                        request.password(),
+                        request.nickname(),
+                        request.gender(),
+                        request.birth(),
+                        request.focusTimeZone(),
+                        request.dayEndTime(),
+                        request.profileImageKey());
 
-    AuthResponse tokens =
-        authService.login(new LoginRequest(request.email(), request.password()), deviceId);
-    SignUpResponse response = SignUpResponse.from(user.getId(), tokens.accessToken());
-    ResponseCookie refreshCookie =
-        ResponseCookie.from("refreshToken", tokens.refreshToken())
-            .httpOnly(true)
-            .secure(true)
-            .sameSite("Lax")
-            .path("/token")
-            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-            .build();
-    ResponseCookie deviceCookie =
-        ResponseCookie.from("deviceId", tokens.deviceId())
-            .httpOnly(true)
-            .secure(true)
-            .sameSite("Lax")
-            .path("/token")
-            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-            .build();
+        AuthResponse tokens =
+                authService.login(new LoginRequest(request.email(), request.password()), deviceId);
+        SignUpResponse response = SignUpResponse.from(user.getId(), tokens.accessToken());
+        ResponseCookie refreshCookie =
+                ResponseCookie.from("refreshToken", tokens.refreshToken())
+                        .httpOnly(true)
+                        .secure(true)
+                        .sameSite("Lax")
+                        .path("/token")
+                        .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+                        .build();
+        ResponseCookie deviceCookie =
+                ResponseCookie.from("deviceId", tokens.deviceId())
+                        .httpOnly(true)
+                        .secure(true)
+                        .sameSite("Lax")
+                        .path("/token")
+                        .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+                        .build();
 
-    return ResponseEntity.ok()
-        .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-        .header(HttpHeaders.SET_COOKIE, deviceCookie.toString())
-        .body(ServerResponse.success(SuccessCode.SIGNUP_SUCCESS, response));
-  }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, deviceCookie.toString())
+                .body(ServerResponse.success(SuccessCode.SIGNUP_SUCCESS, response));
+    }
 
-  @GetMapping("/users")
-  @Override
-  public ResponseEntity<ServerResponse<UserProfileResponse>> getMe() {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-  }
+    @GetMapping("/users")
+    @Override
+    public ResponseEntity<ServerResponse<UserProfileResponse>> getMe() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
 
-  @GetMapping(value = "/users", params = "nickname")
-  @Override
-  public ResponseEntity<ServerResponse<PageResponse<UserSearchItemResponse>>> searchByNickname(
-      @RequestParam String nickname,
-      @RequestParam(required = false, defaultValue = "1") int page,
-      @RequestParam(required = false, defaultValue = "10") int size) {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-  }
+    @GetMapping(value = "/users", params = "nickname")
+    @Override
+    public ResponseEntity<ServerResponse<PageResponse<UserSearchItemResponse>>> searchByNickname(
+            @RequestParam String nickname,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "10") int size) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
 
-  @GetMapping(value = "/users", params = "email")
-  @Override
-  public ResponseEntity<ServerResponse<DuplicatedResponse>> checkEmail(@RequestParam String email) {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-  }
+    @GetMapping(value = "/users", params = "email")
+    @Override
+    public ResponseEntity<ServerResponse<DuplicatedResponse>> checkEmail(
+            @RequestParam String email) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
 
-  @PatchMapping("/users")
-  @Override
-  public ResponseEntity<Void> update(@RequestBody UpdateUserRequest request) {
-    return ResponseEntity.noContent().build();
-  }
+    @PatchMapping("/users")
+    @Override
+    public ResponseEntity<Void> update(@RequestBody UpdateUserRequest request) {
+        return ResponseEntity.noContent().build();
+    }
 
-  @PatchMapping("/users/image")
-  @Override
-  public ResponseEntity<Void> updateProfileImage(@RequestBody UpdateProfileImageRequest request) {
-    return ResponseEntity.noContent().build();
-  }
+    @PatchMapping("/users/image")
+    @Override
+    public ResponseEntity<Void> updateProfileImage(@RequestBody UpdateProfileImageRequest request) {
+        return ResponseEntity.noContent().build();
+    }
 
-  @PatchMapping("/users/password")
-  @Override
-  public ResponseEntity<Void> updatePassword(@RequestBody UpdatePasswordRequest request) {
-    return ResponseEntity.noContent().build();
-  }
+    @PatchMapping("/users/password")
+    @Override
+    public ResponseEntity<Void> updatePassword(@RequestBody UpdatePasswordRequest request) {
+        return ResponseEntity.noContent().build();
+    }
 
-  @DeleteMapping("/users")
-  @Override
-  public ResponseEntity<Void> delete() {
-    return ResponseEntity.noContent().build();
-  }
+    @DeleteMapping("/users")
+    @Override
+    public ResponseEntity<Void> delete() {
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -13,42 +13,43 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-  private final JwtUtil jwtUtil;
-  private final CustomUserDetailsService userDetailsService;
-  private final TokenBlacklistStore tokenBlacklistStore;
-  private final TokenVersionStore tokenVersionStore;
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
+    private final TokenBlacklistStore tokenBlacklistStore;
+    private final TokenVersionStore tokenVersionStore;
 
-  public Authentication getAuthentication(String token) {
-    Long userId = jwtUtil.extractUserId(token);
+    public Authentication getAuthentication(String token) {
+        Long userId = jwtUtil.extractUserId(token);
 
-    UserDetails userDetails = userDetailsService.loadUserByUsername(userId.toString());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(userId.toString());
 
-    return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-  }
-
-  public boolean validateAccessToken(String token) {
-    return isValidToken(token);
-  }
-
-  public boolean validateRefreshToken(String token) {
-    return isValidToken(token);
-  }
-
-  private boolean isValidToken(String token) {
-    if (token == null) {
-      return false;
+        return new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
     }
 
-    Long userId = jwtUtil.extractUserId(token);
-    Long tokenVersion = jwtUtil.extractTokenVersion(token);
-    if (userId == null || tokenVersion == null) {
-      return false;
+    public boolean validateAccessToken(String token) {
+        return isValidToken(token);
     }
 
-    boolean isBlackList = tokenBlacklistStore.contains(userId, token);
-    boolean isExpired = jwtUtil.isExpired(token);
-    boolean isVersionMatch = tokenVersionStore.get(userId) == tokenVersion;
+    public boolean validateRefreshToken(String token) {
+        return isValidToken(token);
+    }
 
-    return !isBlackList && !isExpired && isVersionMatch;
-  }
+    private boolean isValidToken(String token) {
+        if (token == null) {
+            return false;
+        }
+
+        Long userId = jwtUtil.extractUserId(token);
+        Long tokenVersion = jwtUtil.extractTokenVersion(token);
+        if (userId == null || tokenVersion == null) {
+            return false;
+        }
+
+        boolean isBlackList = tokenBlacklistStore.contains(userId, token);
+        boolean isExpired = jwtUtil.isExpired(token);
+        boolean isVersionMatch = tokenVersionStore.get(userId) == tokenVersion;
+
+        return !isBlackList && !isExpired && isVersionMatch;
+    }
 }

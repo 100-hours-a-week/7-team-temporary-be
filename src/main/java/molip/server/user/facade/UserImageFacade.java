@@ -16,23 +16,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class UserImageFacade {
-  private final UserRepository userRepository;
-  private final ImageRepository imageRepository;
-  private final UserImageRepository userImageRepository;
+    private final UserRepository userRepository;
+    private final ImageRepository imageRepository;
+    private final UserImageRepository userImageRepository;
 
-  @Transactional
-  public void linkProfileImage(Long userId, String imageKey) {
-    Users user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+    @Transactional
+    public void linkProfileImage(Long userId, String imageKey) {
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-    Image image =
-        imageRepository
-            .findByUploadKeyAndUploadStatusAndDeletedAtIsNull(imageKey, UploadStatus.PENDING)
-            .orElseThrow(() -> new BaseException(ErrorCode.CONFLICT_INVALID_IMAGE_KEY));
+        Image image =
+                imageRepository
+                        .findByUploadKeyAndUploadStatusAndDeletedAtIsNull(
+                                imageKey, UploadStatus.PENDING)
+                        .orElseThrow(() -> new BaseException(ErrorCode.CONFLICT_INVALID_IMAGE_KEY));
 
-    image.markSuccess();
-    userImageRepository.save(new UserImage(user, image));
-  }
+        image.markSuccess();
+        userImageRepository.save(new UserImage(user, image));
+    }
 }

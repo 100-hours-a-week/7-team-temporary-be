@@ -17,57 +17,57 @@ import org.springframework.test.util.ReflectionTestUtils;
 @DataJpaTest
 @ActiveProfiles("test")
 class UserRepositoryTest {
-  @Autowired private UserRepository userRepository;
+    @Autowired private UserRepository userRepository;
 
-  @Test
-  void 이메일이_존재하면_true를_반환한다() {
-    // given
-    Users user = createUser("email@test.com");
-    userRepository.save(user);
+    @Test
+    void 이메일이_존재하면_true를_반환한다() {
+        // given
+        Users user = createUser("email@test.com");
+        userRepository.save(user);
 
-    // when
-    boolean exists = userRepository.existsByEmailAndDeletedAtIsNull("email@test.com");
+        // when
+        boolean exists = userRepository.existsByEmailAndDeletedAtIsNull("email@test.com");
 
-    // then
-    assertThat(exists).isTrue();
-  }
+        // then
+        assertThat(exists).isTrue();
+    }
 
-  @Test
-  void 삭제된_유저는_조회되지_않는다() {
-    // given
-    Users user = createUser("email@test.com");
-    userRepository.save(user);
-    ReflectionTestUtils.setField(user, "deletedAt", LocalDateTime.now());
-    userRepository.save(user);
+    @Test
+    void 삭제된_유저는_조회되지_않는다() {
+        // given
+        Users user = createUser("email@test.com");
+        userRepository.save(user);
+        ReflectionTestUtils.setField(user, "deletedAt", LocalDateTime.now());
+        userRepository.save(user);
 
-    // when
-    boolean exists = userRepository.existsByEmailAndDeletedAtIsNull("email@test.com");
+        // when
+        boolean exists = userRepository.existsByEmailAndDeletedAtIsNull("email@test.com");
 
-    // then
-    assertThat(exists).isFalse();
-  }
+        // then
+        assertThat(exists).isFalse();
+    }
 
-  @Test
-  void 이메일로_유저를_조회한다() {
-    // given
-    Users user = createUser("email@test.com");
-    userRepository.save(user);
+    @Test
+    void 이메일로_유저를_조회한다() {
+        // given
+        Users user = createUser("email@test.com");
+        userRepository.save(user);
 
-    // when
-    var result = userRepository.findByEmailAndDeletedAtIsNull("email@test.com");
+        // when
+        var result = userRepository.findByEmailAndDeletedAtIsNull("email@test.com");
 
-    // then
-    assertThat(result).isPresent();
-  }
+        // then
+        assertThat(result).isPresent();
+    }
 
-  private Users createUser(String email) {
-    return new Users(
-        email,
-        "encoded",
-        "nick",
-        Gender.MALE,
-        LocalDate.of(1990, 1, 1),
-        FocusTimeZone.MORNING,
-        LocalTime.of(22, 40));
-  }
+    private Users createUser(String email) {
+        return new Users(
+                email,
+                "encoded",
+                "nick",
+                Gender.MALE,
+                LocalDate.of(1990, 1, 1),
+                FocusTimeZone.MORNING,
+                LocalTime.of(22, 40));
+    }
 }

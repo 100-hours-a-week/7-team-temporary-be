@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class UserProfileImageLinkedEventHandler {
-  private final UserImageFacade userImageFacade;
+    private final UserImageFacade userImageFacade;
 
-  @EventListener
-  public void handle(UserProfileImageLinkedEvent event) {
-    userImageFacade.linkProfileImage(event.userId(), event.imageKey());
-  }
+    @EventListener
+    public void handle(UserProfileImageLinkedEvent event) {
+        userImageFacade.linkProfileImage(event.userId(), event.imageKey());
+    }
 }

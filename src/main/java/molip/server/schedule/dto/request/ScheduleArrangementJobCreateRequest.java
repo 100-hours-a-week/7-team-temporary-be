@@ -5,4 +5,4 @@ import java.util.List;
 
 @Schema(description = "AI 배치 작업 생성 요청")
 public record ScheduleArrangementJobCreateRequest(
-    @Schema(description = "작업 목록") List<ScheduleArrangementTaskRequest> tasks) {}
+        @Schema(description = "작업 목록") List<ScheduleArrangementTaskRequest> tasks) {}

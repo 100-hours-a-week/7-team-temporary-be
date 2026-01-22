@@ -5,4 +5,4 @@ import molip.server.common.enums.FriendRequestStatus;
 
 @Schema(description = "친구 요청 상태 변경 요청")
 public record FriendRequestStatusUpdateRequest(
-    @Schema(description = "요청 상태", example = "ACCEPTED") FriendRequestStatus status) {}
+        @Schema(description = "요청 상태", example = "ACCEPTED") FriendRequestStatus status) {}
