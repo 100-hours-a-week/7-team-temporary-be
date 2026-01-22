@@ -17,20 +17,20 @@ import molip.server.image.entity.Image;
 @Entity
 public class UserImage extends BaseEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @ManyToOne(optional = false)
-  @JoinColumn(name = "user_id", nullable = false)
-  private Users user;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
 
-  @ManyToOne(optional = false)
-  @JoinColumn(name = "image_id", nullable = false)
-  private Image image;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "image_id", nullable = false)
+    private Image image;
 
-  public UserImage(Users user, Image image) {
-    this.user = user;
-    this.image = image;
-  }
+    public UserImage(Users user, Image image) {
+        this.user = user;
+        this.image = image;
+    }
 }

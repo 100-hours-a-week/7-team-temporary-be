@@ -18,36 +18,36 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TermsController implements TermsApi {
 
-  @GetMapping("/terms")
-  @Override
-  public ResponseEntity<ServerResponse<PageResponse<TermsItemResponse>>> getTerms() {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-  }
+    @GetMapping("/terms")
+    @Override
+    public ResponseEntity<ServerResponse<PageResponse<TermsItemResponse>>> getTerms() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
 
-  @PostMapping("/terms-sign/{termsId}")
-  @Override
-  public ResponseEntity<ServerResponse<TermsSignResponse>> createTermsSign(
-      @PathVariable Long termsId, @RequestBody TermsSignRequest request) {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-  }
+    @PostMapping("/terms-sign/{termsId}")
+    @Override
+    public ResponseEntity<ServerResponse<TermsSignResponse>> createTermsSign(
+            @PathVariable Long termsId, @RequestBody TermsSignRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
 
-  @PatchMapping("/terms-sign/{termsId}")
-  @Override
-  public ResponseEntity<Void> updateTermsSign(
-      @PathVariable Long termsId, @RequestBody TermsSignRequest request) {
-    return ResponseEntity.noContent().build();
-  }
+    @PatchMapping("/terms-sign/{termsId}")
+    @Override
+    public ResponseEntity<Void> updateTermsSign(
+            @PathVariable Long termsId, @RequestBody TermsSignRequest request) {
+        return ResponseEntity.noContent().build();
+    }
 
-  @GetMapping("/terms-sign")
-  @Override
-  public ResponseEntity<ServerResponse<PageResponse<TermsSignItemResponse>>> getMyTermsSigns() {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-  }
+    @GetMapping("/terms-sign")
+    @Override
+    public ResponseEntity<ServerResponse<PageResponse<TermsSignItemResponse>>> getMyTermsSigns() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
 
-  @GetMapping("/terms-sign/{termsSignId}")
-  @Override
-  public ResponseEntity<ServerResponse<TermsSignItemResponse>> getTermsSign(
-      @PathVariable Long termsSignId) {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-  }
+    @GetMapping("/terms-sign/{termsSignId}")
+    @Override
+    public ResponseEntity<ServerResponse<TermsSignItemResponse>> getTermsSign(
+            @PathVariable Long termsSignId) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
 }

@@ -11,20 +11,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-  private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
-  CustomUserDetailsService(UserRepository userRepository) {
-    this.userRepository = userRepository;
-  }
+    CustomUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
-  @Override
-  @Cacheable(value = "userDetailsCache", key = "#userId")
-  public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-    Users user =
-        userRepository
-            .findById(Long.valueOf(userId))
-            .orElseThrow(() -> new RuntimeException("NOT_FOUND_USEr"));
+    @Override
+    @Cacheable(value = "userDetailsCache", key = "#userId")
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+        Users user =
+                userRepository
+                        .findById(Long.valueOf(userId))
+                        .orElseThrow(() -> new RuntimeException("NOT_FOUND_USEr"));
 
-    return new CustomUserDetails(user);
-  }
+        return new CustomUserDetails(user);
+    }
 }

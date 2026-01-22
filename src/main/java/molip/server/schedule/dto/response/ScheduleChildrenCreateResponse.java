@@ -5,4 +5,4 @@ import java.util.List;
 
 @Schema(description = "자식 일정 생성 응답")
 public record ScheduleChildrenCreateResponse(
-    @Schema(description = "자식 일정 목록") List<ScheduleChildResponse> children) {}
+        @Schema(description = "자식 일정 목록") List<ScheduleChildResponse> children) {}

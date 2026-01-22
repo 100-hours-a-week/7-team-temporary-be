@@ -20,33 +20,36 @@ import molip.server.common.enums.UploadStatus;
 @Entity
 public class Image extends BaseEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @Column(nullable = false, length = 36)
-  private String uploadKey;
+    @Column(nullable = false, length = 36)
+    private String uploadKey;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 20)
-  private UploadStatus uploadStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UploadStatus uploadStatus;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 20)
-  private ImageType imageType;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ImageType imageType;
 
-  @Column(nullable = false)
-  private OffsetDateTime expiresAt;
+    @Column(nullable = false)
+    private OffsetDateTime expiresAt;
 
-  public Image(
-      String uploadKey, UploadStatus uploadStatus, ImageType imageType, OffsetDateTime expiresAt) {
-    this.uploadKey = uploadKey;
-    this.uploadStatus = uploadStatus;
-    this.imageType = imageType;
-    this.expiresAt = expiresAt;
-  }
+    public Image(
+            String uploadKey,
+            UploadStatus uploadStatus,
+            ImageType imageType,
+            OffsetDateTime expiresAt) {
+        this.uploadKey = uploadKey;
+        this.uploadStatus = uploadStatus;
+        this.imageType = imageType;
+        this.expiresAt = expiresAt;
+    }
 
-  public void markSuccess() {
-    this.uploadStatus = UploadStatus.SUCCESS;
-  }
+    public void markSuccess() {
+        this.uploadStatus = UploadStatus.SUCCESS;
+    }
 }

@@ -1,7 +1,7 @@
 package molip.server.common.enums;
 
 public enum ScheduleStatus {
-  TODO,
-  DONE,
-  SPLIT_PARENT
+    TODO,
+    DONE,
+    SPLIT_PARENT
 }

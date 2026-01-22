@@ -18,7 +18,23 @@ java {
 
 spotless {
     java {
-        googleJavaFormat()
+        // import 순서
+        importOrder 'java', 'javax', 'org', 'com', ''
+
+        // 미사용 import 제거
+        removeUnusedImports()
+
+        // 구글 포맷
+        googleJavaFormat().aosp()
+
+        // 간격
+        indentWithSpaces(4)
+
+        // 공백 제거
+        trimTrailingWhitespace()
+
+        // 끝부분 NewLine
+        endWithNewline()
     }
 }
 

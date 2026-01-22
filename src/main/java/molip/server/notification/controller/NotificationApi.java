@@ -15,26 +15,26 @@ import org.springframework.http.ResponseEntity;
 @Tag(name = "Notification", description = "알림 API")
 public interface NotificationApi {
 
-  @Operation(summary = "유저 알림 조회")
-  @SecurityRequirement(name = "JWT")
-  @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        description = "조회 성공",
-        content = @Content(schema = @Schema(implementation = PageResponse.class))),
-    @ApiResponse(
-        responseCode = "400",
-        description = "페이지 정보 오류",
-        content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @ApiResponse(
-        responseCode = "401",
-        description = "유효하지 않은 토큰",
-        content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-    @ApiResponse(
-        responseCode = "500",
-        description = "서버 오류",
-        content = @Content(schema = @Schema(implementation = ServerResponse.class)))
-  })
-  ResponseEntity<ServerResponse<PageResponse<NotificationItemResponse>>> getNotifications(
-      int page, int size);
+    @Operation(summary = "유저 알림 조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content = @Content(schema = @Schema(implementation = PageResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "페이지 정보 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<PageResponse<NotificationItemResponse>>> getNotifications(
+            int page, int size);
 }

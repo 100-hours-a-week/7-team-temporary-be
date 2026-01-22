@@ -19,69 +19,76 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-  private static final Pattern EMAIL_PATTERN =
-      Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-  private static final Pattern PASSWORD_PATTERN =
-      Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])\\S{8,20}$");
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PASSWORD_PATTERN =
+            Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])\\S{8,20}$");
 
-  private final UserRepository userRepository;
-  private final PasswordEncoder passwordEncoder;
-  private final ApplicationEventPublisher eventPublisher;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
-  @Transactional
-  public Users registerUser(
-      String email,
-      String password,
-      String nickname,
-      Gender gender,
-      LocalDate birth,
-      FocusTimeZone focusTimeZone,
-      LocalTime dayEndTime,
-      String profileImageKey) {
-    validateEmail(email);
-    validatePassword(password);
-    validateDuplicatedEmail(email);
+    @Transactional
+    public Users registerUser(
+            String email,
+            String password,
+            String nickname,
+            Gender gender,
+            LocalDate birth,
+            FocusTimeZone focusTimeZone,
+            LocalTime dayEndTime,
+            String profileImageKey) {
+        validateEmail(email);
+        validatePassword(password);
+        validateDuplicatedEmail(email);
 
-    String encodedPassword = passwordEncoder.encode(password);
+        String encodedPassword = passwordEncoder.encode(password);
 
-    Users savedUser =
-        userRepository.save(
-            new Users(email, encodedPassword, nickname, gender, birth, focusTimeZone, dayEndTime));
-    publishProfileImageEvent(savedUser.getId(), profileImageKey);
-    return savedUser;
-  }
-
-  private void validateEmail(String email) {
-    if (email == null || email.isBlank()) {
-      throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        Users savedUser =
+                userRepository.save(
+                        new Users(
+                                email,
+                                encodedPassword,
+                                nickname,
+                                gender,
+                                birth,
+                                focusTimeZone,
+                                dayEndTime));
+        publishProfileImageEvent(savedUser.getId(), profileImageKey);
+        return savedUser;
     }
-    if (!EMAIL_PATTERN.matcher(email).matches()) {
-      throw new BaseException(ErrorCode.INVALID_REQUEST_EMAIL_POLICY);
-    }
-  }
 
-  private void validatePassword(String password) {
-    if (password == null || password.isBlank()) {
-      throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+    private void validateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_EMAIL_POLICY);
+        }
     }
-    if (password.length() > 20) {
-      throw new BaseException(ErrorCode.INVALID_REQUEST_PASSWORD_TOO_LONG);
-    }
-    if (!PASSWORD_PATTERN.matcher(password).matches()) {
-      throw new BaseException(ErrorCode.INVALID_REQUEST_PASSWORD_POLICY);
-    }
-  }
 
-  private void validateDuplicatedEmail(String email) {
-    if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
-      throw new BaseException(ErrorCode.EMAIL_CONFLICT);
+    private void validatePassword(String password) {
+        if (password == null || password.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+        if (password.length() > 20) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_PASSWORD_TOO_LONG);
+        }
+        if (!PASSWORD_PATTERN.matcher(password).matches()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_PASSWORD_POLICY);
+        }
     }
-  }
 
-  private void publishProfileImageEvent(Long userId, String profileImageKey) {
-    if (profileImageKey == null || profileImageKey.isBlank()) {
-      return;
+    private void validateDuplicatedEmail(String email) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
+            throw new BaseException(ErrorCode.EMAIL_CONFLICT);
+        }
     }
-    eventPublisher.publishEvent(new UserProfileImageLinkedEvent(userId, profileImageKey));
-  }
+
+    private void publishProfileImageEvent(Long userId, String profileImageKey) {
+        if (profileImageKey == null || profileImageKey.isBlank()) {
+            return;
+        }
+        eventPublisher.publishEvent(new UserProfileImageLinkedEvent(userId, profileImageKey));
+    }
 }
