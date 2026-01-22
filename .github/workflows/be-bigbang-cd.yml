@@ -122,7 +122,7 @@ jobs:
             else
               pm2 start "java" --name "${PM2_NAME}" -- \
                 -jar "${JAR_PATH}" \
-                --server.port="${PORT}" \
+                --server.port="${PORT}" 
             fi
 
             # 오래된 릴리즈 정리 (최근 3개만 유지)
