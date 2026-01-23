@@ -248,10 +248,10 @@ jobs:
           [ "${FREE_GB}" -ge "${DISK_MIN_REM}" ] || { echo "FAIL: 디스크 부족 (${FREE_GB}G < ${DISK_MIN_REM}G)"; exit 1; }
           
           echo "== Extract artifact =="
-          mkdir -p "${RELEASE_DIR}"
+          sudo mkdir -p "${RELEASE_DIR}"
           TS="$(date +%Y%m%d%H%M%S)"
           NEW_REL="${RELEASE_DIR}/${TS}"
-          mkdir -p "${NEW_REL}"
+          sudo mkdir -p "${NEW_REL}"
           tar -xzf /tmp/be-app.tar.gz -C "${NEW_REL}"
           [ -f "${NEW_REL}/app.jar" ] || { echo "FAIL: app.jar not found"; exit 1; }
           ln -sfn "${NEW_REL}" "${CURRENT_DIR}"
