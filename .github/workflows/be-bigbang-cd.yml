@@ -307,8 +307,8 @@ jobs:
           fi
           
           echo "== Stop OLD process: ${ACTIVE_PM2} =="
-          pm2 delete "${ACTIVE_PM2}" >/dev/null 2>&1 || true
-          pm2 save >/dev/null 2>&1 || true
+          sudo pm2 delete "${ACTIVE_PM2}" >/dev/null 2>&1 || true
+          sudo pm2 save >/dev/null 2>&1 || true
           
           echo "== DEPLOY SUCCESS =="
           EOSSH
