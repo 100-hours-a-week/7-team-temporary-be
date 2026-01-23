@@ -6,6 +6,10 @@ on:
       - 'main'
       - 'feature/cicd-merge'  ## test로 돌려보기용
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build:
     name: Build Artifact (BE)
