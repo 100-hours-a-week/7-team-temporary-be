@@ -11,9 +11,9 @@ on:
     branches:
       - feature/ci-cd
 
-  workflow_dispatch:
-    branches:
-      - feature/ci-cd
+  # workflow_dispatch:
+  #   branches:
+  #     - feature/ci-cd
 
 permissions:
   contents: read
@@ -22,33 +22,20 @@ permissions:
 concurrency:
   group: be-prod-cd-${{ github.ref }}
   cancel-in-progress: false
-
 jobs:
-  build-artifact:
-    name: Build BE Artifact (main)
+  build:
+    name: Build Artifact (BE)
     runs-on: ubuntu-latest
-
-    # if: |
-    #   (
-    #     github.event_name == 'pull_request' &&
-    #     github.event.pull_request.merged == true &&
-    #     github.event.pull_request.base.ref == 'main' &&
-    #     (
-    #       startsWith(github.event.pull_request.head.ref, 'feature/ci-cd')
-    #     )
-    #   )
-    #   ||
-    #   (github.event_name == 'workflow_dispatch')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: 25
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -59,43 +46,108 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('backend/**/*.gradle*', 'backend/**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # PR CI에서 테스트가 끝났다는 전제로 -x test
-      # 하지만 "아티팩트가 오류나는 코드일까봐" 걱정이면 여기서 test를 다시 돌리면 됨.
-      - name: Build (bootJar)
-        working-directory: backend
-        run: ./gradlew clean bootJar -x test --no-daemon
-
-      - name: Package artifact
+      - name: Build (Spring Boot)
+        shell: bash
         run: |
           set -euo pipefail
+          ./gradlew clean build -x spotlessJava --no-daemon
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR_PATH=$(ls -1 build/libs/*.jar 2>/dev/null | head -n 1)
+          if [ -z "${JAR_PATH}" ]; then
+            echo "Build output jar not found under build/libs"; exit 1;
+          fi
           mkdir -p release_bundle
-          # bootJar 산출물 찾기 (프로젝트명 달라도 동작)
-          JAR="$(ls -1 build/libs/*.jar | head -n 1)"
-          [ -f "$JAR" ] || { echo "JAR not found in backend/build/libs"; exit 1; }
-          cp "$JAR" release_bundle/app.jar
-          # (선택) 배포 메타
-          echo "${GITHUB_SHA}" > release_bundle/commit_sha.txt
-          tar -czf be-app.tar.gz -C release_bundle .
+          cp "${JAR_PATH}" release_bundle/app.jar
+          tar -czf app.tar.gz -C release_bundle .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: be-app
-          path: backend/be-app.tar.gz
-          if-no-files-found: error
-          retention-days: 7
+          name: be-app-build
+          path: app.tar.gz
+          retention-days: 3
+
+# jobs:
+#   build-artifact:
+#     name: Build BE Artifact (main)
+#     runs-on: ubuntu-latest
+
+#     # if: |
+#     #   (
+#     #     github.event_name == 'pull_request' &&
+#     #     github.event.pull_request.merged == true &&
+#     #     github.event.pull_request.base.ref == 'main' &&
+#     #     (
+#     #       startsWith(github.event.pull_request.head.ref, 'feature/ci-cd')
+#     #     )
+#     #   )
+#     #   ||
+#     #   (github.event_name == 'workflow_dispatch')
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Set up JDK
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: temurin
+#           java-version: "25"
+
+#       - name: Grant execute permission for gradlew
+#         run: chmod +x gradlew
+
+#       - name: Cache Gradle
+#         uses: actions/cache@v4
+#         with:
+#           path: |
+#             ~/.gradle/caches
+#             ~/.gradle/wrapper
+#           key: gradle-${{ runner.os }}-${{ hashFiles('backend/**/*.gradle*', 'backend/**/gradle-wrapper.properties') }}
+#           restore-keys: |
+#             gradle-${{ runner.os }}-
+
+#       # PR CI에서 테스트가 끝났다는 전제로 -x test
+#       # 하지만 "아티팩트가 오류나는 코드일까봐" 걱정이면 여기서 test를 다시 돌리면 됨.
+#       - name: Build (bootJar)
+#         working-directory: backend
+#         run: ./gradlew clean bootJar -x test --no-daemon
+
+#       - name: Package artifact
+#         run: |
+#           set -euo pipefail
+#           mkdir -p release_bundle
+#           # bootJar 산출물 찾기 (프로젝트명 달라도 동작)
+#           JAR="$(ls -1 build/libs/*.jar | head -n 1)"
+#           [ -f "$JAR" ] || { echo "JAR not found in backend/build/libs"; exit 1; }
+#           cp "$JAR" release_bundle/app.jar
+#           # (선택) 배포 메타
+#           echo "${GITHUB_SHA}" > release_bundle/commit_sha.txt
+#           tar -czf be-app.tar.gz -C release_bundle .
+
+#       - name: Upload artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: be-app
+#           path: backend/be-app.tar.gz
+#           if-no-files-found: error
+#           retention-days: 7
 
   # deploy-production:
   #   name: Deploy BE to Production (Blue-Green)
   #   runs-on: ubuntu-latest
   #   needs: build-artifact
-
     #environment:
     #  name: production
+    
   deploy_gcp:
     name: Deploy to GCP (main)
     needs: build-artifact
