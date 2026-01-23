@@ -190,7 +190,7 @@ jobs:
           set -euo pipefail
 
           gcloud compute scp app.tar.gz \
-            ${GCP_USER}@${GCP_INSTANCE}:/tmp/be-app.tar.gz \
+            ${GCP_USER}@${GCP_INSTANCE}:/home/ubuntu/be/tmp/be-app.tar.gz \
             --zone="${GCP_ZONE}" \
             --project="${GCP_PROJECT}" \
             --quiet
@@ -252,7 +252,7 @@ jobs:
           TS="$(date +%Y%m%d%H%M%S)"
           NEW_REL="${RELEASE_DIR}/${TS}"
           sudo mkdir -p "${NEW_REL}"
-          tar -xzf /tmp/app.tar.gz -C "${NEW_REL}"
+          tar -xzf /tmp/be-app.tar.gz -C "${NEW_REL}"
           [ -f "${NEW_REL}/app.jar" ] || { echo "FAIL: app.jar not found"; exit 1; }
           ln -sfn "${NEW_REL}" "${CURRENT_DIR}"
           
