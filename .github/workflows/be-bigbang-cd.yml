@@ -254,7 +254,7 @@ jobs:
                echo "ACTIVE_PM2=${ACTIVE_PM2} (port=${ACTIVE_PORT})"
                echo "IDLE_PM2=${IDLE_PM2} (port=${IDLE_PORT})"
 
-        # 배포
+                # 배포
                echo "== Start IDLE process =="
                sudo pm2 delete "${IDLE_PM2}" >/dev/null 2>&1 || true
                sudo pm2 start "${ECOSYSTEM}" --only "${IDLE_PM2}" --env production
