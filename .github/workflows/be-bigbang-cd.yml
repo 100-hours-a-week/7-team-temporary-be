@@ -1,5 +1,3 @@
-
-
 name: BE Production CD (Artifact + Blue-Green + Preflight)
 
 #on:
