@@ -176,9 +176,11 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
 
-
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: compute
 
       - name: Force set active project (critical)
         shell: bash
