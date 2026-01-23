@@ -163,9 +163,6 @@ jobs:
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: compute
 
       - name: Force set active project (critical)
         shell: bash
@@ -192,7 +189,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          gcloud compute scp be-app.tar.gz \
+          gcloud compute scp app.tar.gz \
             ${GCP_USER}@${GCP_INSTANCE}:/tmp/be-app.tar.gz \
             --zone="${GCP_ZONE}" \
             --project="${GCP_PROJECT}" \
@@ -205,8 +202,7 @@ jobs:
           gcloud compute ssh ${GCP_USER}@${GCP_INSTANCE} \
           --zone "${GCP_ZONE}" \
           --project "${GCP_PROJECT}" \
-          --quiet \
-          --command "bash -se" <<'EOSSH'
+          --quiet 
           
           set -euo pipefail
           
