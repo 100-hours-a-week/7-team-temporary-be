@@ -144,7 +144,7 @@ jobs:
   # deploy-production:
   #   name: Deploy BE to Production (Blue-Green)
   #   runs-on: ubuntu-latest
-  #   needs: build-artifact
+  #   needs: build
     #environment:
     #  name: production
     
