@@ -66,6 +66,7 @@ jobs:
       # PR CI에서 테스트가 끝났다는 전제로 -x test
       # 하지만 "아티팩트가 오류나는 코드일까봐" 걱정이면 여기서 test를 다시 돌리면 됨.
       - name: Build (bootJar)
+        working-directory: backend
         run: ./gradlew clean bootJar -x test --no-daemon
 
       - name: Package artifact
