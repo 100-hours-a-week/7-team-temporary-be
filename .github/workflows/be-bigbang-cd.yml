@@ -247,21 +247,6 @@ jobs:
           FREE_GB=$(df -BG / | awk 'NR==2 {gsub(/G/,"",$4); print $4}')
           [ "${FREE_GB}" -ge "${DISK_MIN_REM}" ] || { echo "FAIL: 디스크 부족 (${FREE_GB}G < ${DISK_MIN_REM}G)"; exit 1; }
           
-#          echo "== [4] Preflight: DB Connections (optional) =="
-#          if command -v mysql >/dev/null 2>&1; then
-#           CUR_CONN=$(MYSQL_PWD="${DB_PASS}" mysql -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" \
-#             -Nse "SHOW STATUS LIKE 'Threads_connected';" 2>/dev/null | awk '{print $2}')
-#           CUR_CONN="${CUR_CONN:-0}"
-#           MAX_CONN="${DB_MAX_CONN}"
-#           THRESH_CONN=$(( MAX_CONN * 60 / 100 ))
-#           REMAIN_CONN=$(( MAX_CONN - CUR_CONN ))
-#
-#           [ "${CUR_CONN}" -le "${THRESH_CONN}" ] || { echo "FAIL: DB 연결 과다 ${CUR_CONN} > ${THRESH_CONN}"; exit 1; }
-#           [ "${REMAIN_CONN}" -ge "${GREEN_POOL}" ] || { echo "FAIL: 남은 커넥션 부족 ${REMAIN_CONN} < ${GREEN_POOL}"; exit 1; }
-#          else
-#           echo "mysql client not found -> DB preflight skipped"
-#          fi
-          
           echo "== Extract artifact =="
           mkdir -p "${RELEASE_DIR}"
           TS="$(date +%Y%m%d%H%M%S)"
