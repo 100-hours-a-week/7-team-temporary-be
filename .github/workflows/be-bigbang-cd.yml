@@ -4,7 +4,7 @@ on:
     branches:
       - 'release/**'
       - 'main'
-      - 'feature/cicd-merge'
+      - 'feature/cicd-merge'  ## test로 돌려보기용
 
 jobs:
   build:
@@ -133,7 +133,7 @@ jobs:
     name: Deploy to GCP (main)
     needs: build
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/cicd/') }}
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/cicd-merge') }}
     env:
       GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
       GCP_ZONE: ${{ secrets.GCP_ZONE }}
