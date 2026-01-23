@@ -132,7 +132,7 @@ jobs:
     name: Deploy to GCP (main)
     needs: build
     runs-on: ubuntu-latest
-    #if: github.ref == 'refs/heads/main'
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/cicd/') }}
     env:
       GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
       GCP_ZONE: ${{ secrets.GCP_ZONE }}
