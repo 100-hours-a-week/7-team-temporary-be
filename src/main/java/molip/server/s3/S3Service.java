@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
@@ -16,6 +17,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 public class S3Service {
     private final S3Properties s3Properties;
     private final S3Presigner preSigner;
+    private final S3Client s3Client;
 
     public PresignedUrlResult createGetPresignedUrl(String key, Duration duration) {
         PresignedGetObjectRequest presigned =
@@ -31,6 +33,10 @@ public class S3Service {
         return new PresignedUrlResult(
                 presigned.url().toString(),
                 OffsetDateTime.ofInstant(presigned.expiration(), ZoneId.of("Asia/Seoul")));
+    }
+
+    public void deleteObject(String key) {
+        s3Client.deleteObject(builder -> builder.bucket(s3Properties.bucket()).key(key));
     }
 
     private GetObjectPresignRequest getObjectPresignRequest(String key, Duration duration) {

@@ -8,8 +8,10 @@ import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
 import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;
+import molip.server.user.event.UserProfileImageDeletedEvent;
 import molip.server.user.repository.UserImageRepository;
 import molip.server.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ public class UserCommandFacade {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final UserImageRepository userImageRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void linkProfileImage(Long userId, String imageKey) {
@@ -55,7 +58,11 @@ public class UserCommandFacade {
                 .ifPresent(
                         userImage -> {
                             userImage.deleteUserImage();
-                            userImage.getImage().deleteImage();
+                            Image oldImage = userImage.getImage();
+                            oldImage.deleteImage();
+                            eventPublisher.publishEvent(
+                                    new UserProfileImageDeletedEvent(
+                                            oldImage.getImageType(), oldImage.getUploadKey()));
                         });
 
         newImage.markSuccess();
