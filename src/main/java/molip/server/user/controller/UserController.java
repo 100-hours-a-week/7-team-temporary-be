@@ -139,8 +139,13 @@ public class UserController implements UserApi {
 
     @PatchMapping("/users/password")
     @Override
-    public ResponseEntity<Void> updatePassword(@RequestBody UpdatePasswordRequest request) {
-        // userService.modifyPassword();
+    public ResponseEntity<Void> updatePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UpdatePasswordRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        userService.modifyPassword(userId, request.newPassword());
+
         return ResponseEntity.noContent().build();
     }
 

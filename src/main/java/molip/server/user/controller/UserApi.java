@@ -170,7 +170,8 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updatePassword(UpdatePasswordRequest request);
+    ResponseEntity<Void> updatePassword(
+            @AuthenticationPrincipal UserDetails userDetails, UpdatePasswordRequest request);
 
     @Operation(summary = "회원 탈퇴")
     @SecurityRequirement(name = "JWT")
