@@ -294,8 +294,8 @@ jobs:
           echo "[DEBUG] list APP_DIR"
           ls -al "${APP_DIR}" || true
 
-          sudo pm2 delete "${IDLE_PM2}" >/dev/null 2>&1 || true
-          sudo pm2 start "${APP_DIR}/ecosystem.config.js" --only "${IDLE_PM2}" --env production          
+          pm2 delete "${IDLE_PM2}" >/dev/null 2>&1 || true
+          pm2 start "${APP_DIR}/ecosystem.config.js" --only "${IDLE_PM2}" --env production          
           # echo "== Health check IDLE (max 60s) =="
           # for i in {1..30}; do
           # if curl -fsS "${IDLE_HEALTH}" >/dev/null; then
@@ -324,8 +324,8 @@ jobs:
           # fi
           
           echo "== Stop OLD process: ${ACTIVE_PM2} =="
-          sudo pm2 delete "${ACTIVE_PM2}" >/dev/null 2>&1 || true
-          sudo pm2 save >/dev/null 2>&1 || true
+          pm2 delete "${ACTIVE_PM2}" >/dev/null 2>&1 || true
+          pm2 save >/dev/null 2>&1 || true
           
           echo "== DEPLOY SUCCESS =="
           EOSSH
