@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build -x test --no-daemon
+          ./gradlew clean build -x spotlessJava --no-daemon
 
       - name: Package artifact
         shell: bash
@@ -64,8 +64,7 @@ jobs:
     needs: build
 
     # PR merge 완료 된것들 (base가 release, head가 develop)
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'release/') && github.event.pull_request.head.ref == 'develop' }}
-
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/') }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -76,28 +75,26 @@ jobs:
       - name: Upload artifact to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.BE_STAGING_HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.BE_STAGING_SSH_KEY }}
-          port: ${{ secrets.BE_SSH_PORT }}
+          host: ${{ secrets.HOST_STAGING }}
+          username: ${{ secrets.USER_STAGING }}
+          key: ${{ secrets.SSH_KEY_STAGING }}
+          port: 22
           source: app.tar.gz
           target: /tmp
 
       - name: Deploy via SSH (staging)
-        uses: appleboy/ssh-action@1.2.3
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.BE_STAGING_HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.BE_STAGING_SSH_KEY }}
-          port: ${{ secrets.BE_SSH_PORT }}
+          host: ${{ secrets.HOST_STAGING }}
+          username: ${{ secrets.USER_STAGING }}
+          key: ${{ secrets.SSH_KEY_STAGING }}
+          port: 22
           script_stop: true
           script: |
             set -euo pipefail
 
-            APP_DIR="${{ secrets.BE_APP_DIR }}"
-            PM2_NAME="${{ secrets.BE_PM2_NAME }}"
-            PORT="${{ secrets.BE_PORT }}"
-            PROFILE="${{ secrets.BE_STAGING_PROFILE }}"
+            APP_DIR="${{ secrets.APP_DIR }}"
+            PM2_NAME="${{ secrets.PM2_NAME }}"
 
             RELEASE_ROOT="${APP_DIR}/releases"
             CURRENT_LINK="${APP_DIR}/current"
@@ -124,10 +121,8 @@ jobs:
               pm2 restart "${PM2_NAME}" --update-env
             else
               pm2 start "java" --name "${PM2_NAME}" -- \
-                -Xms256m -Xmx1024m \
                 -jar "${JAR_PATH}" \
-                --server.port="${PORT}" \
-                --spring.profiles.active="${PROFILE}"
+                --server.port="${PORT}" 
             fi
 
             # 오래된 릴리즈 정리 (최근 3개만 유지)
