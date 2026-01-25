@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build -x spotlessJava --no-daemon
+          ./gradlew clean bootJar -x test -x spotlessJava --no-daemon
 
       - name: Package artifact
         shell: bash
