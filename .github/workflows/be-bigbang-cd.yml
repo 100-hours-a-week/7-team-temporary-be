@@ -4,6 +4,11 @@ on:
     branches:
       - 'release/**'
       - 'main'
+      #- 'feature/cicd-merge'  ## test로 돌려보기용
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   build:
@@ -37,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build -x test --no-daemon
+          ./gradlew clean bootJar -x test -x spotlessJava --no-daemon
 
       - name: Package artifact
         shell: bash
@@ -64,8 +69,7 @@ jobs:
     needs: build
 
     # PR merge 완료 된것들 (base가 release, head가 develop)
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'release/') && github.event.pull_request.head.ref == 'develop' }}
-
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/') }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -76,28 +80,26 @@ jobs:
       - name: Upload artifact to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.BE_STAGING_HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.BE_STAGING_SSH_KEY }}
-          port: ${{ secrets.BE_SSH_PORT }}
+          host: ${{ secrets.HOST_STAGING }}
+          username: ${{ secrets.USER_STAGING }}
+          key: ${{ secrets.SSH_KEY_STAGING }}
+          port: 22
           source: app.tar.gz
           target: /tmp
 
       - name: Deploy via SSH (staging)
-        uses: appleboy/ssh-action@1.2.3
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.BE_STAGING_HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.BE_STAGING_SSH_KEY }}
-          port: ${{ secrets.BE_SSH_PORT }}
+          host: ${{ secrets.HOST_STAGING }}
+          username: ${{ secrets.USER_STAGING }}
+          key: ${{ secrets.SSH_KEY_STAGING }}
+          port: 22
           script_stop: true
           script: |
             set -euo pipefail
 
-            APP_DIR="${{ secrets.BE_APP_DIR }}"
-            PM2_NAME="${{ secrets.BE_PM2_NAME }}"
-            PORT="${{ secrets.BE_PORT }}"
-            PROFILE="${{ secrets.BE_STAGING_PROFILE }}"
+            APP_DIR="${{ secrets.APP_DIR }}"
+            PM2_NAME="${{ secrets.PM2_NAME }}"
 
             RELEASE_ROOT="${APP_DIR}/releases"
             CURRENT_LINK="${APP_DIR}/current"
@@ -124,11 +126,206 @@ jobs:
               pm2 restart "${PM2_NAME}" --update-env
             else
               pm2 start "java" --name "${PM2_NAME}" -- \
-                -Xms256m -Xmx1024m \
                 -jar "${JAR_PATH}" \
-                --server.port="${PORT}" \
-                --spring.profiles.active="${PROFILE}"
+                --server.port="${PORT}" 
             fi
 
             # 오래된 릴리즈 정리 (최근 3개만 유지)
             ls -dt "${RELEASE_ROOT}"/* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+
+  deploy_gcp:
+    name: Deploy to GCP (main)
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/cicd-merge') }}
+    env:
+      GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_ZONE: ${{ secrets.GCP_ZONE }}
+      GCP_INSTANCE: ${{ secrets.GCE_INSTANCE_NAME }}
+      GCP_USER: ${{ secrets.GCE_USER }}
+      GCP_TARGET_DIR: ${{ secrets.APP_DIR_AWS }}
+      GCP_SERVICE: ${{ secrets.PM2_NAME }}
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: be-app-build
+          path: .
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Force set active project (critical)
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT}"
+          echo "ACTIVE_PROJECT=$(gcloud config get-value project)"
+          gcloud config list
+          
+          #      - name: SSH into VM (public IP) and run simple commands
+          #        shell: bash
+          #        run: |
+          #          set -euo pipefail
+          #          gcloud compute ssh "${GCP_INSTANCE}" \
+          #            --project "${GCP_PROJECT}" \
+          #            --zone "${GCP_ZONE}" \
+          #            --quiet \
+          #            --command "echo 'SSH_OK'; whoami; hostname; uname -a"
+      
+
+      # 1) tar 업로드  2) 원격에서 preflight + blue/green + switch
+      # 파일이동만 처리
+      - name: Upload artifact (GCP scp)
+        run: |
+          set -euo pipefail
+          gcloud compute scp app.tar.gz \
+            ${GCP_USER}@${GCP_INSTANCE}:/tmp/be-app.tar.gz \
+            --zone="${GCP_ZONE}" \
+            --project="${GCP_PROJECT}" \
+            --quiet
+
+      # ssh 접속
+      - name: Deploy (remote script)
+        run: |
+          set -euo pipefail
+           gcloud compute ssh "${GCP_USER}@${GCP_INSTANCE}" \
+            --zone "${GCP_ZONE}" \
+            --project "${GCP_PROJECT}" \
+            --quiet \
+            --command "bash -se" <<'EOSSH'
+          
+          set -euo pipefail
+          
+          APP_DIR="${{ secrets.APP_DIR }}"        # home/ubuntu/be
+          RELEASE_DIR="${APP_DIR}/releases"
+          CURRENT_DIR="${APP_DIR}/current"
+          
+          BLUE_PORT="${{ secrets.BLUE_PORT }}"      # 8080
+          GREEN_PORT="${{ secrets.GREEN_PORT }}"    # 8081
+          PM2_BLUE="${{ secrets.PM2_BLUE_NAME }}"   # molip-be-blue
+          PM2_GREEN="${{ secrets.PM2_GREEN_NAME }}" # molip-be-green
+          
+          HEALTH_BLUE="${{ secrets.HEALTH_BLUE_URL }}"   # healthurl:8080
+          HEALTH_GREEN="${{ secrets.HEALTH_GREEN_URL }}" # health:8081
+          
+          UPSTREAM_CONF="${{ secrets.NGINX_UPSTREAM_CONF }}" #  /etc/nginx/sites-available/molip
+          
+          # PREFLIGHT 상수 (필요하면 조정)
+          MIN_MEM=1843200
+          MAX_LA=1.0
+          DISK_MIN_REM=3
+          
+          # (선택) DB preflight를 쓰려면 mysql client가 서버에 있어야 함
+          DB_HOST="${{ secrets.DB_HOST }}"  # localhost
+          DB_PORT="${{ secrets.DB_PORT }}"  # 3306
+          DB_USER="${{ secrets.DB_USER }}"  # molip
+          DB_PASS="${{ secrets.DB_PASS }}"  # molip1234
+          DB_MAX_CONN="${{ secrets.DB_MAX_CONNECTIONS }}"  # 151             
+          GREEN_POOL="${{ secrets.GREEN_DB_POOL }}" # 10
+          
+          echo "== [1] Preflight: MemAvailable =="
+          MEM_AVAIL=$(grep '^MemAvailable:' /proc/meminfo | awk '{print $2}')
+          [ "${MEM_AVAIL}" -ge "${MIN_MEM}" ] || { echo "FAIL: MEM 부족 (${MEM_AVAIL} < ${MIN_MEM})"; exit 1; }
+          
+          # echo "== [2] Preflight: LoadAvg =="
+          # LA1=$(awk '{print $1}' /proc/loadavg)
+          # LA5=$(awk '{print $2}' /proc/loadavg)
+          # awk -v la1="$LA1" -v la5="$LA5" -v max="$MAX_LA" 'BEGIN { exit ! (la1 <= max && la5 <= max) }' \
+          #  || { echo "FAIL: LA1=${LA1}, LA5=${LA5} > ${MAX_LA}"; exit 1; }
+          
+          # echo "== [3] Preflight: Disk Free =="
+          # FREE_GB=$(df -BG / | awk 'NR==2 {gsub(/G/,"",$4); print $4}')
+          # [ "${FREE_GB}" -ge "${DISK_MIN_REM}" ] || { echo "FAIL: 디스크 부족 (${FREE_GB}G < ${DISK_MIN_REM}G)"; exit 1; }
+          
+          echo "== Extract artifact =="
+          # (필수) 파일 존재 확인: 없으면 여기서 바로 종료
+          ls -al /tmp || true
+          [ -f /tmp/be-app.tar.gz ] || { echo "FAIL: /tmp/be-app.tar.gz not found"; exit 1; }
+          
+          sudo mkdir -p "${RELEASE_DIR}"
+          TS="$(date +%Y%m%d%H%M%S)"
+          NEW_REL="${RELEASE_DIR}/${TS}"
+          sudo mkdir -p "${NEW_REL}"
+          
+          # (중요) NEW_REL이 root 소유일 수 있으니 tar도 sudo
+          sudo tar -xzf /tmp/be-app.tar.gz -C "${NEW_REL}"
+
+          [ -f "${NEW_REL}/app.jar" ] || { echo "FAIL: app.jar not found"; exit 1; }
+          
+          # (중요) current 링크도 권한 이슈 방지
+          sudo ln -sfn "${NEW_REL}" "${CURRENT_DIR}"
+          
+          echo "== Detect ACTIVE port from Nginx upstream =="
+          ACTIVE_PORT=$(grep -Eo '127.0.0.1:(8080|8081)+' "${UPSTREAM_CONF}" | head -n 1 | cut -d: -f2)
+          
+          if [ "${ACTIVE_PORT}" = "${BLUE_PORT}" ]; then
+           ACTIVE_PM2="${PM2_BLUE}"
+           IDLE_PM2="${PM2_GREEN}"
+           IDLE_PORT="${GREEN_PORT}"
+           IDLE_HEALTH="${HEALTH_GREEN}"
+          else
+           ACTIVE_PM2="${PM2_GREEN}"
+           IDLE_PM2="${PM2_BLUE}"
+           IDLE_PORT="${BLUE_PORT}"
+           IDLE_HEALTH="${HEALTH_BLUE}"
+          fi
+          
+          echo "ACTIVE_PM2=${ACTIVE_PM2} (port=${ACTIVE_PORT})"
+          echo "IDLE_PM2=${IDLE_PM2} (port=${IDLE_PORT})"
+          
+           # 배포
+          echo "== Start IDLE process =="
+          # 디버깅: pm2 실행 직전 위치/사용자 확인
+          echo "[DEBUG] before pm2: whoami=$(whoami)"
+          echo "[DEBUG] before pm2: pwd=$(pwd)"
+          echo "[DEBUG] APP_DIR=${APP_DIR}"
+          echo "[DEBUG] list pwd"
+          ls -al "$(pwd)" || true
+          echo "[DEBUG] list APP_DIR"
+          ls -al "${APP_DIR}" || true
+
+          pm2 delete "${IDLE_PM2}" >/dev/null 2>&1 || true
+          pm2 start "${APP_DIR}/ecosystem.config.js" --only "${IDLE_PM2}" --env production          
+          echo "== Health check IDLE (max 60s) =="
+          for i in {1..30}; do
+          if curl -fsS "${IDLE_HEALTH}" >/dev/null; then
+          echo "Health OK"
+          break
+          fi
+          sleep 2
+          done
+          curl -fsS "${IDLE_HEALTH}" >/dev/null || {
+          echo "FAIL: Health check";
+          exit 1;
+          }
+          
+          echo "== Switch Nginx upstream -> ${IDLE_PORT} =="
+          sudo sed -i -E "0,/127\\.0\\.0\\.1:[0-9]+/s//127.0.0.1:${IDLE_PORT}/" "${UPSTREAM_CONF}"
+          sudo nginx -t
+          sudo systemctl reload nginx || sudo nginx -s reload
+          
+          echo "== Verify after switch =="
+          if ! curl -fsS "${IDLE_HEALTH}" >/dev/null; then
+          echo "FAIL: Post-switch health -> rollback upstream"
+          sudo sed -i -E "0,/127\\.0\\.0\\.1:(8080|8081)/s//127.0.0.1:${ACTIVE_PORT}/" "${UPSTREAM_CONF}"          
+          sudo nginx -t
+          sudo systemctl reload nginx || sudo nginx -s reload-
+          exit 1
+          fi
+          
+          echo "== Stop OLD process: ${ACTIVE_PM2} =="
+          pm2 delete "${ACTIVE_PM2}" >/dev/null 2>&1 || true
+          pm2 save >/dev/null 2>&1 || true
+          
+          echo "== DEPLOY SUCCESS =="
+          EOSSH
