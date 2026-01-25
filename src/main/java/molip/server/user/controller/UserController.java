@@ -130,7 +130,7 @@ public class UserController implements UserApi {
     @PatchMapping("/users/password")
     @Override
     public ResponseEntity<Void> updatePassword(@RequestBody UpdatePasswordRequest request) {
-        //userService.modifyPassword();
+        // userService.modifyPassword();
         return ResponseEntity.noContent().build();
     }
 

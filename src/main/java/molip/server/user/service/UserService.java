@@ -69,7 +69,10 @@ public class UserService {
     public void modifyPassword(Long userId, String passwowrd) {
         validatePassword(passwowrd);
 
-        Users user = userRepository.findById(userId).orElseThrow(()-> new BaseException(ErrorCode.USER_NOT_FOUND));
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         user.modifyPassword(passwowrd);
     }
