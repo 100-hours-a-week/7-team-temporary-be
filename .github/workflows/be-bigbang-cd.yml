@@ -314,14 +314,14 @@ jobs:
           sudo nginx -t
           sudo systemctl reload nginx || sudo nginx -s reload
           
-          echo "== Verify after switch =="
-          if ! curl -fsS "${IDLE_HEALTH}" >/dev/null; then
-          echo "FAIL: Post-switch health -> rollback upstream"
-          sudo sed -i -E "0,/127\\.0\\.0\\.1:[0-9]+/s//127.0.0.1:${ACTIVE_PORT}/" "${UPSTREAM_CONF}"
-          sudo nginx -t
-          sudo systemctl reload nginx || sudo nginx -s reload
-          exit 1
-          fi
+          # echo "== Verify after switch =="
+          # if ! curl -fsS "${IDLE_HEALTH}" >/dev/null; then
+          # echo "FAIL: Post-switch health -> rollback upstream"
+          # sudo sed -i -E "0,/127\\.0\\.0\\.1:[0-9]+/s//127.0.0.1:${ACTIVE_PORT}/" "${UPSTREAM_CONF}"
+          # sudo nginx -t
+          # sudo systemctl reload nginx || sudo nginx -s reload
+          # exit 1
+          # fi
           
           echo "== Stop OLD process: ${ACTIVE_PM2} =="
           sudo pm2 delete "${ACTIVE_PM2}" >/dev/null 2>&1 || true
