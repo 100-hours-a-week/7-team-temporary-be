@@ -16,12 +16,15 @@ import molip.server.user.dto.response.SignUpResponse;
 import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
 import molip.server.user.entity.Users;
+import molip.server.user.facade.UserQueryFacade;
 import molip.server.user.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,14 +38,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController implements UserApi {
 
     private final UserService userService;
+    private final UserQueryFacade userQueryFacade;
     private final AuthService authService;
     private final long refreshTokenExpirationMs;
 
     public UserController(
             UserService userService,
+            UserQueryFacade userQueryFacade,
             AuthService authService,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.userService = userService;
+        this.userQueryFacade = userQueryFacade;
         this.authService = authService;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
@@ -91,8 +97,12 @@ public class UserController implements UserApi {
 
     @GetMapping("/users")
     @Override
-    public ResponseEntity<ServerResponse<UserProfileResponse>> getMe() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<UserProfileResponse>> getMe(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+        UserProfileResponse response = userQueryFacade.getUserProfile(userId);
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.USER_PROFILE_FETCH_SUCCESS, response));
     }
 
     @GetMapping("/users/nickname")
