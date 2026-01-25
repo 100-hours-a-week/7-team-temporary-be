@@ -190,5 +190,5 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> delete();
+    ResponseEntity<Void> delete(@AuthenticationPrincipal UserDetails userDetails);
 }
