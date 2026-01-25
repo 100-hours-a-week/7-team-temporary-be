@@ -40,6 +40,12 @@ public class ImageService {
         return new ImageGetUrlResponse(result.url(), result.expiresAt(), imageKey);
     }
 
+    public ImageGetUrlResponse issueGetUrlWithoutValidation(ImageType type, String imageKey) {
+        String objectKey = resolveObjectKey(type, imageKey);
+        PresignedUrlResult result = s3Service.createGetPresignedUrl(objectKey, DEFAULT_EXPIRATION);
+        return new ImageGetUrlResponse(result.url(), result.expiresAt(), imageKey);
+    }
+
     public void deleteStoredImage(ImageType type, String imageKey) {
         String objectKey = resolveObjectKey(type, imageKey);
         s3Service.deleteObject(objectKey);

@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class UserQueryFacade {
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "default_image.png";
+
     private final UserRepository userRepository;
     private final UserImageRepository userImageRepository;
     private final ImageService imageService;
@@ -44,7 +46,11 @@ public class UserQueryFacade {
     private ImageInfoResponse resolveProfileImage(Long userId) {
         Optional<UserImage> userImage = userImageRepository.findLatestByUserIdWithImage(userId);
         if (userImage.isEmpty()) {
-            return null;
+            ImageGetUrlResponse presigned =
+                    imageService.issueGetUrlWithoutValidation(
+                            ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
+            return new ImageInfoResponse(
+                    presigned.url(), presigned.expiresAt(), presigned.imageKey());
         }
         Image image = userImage.get().getImage();
         ImageGetUrlResponse presigned =
