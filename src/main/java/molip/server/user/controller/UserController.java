@@ -1,5 +1,6 @@
 package molip.server.user.controller;
 
+import jakarta.validation.Valid;
 import java.time.Duration;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AuthResponse;
@@ -16,12 +17,15 @@ import molip.server.user.dto.response.SignUpResponse;
 import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
 import molip.server.user.entity.Users;
+import molip.server.user.facade.UserCommandFacade;
+import molip.server.user.facade.UserQueryFacade;
 import molip.server.user.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,14 +39,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController implements UserApi {
 
     private final UserService userService;
+    private final UserCommandFacade userCommandFacade;
+    private final UserQueryFacade userQueryFacade;
     private final AuthService authService;
     private final long refreshTokenExpirationMs;
 
     public UserController(
             UserService userService,
+            UserCommandFacade userCommandFacade,
+            UserQueryFacade userQueryFacade,
             AuthService authService,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.userService = userService;
+        this.userCommandFacade = userCommandFacade;
+        this.userQueryFacade = userQueryFacade;
         this.authService = authService;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
@@ -91,47 +101,85 @@ public class UserController implements UserApi {
 
     @GetMapping("/users")
     @Override
-    public ResponseEntity<ServerResponse<UserProfileResponse>> getMe() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<UserProfileResponse>> getMe(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+        UserProfileResponse response = userQueryFacade.getUserProfile(userId);
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.USER_PROFILE_FETCH_SUCCESS, response));
     }
 
-    @GetMapping(value = "/users", params = "nickname")
+    @GetMapping("/users/nickname")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<UserSearchItemResponse>>> searchByNickname(
             @RequestParam String nickname,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        PageResponse<UserSearchItemResponse> response =
+                userQueryFacade.searchByNickname(nickname, page, size);
+        return ResponseEntity.ok(ServerResponse.success(SuccessCode.USER_SEARCH_SUCCESS, response));
     }
 
-    @GetMapping(value = "/users", params = "email")
+    @GetMapping("/users/email")
     @Override
     public ResponseEntity<ServerResponse<DuplicatedResponse>> checkEmail(
             @RequestParam String email) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        boolean isDuplicated = userService.checkEmailDuplicated(email);
+        return ResponseEntity.ok(
+                ServerResponse.success(
+                        SuccessCode.EMAIL_DUPLICATION_CHECKED,
+                        DuplicatedResponse.from(isDuplicated)));
     }
 
     @PatchMapping("/users")
     @Override
-    public ResponseEntity<Void> update(@RequestBody UpdateUserRequest request) {
+    public ResponseEntity<Void> update(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody UpdateUserRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        userService.modifyUserDetails(
+                userId,
+                request.gender(),
+                request.birth(),
+                request.focusTimeZone(),
+                request.dayEndTime(),
+                request.nickname());
+
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/users/image")
     @Override
-    public ResponseEntity<Void> updateProfileImage(@RequestBody UpdateProfileImageRequest request) {
+    public ResponseEntity<Void> updateProfileImage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UpdateProfileImageRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        userCommandFacade.changeProfileImage(userId, request.imageKey());
+
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/users/password")
     @Override
-    public ResponseEntity<Void> updatePassword(@RequestBody UpdatePasswordRequest request) {
+    public ResponseEntity<Void> updatePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UpdatePasswordRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        userService.modifyPassword(userId, request.newPassword());
+
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/users")
     @Override
-    public ResponseEntity<Void> delete() {
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        userService.deleteUser(userId);
+
         return ResponseEntity.noContent().build();
     }
 }

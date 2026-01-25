@@ -6,6 +6,10 @@ on:
   push:
     branches: [develop, main, 'release/**', 'feature/cicd-merge']
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   be:
     runs-on: ubuntu-latest
