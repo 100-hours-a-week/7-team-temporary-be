@@ -1,6 +1,5 @@
 package molip.server.terms.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -22,14 +21,11 @@ public class Terms extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private TermsType termsType;
 
-    @Column(nullable = false)
     private boolean isActive;
 
     public Terms(String name, TermsType termsType, boolean isActive) {
