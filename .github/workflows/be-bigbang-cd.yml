@@ -190,7 +190,7 @@ jobs:
           set -euo pipefail
 
           gcloud compute scp app.tar.gz \
-            ${GCP_USER}@${GCP_INSTANCE}:/home/ubuntu/be/tmp/be-app.tar.gz \
+            ${GCP_USER}@${GCP_INSTANCE}:/tmp/be-app.tar.gz \
             --zone="${GCP_ZONE}" \
             --project="${GCP_PROJECT}" \
             --quiet
