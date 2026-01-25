@@ -22,7 +22,6 @@ import molip.server.user.facade.UserQueryFacade;
 import molip.server.user.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -116,7 +115,9 @@ public class UserController implements UserApi {
             @RequestParam String nickname,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        PageResponse<UserSearchItemResponse> response =
+                userQueryFacade.searchByNickname(nickname, page, size);
+        return ResponseEntity.ok(ServerResponse.success(SuccessCode.USER_SEARCH_SUCCESS, response));
     }
 
     @GetMapping("/users/email")
