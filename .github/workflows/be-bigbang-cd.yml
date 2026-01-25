@@ -285,6 +285,15 @@ jobs:
           
            # 배포
           echo "== Start IDLE process =="
+          # 디버깅: pm2 실행 직전 위치/사용자 확인
+          echo "[DEBUG] before pm2: whoami=$(whoami)"
+          echo "[DEBUG] before pm2: pwd=$(pwd)"
+          echo "[DEBUG] APP_DIR=${APP_DIR}"
+          echo "[DEBUG] list pwd"
+          ls -al "$(pwd)" || true
+          echo "[DEBUG] list APP_DIR"
+          ls -al "${APP_DIR}" || true
+
           sudo pm2 delete "${IDLE_PM2}" >/dev/null 2>&1 || true
           sudo pm2 start ecosystem.config.js --only "${IDLE_PM2}" --env production
           
