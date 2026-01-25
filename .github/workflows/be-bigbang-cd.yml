@@ -124,13 +124,8 @@ jobs:
             ln -sfn "${NEXT_RELEASE}" "${CURRENT_LINK}"
 
             echo "== [STAGING] pm2 restart"
-            if pm2 describe "${PM2_NAME}" >/dev/null 2>&1; then
-              pm2 restart "${PM2_NAME}" --update-env
-            else
-              pm2 start "java" --name "${PM2_NAME}" -- \
-                -jar "${JAR_PATH}" \
-                --server.port="${PORT}" 
-            fi
+            cd /home/ubuntu/be
+            pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
 
             # 오래된 릴리즈 정리 (최근 3개만 유지)
             ls -dt "${RELEASE_ROOT}"/* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
