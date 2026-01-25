@@ -20,9 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
     private static final Pattern EMAIL_PATTERN =
-        Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final Pattern PASSWORD_PATTERN =
-        Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])\\S{8,20}$");
+            Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])\\S{8,20}$");
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -30,14 +30,14 @@ public class UserService {
 
     @Transactional
     public Users registerUser(
-        String email,
-        String password,
-        String nickname,
-        Gender gender,
-        LocalDate birth,
-        FocusTimeZone focusTimeZone,
-        LocalTime dayEndTime,
-        String profileImageKey) {
+            String email,
+            String password,
+            String nickname,
+            Gender gender,
+            LocalDate birth,
+            FocusTimeZone focusTimeZone,
+            LocalTime dayEndTime,
+            String profileImageKey) {
         validateEmail(email);
         validatePassword(password);
         validateDuplicatedEmail(email);
@@ -45,15 +45,15 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(password);
 
         Users savedUser =
-            userRepository.save(
-                new Users(
-                    email,
-                    encodedPassword,
-                    nickname,
-                    gender,
-                    birth,
-                    focusTimeZone,
-                    dayEndTime));
+                userRepository.save(
+                        new Users(
+                                email,
+                                encodedPassword,
+                                nickname,
+                                gender,
+                                birth,
+                                focusTimeZone,
+                                dayEndTime));
         publishProfileImageEvent(savedUser.getId(), profileImageKey);
         return savedUser;
     }
