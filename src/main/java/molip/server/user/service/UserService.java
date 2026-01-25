@@ -65,6 +65,18 @@ public class UserService {
         return userRepository.existsByEmailAndDeletedAtIsNull(email);
     }
 
+    @Transactional
+    public void modifyPassword(Long userId, String passwowrd) {
+        validatePassword(passwowrd);
+
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        user.modifyPassword(passwowrd);
+    }
+
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);

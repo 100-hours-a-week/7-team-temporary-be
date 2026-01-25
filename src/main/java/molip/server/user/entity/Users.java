@@ -51,4 +51,8 @@ public class Users extends BaseEntity {
         this.focusTimeZone = focusTimeZone;
         this.dayEndTime = dayEndTime;
     }
+
+    public void modifyPassword(String password) {
+        this.password = password;
+    }
 }
