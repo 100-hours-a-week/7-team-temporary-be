@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -51,5 +52,9 @@ public class Image extends BaseEntity {
 
     public void markSuccess() {
         this.uploadStatus = UploadStatus.SUCCESS;
+    }
+
+    public void deleteImage() {
+        this.deletedAt = LocalDateTime.now();
     }
 }

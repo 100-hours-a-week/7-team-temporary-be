@@ -18,6 +18,8 @@ import molip.server.user.dto.response.SignUpResponse;
 import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
 
 @Tag(name = "User", description = "유저 API")
@@ -66,7 +68,8 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<UserProfileResponse>> getMe();
+    ResponseEntity<ServerResponse<UserProfileResponse>> getMe(
+            @AuthenticationPrincipal UserDetails userDetails);
 
     @Operation(summary = "닉네임 기반 회원 검색")
     @SecurityRequirement(name = "JWT")
@@ -125,7 +128,8 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> update(UpdateUserRequest request);
+    ResponseEntity<Void> update(
+            @AuthenticationPrincipal UserDetails userDetails, UpdateUserRequest request);
 
     @Operation(summary = "프로필 이미지 수정")
     @SecurityRequirement(name = "JWT")
@@ -144,7 +148,8 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateProfileImage(UpdateProfileImageRequest request);
+    ResponseEntity<Void> updateProfileImage(
+            @AuthenticationPrincipal UserDetails userDetails, UpdateProfileImageRequest request);
 
     @Operation(summary = "비밀번호 수정")
     @SecurityRequirement(name = "JWT")
@@ -167,7 +172,8 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updatePassword(UpdatePasswordRequest request);
+    ResponseEntity<Void> updatePassword(
+            @AuthenticationPrincipal UserDetails userDetails, UpdatePasswordRequest request);
 
     @Operation(summary = "회원 탈퇴")
     @SecurityRequirement(name = "JWT")
@@ -186,5 +192,5 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> delete();
+    ResponseEntity<Void> delete(@AuthenticationPrincipal UserDetails userDetails);
 }

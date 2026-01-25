@@ -40,6 +40,11 @@ public class ImageService {
         return new ImageGetUrlResponse(result.url(), result.expiresAt(), imageKey);
     }
 
+    public void deleteStoredImage(ImageType type, String imageKey) {
+        String objectKey = resolveObjectKey(type, imageKey);
+        s3Service.deleteObject(objectKey);
+    }
+
     private String resolveObjectKey(ImageType type, String imageKey) {
         return type.folder() + "/" + imageKey;
     }

@@ -6,8 +6,7 @@ public enum SuccessCode {
     SIGNUP_SUCCESS("SUCCESS", "회원가입이 완료되었습니다."),
     USER_PROFILE_FETCH_SUCCESS("SUCCESS", "회원 정보를 성공적으로 조회했습니다."),
     USER_SEARCH_SUCCESS("SUCCESS", "회원 검색 결과입니다."),
-    EMAIL_AVAILABLE("SUCCESS", "사용 가능한 이메일입니다."),
-    EMAIL_DUPLICATED("SUCCESS", "이미 사용 중인 이메일입니다."),
+    EMAIL_DUPLICATION_CHECKED("SUCCESS", "이메일 중복여부가 성공적으로 조회되었습니다."),
 
     IMAGE_UPLOAD_URL_ISSUED("SUCCESS", "이미지 업로드 URL이 발급되었습니다."),
     IMAGE_GET_URL_ISSUED("SUCCESS", "이미지 조회 URL이 발급되었습니다."),
