@@ -108,7 +108,11 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<ServerResponse<DuplicatedResponse>> checkEmail(
             @RequestParam String email) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        boolean isDuplicated = userService.checkEmailDuplicated(email);
+        return ResponseEntity.ok(
+                ServerResponse.success(
+                        SuccessCode.EMAIL_DUPLICATION_CHECKED,
+                        DuplicatedResponse.from(isDuplicated)));
     }
 
     @PatchMapping("/users")

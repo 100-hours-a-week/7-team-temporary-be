@@ -58,6 +58,13 @@ public class UserService {
         return savedUser;
     }
 
+    @Transactional(readOnly = true)
+    public boolean checkEmailDuplicated(String email) {
+        validateEmail(email);
+
+        return userRepository.existsByEmailAndDeletedAtIsNull(email);
+    }
+
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
