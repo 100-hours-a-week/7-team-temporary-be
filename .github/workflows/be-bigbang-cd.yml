@@ -304,7 +304,7 @@ jobs:
           }
           
           echo "== Switch Nginx upstream -> ${IDLE_PORT} =="
-          sudo sed -i -E "0,/127\\.0\\.0\\.1:[0-9]+/s//127.0.0.1:${IDLE_PORT}/" "${UPSTREAM_CONF}"
+          sudo sed -i -E "0,/127\\.0\\.0\\.1:[8080|8081]+/s//127.0.0.1:${IDLE_PORT}/" "${UPSTREAM_CONF}"
           sudo nginx -t
           sudo systemctl reload nginx || sudo nginx -s reload
           
