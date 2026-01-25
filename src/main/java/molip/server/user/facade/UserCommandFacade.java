@@ -36,4 +36,29 @@ public class UserCommandFacade {
         image.markSuccess();
         userImageRepository.save(new UserImage(user, image));
     }
+
+    @Transactional
+    public void changeProfileImage(Long userId, String imageKey) {
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        Image newImage =
+                imageRepository
+                        .findByUploadKeyAndUploadStatusAndDeletedAtIsNull(
+                                imageKey, UploadStatus.PENDING)
+                        .orElseThrow(() -> new BaseException(ErrorCode.CONFLICT_INVALID_IMAGE_KEY));
+
+        userImageRepository
+                .findLatestByUserIdWithImage(userId)
+                .ifPresent(
+                        userImage -> {
+                            userImage.deleteUserImage();
+                            userImage.getImage().deleteImage();
+                        });
+
+        newImage.markSuccess();
+        userImageRepository.save(new UserImage(user, newImage));
+    }
 }

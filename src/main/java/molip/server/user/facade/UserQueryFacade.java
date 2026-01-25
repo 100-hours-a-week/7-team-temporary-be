@@ -43,7 +43,7 @@ public class UserQueryFacade {
 
     private ImageInfoResponse resolveProfileImage(Long userId) {
         Optional<UserImage> userImage =
-                userImageRepository.findTopByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId);
+                userImageRepository.findLatestByUserIdWithImage(userId);
         if (userImage.isEmpty()) {
             return null;
         }
