@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
-public class UserImageFacade {
+public class UserCommandFacade {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final UserImageRepository userImageRepository;
