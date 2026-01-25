@@ -188,7 +188,6 @@ jobs:
       - name: Upload artifact (GCP scp)
         run: |
           set -euo pipefail
-
           gcloud compute scp app.tar.gz \
             ${GCP_USER}@${GCP_INSTANCE}:/tmp/be-app.tar.gz \
             --zone="${GCP_ZONE}" \
@@ -199,10 +198,11 @@ jobs:
       - name: Deploy (remote script)
         run: |
           set -euo pipefail
-          gcloud compute ssh ${GCP_USER}@${GCP_INSTANCE} \
-          --zone "${GCP_ZONE}" \
-          --project "${GCP_PROJECT}" \
-          --quiet 
+           gcloud compute ssh "${GCP_USER}@${GCP_INSTANCE}" \
+            --zone "${GCP_ZONE}" \
+            --project "${GCP_PROJECT}" \
+            --quiet \
+            --command "bash -se" <<'EOSSH'
           
           set -euo pipefail
           
@@ -248,13 +248,23 @@ jobs:
           [ "${FREE_GB}" -ge "${DISK_MIN_REM}" ] || { echo "FAIL: 디스크 부족 (${FREE_GB}G < ${DISK_MIN_REM}G)"; exit 1; }
           
           echo "== Extract artifact =="
+
+        # (필수) 파일 존재 확인: 없으면 여기서 바로 종료
+          ls -al /tmp || true
+          [ -f /tmp/be-app.tar.gz ] || { echo "FAIL: /tmp/be-app.tar.gz not found"; exit 1; }
+          
           sudo mkdir -p "${RELEASE_DIR}"
           TS="$(date +%Y%m%d%H%M%S)"
           NEW_REL="${RELEASE_DIR}/${TS}"
           sudo mkdir -p "${NEW_REL}"
-          tar -xzf /tmp/be-app.tar.gz -C "${NEW_REL}"
+          
+          # (중요) NEW_REL이 root 소유일 수 있으니 tar도 sudo
+          sudo tar -xzf /tmp/be-app.tar.gz -C "${NEW_REL}"
+
           [ -f "${NEW_REL}/app.jar" ] || { echo "FAIL: app.jar not found"; exit 1; }
-          ln -sfn "${NEW_REL}" "${CURRENT_DIR}"
+        
+        # (중요) current 링크도 권한 이슈 방지
+          sudo ln -sfn "${NEW_REL}" "${CURRENT_DIR}"
           
           echo "== Detect ACTIVE port from Nginx upstream =="
           ACTIVE_PORT=$(grep -Eo '127\.0\.0\.1:[0-9]+' "${UPSTREAM_CONF}" | head -n 1 | cut -d: -f2)
