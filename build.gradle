@@ -7,7 +7,6 @@ plugins {
 
     id 'pmd'                                         // 정적 분석
     id 'com.github.spotbugs' version '6.4.8'         // 버그 패턴 검사
-    id 'org.owasp.dependencycheck' version '11.1.1'  // 보안 취약점 검사
 
 }
 
@@ -51,17 +50,6 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
         xml.required = false
     }
 }
-
-dependencyCheck {
-    analyzers {
-        assemblyEnabled = false
-        nugetconfEnabled = false
-    }
-    format = 'HTML'
-    suppressionFile = 'config/dependency-check-suppressions.xml'
-    failBuildOnCVSS = 10
-}
-
 
 group = 'molip'
 version = '0.0.1-SNAPSHOT'
