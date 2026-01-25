@@ -53,6 +53,19 @@ public class Users extends BaseEntity {
         this.dayEndTime = dayEndTime;
     }
 
+    public void modifyUserDetails(
+            Gender gender,
+            LocalDate birth,
+            FocusTimeZone focusTimeZone,
+            LocalTime dayEndTime,
+            String nickname) {
+        this.gender = (gender != null) ? gender : this.gender;
+        this.birth = (birth != null) ? birth : this.birth;
+        this.focusTimeZone = (focusTimeZone != null) ? focusTimeZone : this.focusTimeZone;
+        this.dayEndTime = (dayEndTime != null) ? dayEndTime : this.dayEndTime;
+        this.nickname = (nickname != null) ? nickname : this.nickname;
+    }
+
     public void modifyPassword(String password) {
         this.password = password;
     }

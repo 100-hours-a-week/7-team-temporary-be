@@ -128,7 +128,8 @@ public interface UserApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> update(UpdateUserRequest request);
+    ResponseEntity<Void> update(
+            @AuthenticationPrincipal UserDetails userDetails, UpdateUserRequest request);
 
     @Operation(summary = "프로필 이미지 수정")
     @SecurityRequirement(name = "JWT")
