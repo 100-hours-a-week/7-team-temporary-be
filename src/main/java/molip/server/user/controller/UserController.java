@@ -151,7 +151,11 @@ public class UserController implements UserApi {
 
     @DeleteMapping("/users")
     @Override
-    public ResponseEntity<Void> delete() {
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        userService.deleteUser(userId);
+
         return ResponseEntity.noContent().build();
     }
 }

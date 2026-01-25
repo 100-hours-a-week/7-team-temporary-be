@@ -2,6 +2,7 @@ package molip.server.user.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -54,5 +55,9 @@ public class Users extends BaseEntity {
 
     public void modifyPassword(String password) {
         this.password = password;
+    }
+
+    public void deleteUser() {
+        this.deletedAt = LocalDateTime.now();
     }
 }

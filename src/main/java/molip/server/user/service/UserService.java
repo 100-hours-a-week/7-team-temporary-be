@@ -77,6 +77,16 @@ public class UserService {
         user.modifyPassword(passwowrd);
     }
 
+    @Transactional
+    public void deleteUser(Long userId) {
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        user.deleteUser();
+    }
+
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
