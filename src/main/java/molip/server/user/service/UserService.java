@@ -58,6 +58,51 @@ public class UserService {
         return savedUser;
     }
 
+    @Transactional(readOnly = true)
+    public boolean checkEmailDuplicated(String email) {
+        validateEmail(email);
+
+        return userRepository.existsByEmailAndDeletedAtIsNull(email);
+    }
+
+    @Transactional
+    public void modifyUserDetails(
+            Long userId,
+            Gender gender,
+            LocalDate birth,
+            FocusTimeZone focusTimeZone,
+            LocalTime dayEndTime,
+            String nickname) {
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        user.modifyUserDetails(gender, birth, focusTimeZone, dayEndTime, nickname);
+    }
+
+    @Transactional
+    public void modifyPassword(Long userId, String passwowrd) {
+        validatePassword(passwowrd);
+
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        user.modifyPassword(passwowrd);
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        user.deleteUser();
+    }
+
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);

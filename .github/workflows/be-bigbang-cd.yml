@@ -42,7 +42,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          
           ./gradlew clean bootJar -x test -x spotlessJava --no-daemon
+
 
       - name: Package artifact
         shell: bash
@@ -132,6 +134,7 @@ jobs:
 
             # 오래된 릴리즈 정리 (최근 3개만 유지)
             ls -dt "${RELEASE_ROOT}"/* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+
 
   deploy_gcp:
     name: Deploy to GCP (main)
@@ -329,3 +332,4 @@ jobs:
           
           echo "== DEPLOY SUCCESS =="
           EOSSH
+
