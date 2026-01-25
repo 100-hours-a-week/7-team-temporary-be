@@ -248,8 +248,7 @@ jobs:
           [ "${FREE_GB}" -ge "${DISK_MIN_REM}" ] || { echo "FAIL: 디스크 부족 (${FREE_GB}G < ${DISK_MIN_REM}G)"; exit 1; }
           
           echo "== Extract artifact =="
-
-        # (필수) 파일 존재 확인: 없으면 여기서 바로 종료
+          # (필수) 파일 존재 확인: 없으면 여기서 바로 종료
           ls -al /tmp || true
           [ -f /tmp/be-app.tar.gz ] || { echo "FAIL: /tmp/be-app.tar.gz not found"; exit 1; }
           
@@ -263,7 +262,7 @@ jobs:
 
           [ -f "${NEW_REL}/app.jar" ] || { echo "FAIL: app.jar not found"; exit 1; }
         
-        # (중요) current 링크도 권한 이슈 방지
+          # (중요) current 링크도 권한 이슈 방지
           sudo ln -sfn "${NEW_REL}" "${CURRENT_DIR}"
           
           echo "== Detect ACTIVE port from Nginx upstream =="
