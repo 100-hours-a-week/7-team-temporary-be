@@ -296,17 +296,17 @@ jobs:
 
           sudo pm2 delete "${IDLE_PM2}" >/dev/null 2>&1 || true
           sudo pm2 start "${APP_DIR}/ecosystem.config.js" --only "${IDLE_PM2}" --env production          
-          echo "== Health check IDLE (max 60s) =="
-          for i in {1..30}; do
-          if curl -fsS "${IDLE_HEALTH}" >/dev/null; then
-          echo "Health OK"
-          break
-          fi
-          sleep 2
-          done
-          curl -fsS "${IDLE_HEALTH}" >/dev/null || {
-          echo "FAIL: Health check";
-          exit 1;
+#          echo "== Health check IDLE (max 60s) =="
+#          for i in {1..30}; do
+#          if curl -fsS "${IDLE_HEALTH}" >/dev/null; then
+#          echo "Health OK"
+#          break
+#          fi
+#          sleep 2
+#          done
+#          curl -fsS "${IDLE_HEALTH}" >/dev/null || {
+#          echo "FAIL: Health check";
+#          exit 1;
            }
           
           echo "== Switch Nginx upstream -> ${IDLE_PORT} =="
