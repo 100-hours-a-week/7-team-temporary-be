@@ -50,7 +50,6 @@ public class UserQueryFacade {
         Image image = userImage.get().getImage();
         ImageGetUrlResponse presigned =
                 imageService.issueGetUrl(ImageType.USERS, image.getUploadKey());
-        return new ImageInfoResponse(
-                presigned.url(), presigned.expiresAt(), presigned.imageKey(), null);
+        return new ImageInfoResponse(presigned.url(), presigned.expiresAt(), presigned.imageKey());
     }
 }
