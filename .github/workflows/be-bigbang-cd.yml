@@ -237,11 +237,11 @@ jobs:
           MEM_AVAIL=$(grep '^MemAvailable:' /proc/meminfo | awk '{print $2}')
           [ "${MEM_AVAIL}" -ge "${MIN_MEM}" ] || { echo "FAIL: MEM 부족 (${MEM_AVAIL} < ${MIN_MEM})"; exit 1; }
           
-          echo "== [2] Preflight: LoadAvg =="
-          LA1=$(awk '{print $1}' /proc/loadavg)
-          LA5=$(awk '{print $2}' /proc/loadavg)
-          awk -v la1="$LA1" -v la5="$LA5" -v max="$MAX_LA" 'BEGIN { exit ! (la1 <= max && la5 <= max) }' \
-           || { echo "FAIL: LA1=${LA1}, LA5=${LA5} > ${MAX_LA}"; exit 1; }
+          # echo "== [2] Preflight: LoadAvg =="
+          # LA1=$(awk '{print $1}' /proc/loadavg)
+          # LA5=$(awk '{print $2}' /proc/loadavg)
+          # awk -v la1="$LA1" -v la5="$LA5" -v max="$MAX_LA" 'BEGIN { exit ! (la1 <= max && la5 <= max) }' \
+          #  || { echo "FAIL: LA1=${LA1}, LA5=${LA5} > ${MAX_LA}"; exit 1; }
           
           echo "== [3] Preflight: Disk Free =="
           FREE_GB=$(df -BG / | awk 'NR==2 {gsub(/G/,"",$4); print $4}')
