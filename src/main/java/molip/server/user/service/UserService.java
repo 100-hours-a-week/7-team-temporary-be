@@ -66,6 +66,22 @@ public class UserService {
     }
 
     @Transactional
+    public void modifyUserDetails(
+            Long userId,
+            Gender gender,
+            LocalDate birth,
+            FocusTimeZone focusTimeZone,
+            LocalTime dayEndTime,
+            String nickname) {
+        Users user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        user.modifyUserDetails(gender, birth, focusTimeZone, dayEndTime, nickname);
+    }
+
+    @Transactional
     public void modifyPassword(Long userId, String passwowrd) {
         validatePassword(passwowrd);
 

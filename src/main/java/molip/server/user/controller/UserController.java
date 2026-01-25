@@ -1,5 +1,6 @@
 package molip.server.user.controller;
 
+import jakarta.validation.Valid;
 import java.time.Duration;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AuthResponse;
@@ -127,7 +128,19 @@ public class UserController implements UserApi {
 
     @PatchMapping("/users")
     @Override
-    public ResponseEntity<Void> update(@RequestBody UpdateUserRequest request) {
+    public ResponseEntity<Void> update(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody UpdateUserRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        userService.modifyUserDetails(
+                userId,
+                request.gender(),
+                request.birth(),
+                request.focusTimeZone(),
+                request.dayEndTime(),
+                request.nickname());
+
         return ResponseEntity.noContent().build();
     }
 
