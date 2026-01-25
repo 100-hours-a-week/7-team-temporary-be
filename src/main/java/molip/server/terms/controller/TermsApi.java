@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import molip.server.common.response.ListResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.terms.dto.request.TermsSignRequest;
@@ -23,13 +25,13 @@ public interface TermsApi {
         @ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content = @Content(schema = @Schema(implementation = PageResponse.class))),
+                content = @Content(schema = @Schema(implementation = ListResponse.class))),
         @ApiResponse(
                 responseCode = "500",
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<TermsItemResponse>>> getTerms();
+    ResponseEntity<ServerResponse<List<TermsItemResponse>>> getTerms();
 
     @Operation(summary = "약관 동의 내역 생성")
     @SecurityRequirement(name = "JWT")

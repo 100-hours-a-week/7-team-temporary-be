@@ -1,11 +1,15 @@
 package molip.server.terms.controller;
 
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import molip.server.common.SuccessCode;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.terms.dto.request.TermsSignRequest;
 import molip.server.terms.dto.response.TermsItemResponse;
 import molip.server.terms.dto.response.TermsSignItemResponse;
 import molip.server.terms.dto.response.TermsSignResponse;
+import molip.server.terms.service.TermsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +20,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 public class TermsController implements TermsApi {
+    private final TermsService termsService;
 
     @GetMapping("/terms")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<TermsItemResponse>>> getTerms() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<List<TermsItemResponse>>> getTerms() {
+        List<TermsItemResponse> content = termsService.getActiveTerms();
+
+        return ResponseEntity.ok(ServerResponse.success(SuccessCode.TERMS_LIST_SUCCESS, content));
     }
 
     @PostMapping("/terms-sign/{termsId}")
