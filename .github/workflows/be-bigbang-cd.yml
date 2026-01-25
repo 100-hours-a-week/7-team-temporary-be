@@ -266,7 +266,7 @@ jobs:
           sudo ln -sfn "${NEW_REL}" "${CURRENT_DIR}"
           
           echo "== Detect ACTIVE port from Nginx upstream =="
-          ACTIVE_PORT=$(grep -Eo '127\.0\.0\.1:[0-9]+' "${UPSTREAM_CONF}" | head -n 1 | cut -d: -f2)
+          ACTIVE_PORT=$(grep -Eo '127.0.0.1:(8080|8081)+' "${UPSTREAM_CONF}" | head -n 1 | cut -d: -f2)
           
           if [ "${ACTIVE_PORT}" = "${BLUE_PORT}" ]; then
            ACTIVE_PM2="${PM2_BLUE}"
