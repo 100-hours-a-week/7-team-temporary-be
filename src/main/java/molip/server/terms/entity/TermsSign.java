@@ -37,4 +37,8 @@ public class TermsSign extends BaseEntity {
         this.terms = terms;
         this.isAgreed = isAgreed;
     }
+
+    public void updateAgreement(boolean isAgreed) {
+        this.isAgreed = isAgreed;
+    }
 }
