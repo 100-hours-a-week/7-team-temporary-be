@@ -2,7 +2,9 @@ package molip.server.terms.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import molip.server.common.enums.TermsType;
+import molip.server.terms.entity.TermsSign;
 
 @Schema(description = "약관 동의 내역")
 public record TermsSignHistoryResponse(
@@ -12,4 +14,18 @@ public record TermsSignHistoryResponse(
         @Schema(description = "약관 타입", example = "MANDATORY") TermsType termsType,
         @Schema(description = "동의 여부", example = "true") boolean isAgreed,
         @Schema(description = "동의 시각", example = "2026-01-13T10:10:10+09:00")
-                OffsetDateTime agreedAt) {}
+                OffsetDateTime agreedAt) {
+
+    public static TermsSignHistoryResponse from(TermsSign termsSign) {
+        String displayName =
+                termsSign.getTerms().getTermsType().label() + " " + termsSign.getTerms().getName();
+
+        return new TermsSignHistoryResponse(
+                termsSign.getId(),
+                termsSign.getTerms().getId(),
+                displayName,
+                termsSign.getTerms().getTermsType(),
+                termsSign.isAgreed(),
+                termsSign.getUpdatedAt().atZone(ZoneId.of("Asia/Seoul")).toOffsetDateTime());
+    }
+}

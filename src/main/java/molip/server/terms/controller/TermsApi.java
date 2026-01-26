@@ -142,5 +142,6 @@ public interface TermsApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<TermsSignHistoryResponse>> getTermsSign(Long termsSignId);
+    ResponseEntity<ServerResponse<TermsSignHistoryResponse>> getTermsSign(
+            @AuthenticationPrincipal UserDetails userDetails, Long termsId);
 }

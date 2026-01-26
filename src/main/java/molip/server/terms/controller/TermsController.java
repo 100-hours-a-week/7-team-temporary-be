@@ -73,10 +73,16 @@ public class TermsController implements TermsApi {
                 ServerResponse.success(SuccessCode.TERMS_SIGN_LIST_SUCCESS, response));
     }
 
-    @GetMapping("/terms-sign/{termsSignId}")
+    @GetMapping("/terms-sign/{termsId}")
     @Override
     public ResponseEntity<ServerResponse<TermsSignHistoryResponse>> getTermsSign(
-            @PathVariable Long termsSignId) {
-        return ResponseEntity.noContent().build();
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long termsId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        TermsSignHistoryResponse response = termsSignService.getTermsSignDetail(userId, termsId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.TERMS_SIGN_DETAIL_SUCCESS, response));
     }
 }
