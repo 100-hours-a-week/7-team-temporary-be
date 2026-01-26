@@ -50,6 +50,7 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.GET,
+                                                "/",
                                                 "/swagger-ui.html",
                                                 "/images/**",
                                                 "/terms",

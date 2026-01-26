@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [develop, main, 'release/**']
   push:
-    branches: [develop, main, 'release/**']
+    branches: [develop, main, 'release/**', 'feature/cicd-merge']
 
 permissions:
   contents: read
