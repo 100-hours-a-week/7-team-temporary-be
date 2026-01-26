@@ -1,9 +1,12 @@
 package molip.server.terms.service;
 
+import java.time.ZoneId;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.TermsType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.terms.dto.response.TermsSignHistoryResponse;
 import molip.server.terms.entity.TermsSign;
 import molip.server.terms.repository.TermsSignRepository;
 import org.springframework.stereotype.Service;
@@ -26,5 +29,23 @@ public class TermsSignService {
         }
 
         termsSign.updateAgreement(isAgreed);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TermsSignHistoryResponse> getMyTermsSigns(Long userId) {
+        return termsSignRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(userId).stream()
+                .map(
+                        termsSign ->
+                                new TermsSignHistoryResponse(
+                                        termsSign.getId(),
+                                        termsSign.getTerms().getId(),
+                                        termsSign.getTerms().getName(),
+                                        termsSign.getTerms().getTermsType(),
+                                        termsSign.isAgreed(),
+                                        termsSign
+                                                .getUpdatedAt()
+                                                .atZone(ZoneId.of("Asia/Seoul"))
+                                                .toOffsetDateTime()))
+                .toList();
     }
 }

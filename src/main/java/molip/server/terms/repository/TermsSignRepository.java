@@ -1,7 +1,9 @@
 package molip.server.terms.repository;
 
+import java.util.List;
 import java.util.Optional;
 import molip.server.terms.entity.TermsSign;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,4 +17,7 @@ public interface TermsSignRepository extends JpaRepository<TermsSign, Long> {
                     + "where ts.user.id = :userId and t.id = :termsId and ts.deletedAt is null")
     Optional<TermsSign> findByUserIdAndTermsIdWithTerms(
             @Param("userId") Long userId, @Param("termsId") Long termsId);
+
+    @EntityGraph(attributePaths = "terms")
+    List<TermsSign> findByUserIdAndDeletedAtIsNullOrderByIdDesc(Long userId);
 }
