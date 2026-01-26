@@ -59,6 +59,8 @@ public class SecurityConfig {
                                                 "/reflections/**",
                                                 "/reflections/**",
                                                 "/swagger-ui/**",
+                                                "/actuator/prometheus",
+                                                "/actuator/health",
                                                 "/v3/api-docs/**")
                                         .permitAll()
                                         .anyRequest()
