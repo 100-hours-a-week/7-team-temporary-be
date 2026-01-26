@@ -92,7 +92,10 @@ public interface TermsApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateTermsSign(Long termsId, TermsSignRequest request);
+    ResponseEntity<Void> updateTermsSign(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long termsId,
+            TermsSignRequest request);
 
     @Operation(summary = "로그인한 유저의 약관 동의 내역 조회")
     @SecurityRequirement(name = "JWT")

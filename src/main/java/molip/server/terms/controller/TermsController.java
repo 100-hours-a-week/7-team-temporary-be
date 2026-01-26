@@ -53,7 +53,13 @@ public class TermsController implements TermsApi {
     @PatchMapping("/terms-sign/{termsId}")
     @Override
     public ResponseEntity<Void> updateTermsSign(
-            @PathVariable Long termsId, @RequestBody TermsSignRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long termsId,
+            @RequestBody TermsSignRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        termsSignService.updateTermsSign(userId, termsId, request.isAgreed());
+
         return ResponseEntity.noContent().build();
     }
 
