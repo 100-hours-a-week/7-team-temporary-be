@@ -1,13 +1,18 @@
 package molip.server.terms.controller;
 
-import molip.server.common.response.PageResponse;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import molip.server.common.SuccessCode;
 import molip.server.common.response.ServerResponse;
 import molip.server.terms.dto.request.TermsSignRequest;
-import molip.server.terms.dto.response.TermsItemResponse;
-import molip.server.terms.dto.response.TermsSignItemResponse;
+import molip.server.terms.dto.response.TermsSignHistoryResponse;
 import molip.server.terms.dto.response.TermsSignResponse;
-import org.springframework.http.HttpStatus;
+import molip.server.terms.dto.response.TermsSummaryResponse;
+import molip.server.terms.service.TermsService;
+import molip.server.terms.service.TermsSignService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,38 +21,68 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 public class TermsController implements TermsApi {
+    private final TermsService termsService;
+    private final TermsSignService termsSignService;
 
     @GetMapping("/terms")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<TermsItemResponse>>> getTerms() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<List<TermsSummaryResponse>>> getTerms() {
+        List<TermsSummaryResponse> content = termsService.getActiveTerms();
+
+        return ResponseEntity.ok(ServerResponse.success(SuccessCode.TERMS_LIST_SUCCESS, content));
     }
 
     @PostMapping("/terms-sign/{termsId}")
     @Override
     public ResponseEntity<ServerResponse<TermsSignResponse>> createTermsSign(
-            @PathVariable Long termsId, @RequestBody TermsSignRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long termsId,
+            @RequestBody TermsSignRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        TermsSignResponse response =
+                termsService.createTermsSign(userId, termsId, request.isAgreed());
+
+        return ResponseEntity.ok(ServerResponse.success(SuccessCode.TERMS_SIGN_CREATED, response));
     }
 
     @PatchMapping("/terms-sign/{termsId}")
     @Override
     public ResponseEntity<Void> updateTermsSign(
-            @PathVariable Long termsId, @RequestBody TermsSignRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long termsId,
+            @RequestBody TermsSignRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        termsSignService.updateTermsSign(userId, termsId, request.isAgreed());
+
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/terms-sign")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<TermsSignItemResponse>>> getMyTermsSigns() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<List<TermsSignHistoryResponse>>> getMyAllTermsSigns(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        List<TermsSignHistoryResponse> response = termsSignService.getMyTermsSigns(userId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.TERMS_SIGN_LIST_SUCCESS, response));
     }
 
-    @GetMapping("/terms-sign/{termsSignId}")
+    @GetMapping("/terms-sign/{termsId}")
     @Override
-    public ResponseEntity<ServerResponse<TermsSignItemResponse>> getTermsSign(
-            @PathVariable Long termsSignId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<TermsSignHistoryResponse>> getTermsSign(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long termsId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        TermsSignHistoryResponse response = termsSignService.getTermsSignDetail(userId, termsId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.TERMS_SIGN_DETAIL_SUCCESS, response));
     }
 }

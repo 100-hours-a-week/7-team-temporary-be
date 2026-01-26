@@ -7,13 +7,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.terms.dto.request.TermsSignRequest;
-import molip.server.terms.dto.response.TermsItemResponse;
-import molip.server.terms.dto.response.TermsSignItemResponse;
+import molip.server.terms.dto.response.TermsSignHistoryResponse;
 import molip.server.terms.dto.response.TermsSignResponse;
+import molip.server.terms.dto.response.TermsSummaryResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Terms", description = "약관 API")
 public interface TermsApi {
@@ -23,13 +26,13 @@ public interface TermsApi {
         @ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content = @Content(schema = @Schema(implementation = PageResponse.class))),
+                content = @Content(schema = @Schema(implementation = TermsSummaryResponse.class))),
         @ApiResponse(
                 responseCode = "500",
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<TermsItemResponse>>> getTerms();
+    ResponseEntity<ServerResponse<List<TermsSummaryResponse>>> getTerms();
 
     @Operation(summary = "약관 동의 내역 생성")
     @SecurityRequirement(name = "JWT")
@@ -60,7 +63,9 @@ public interface TermsApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<TermsSignResponse>> createTermsSign(
-            Long termsId, TermsSignRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long termsId,
+            TermsSignRequest request);
 
     @Operation(summary = "약관 동의 내역 변경")
     @SecurityRequirement(name = "JWT")
@@ -87,7 +92,10 @@ public interface TermsApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateTermsSign(Long termsId, TermsSignRequest request);
+    ResponseEntity<Void> updateTermsSign(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long termsId,
+            TermsSignRequest request);
 
     @Operation(summary = "로그인한 유저의 약관 동의 내역 조회")
     @SecurityRequirement(name = "JWT")
@@ -105,7 +113,8 @@ public interface TermsApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<TermsSignItemResponse>>> getMyTermsSigns();
+    ResponseEntity<ServerResponse<List<TermsSignHistoryResponse>>> getMyAllTermsSigns(
+            @AuthenticationPrincipal UserDetails userDetails);
 
     @Operation(summary = "특정 약관에 대한 로그인한 유저의 동의 내역 조회")
     @SecurityRequirement(name = "JWT")
@@ -113,7 +122,9 @@ public interface TermsApi {
         @ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content = @Content(schema = @Schema(implementation = TermsSignItemResponse.class))),
+                content =
+                        @Content(
+                                schema = @Schema(implementation = TermsSignHistoryResponse.class))),
         @ApiResponse(
                 responseCode = "401",
                 description = "유효하지 않은 토큰",
@@ -131,5 +142,6 @@ public interface TermsApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<TermsSignItemResponse>> getTermsSign(Long termsSignId);
+    ResponseEntity<ServerResponse<TermsSignHistoryResponse>> getTermsSign(
+            @AuthenticationPrincipal UserDetails userDetails, Long termsId);
 }
