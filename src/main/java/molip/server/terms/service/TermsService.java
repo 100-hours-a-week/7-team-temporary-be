@@ -4,8 +4,8 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
-import molip.server.terms.dto.response.TermsItemResponse;
 import molip.server.terms.dto.response.TermsSignResponse;
+import molip.server.terms.dto.response.TermsSummaryResponse;
 import molip.server.terms.entity.Terms;
 import molip.server.terms.entity.TermsSign;
 import molip.server.terms.repository.TermsRepository;
@@ -23,9 +23,9 @@ public class TermsService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<TermsItemResponse> getActiveTerms() {
+    public List<TermsSummaryResponse> getActiveTerms() {
         return termsRepository.findByIsActiveTrueAndDeletedAtIsNullOrderByIdAsc().stream()
-                .map(TermsItemResponse::from)
+                .map(TermsSummaryResponse::from)
                 .toList();
     }
 
