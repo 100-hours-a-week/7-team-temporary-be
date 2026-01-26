@@ -9,7 +9,6 @@ import molip.server.terms.dto.response.TermsSignHistoryResponse;
 import molip.server.terms.dto.response.TermsSignResponse;
 import molip.server.terms.dto.response.TermsSummaryResponse;
 import molip.server.terms.service.TermsService;
-import molip.server.terms.service.TermsSignQueryService;
 import molip.server.terms.service.TermsSignService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class TermsController implements TermsApi {
     private final TermsService termsService;
     private final TermsSignService termsSignService;
-    private final TermsSignQueryService termsSignQueryService;
 
     @GetMapping("/terms")
     @Override
@@ -69,7 +67,7 @@ public class TermsController implements TermsApi {
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        List<TermsSignHistoryResponse> response = termsSignQueryService.getMyTermsSigns(userId);
+        List<TermsSignHistoryResponse> response = termsSignService.getMyTermsSigns(userId);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.TERMS_SIGN_LIST_SUCCESS, response));
