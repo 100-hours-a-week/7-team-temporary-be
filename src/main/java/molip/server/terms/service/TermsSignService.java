@@ -1,6 +1,5 @@
 package molip.server.terms.service;
 
-import java.time.ZoneId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.TermsType;
@@ -34,18 +33,17 @@ public class TermsSignService {
     @Transactional(readOnly = true)
     public List<TermsSignHistoryResponse> getMyTermsSigns(Long userId) {
         return termsSignRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(userId).stream()
-                .map(
-                        termsSign ->
-                                new TermsSignHistoryResponse(
-                                        termsSign.getId(),
-                                        termsSign.getTerms().getId(),
-                                        termsSign.getTerms().getName(),
-                                        termsSign.getTerms().getTermsType(),
-                                        termsSign.isAgreed(),
-                                        termsSign
-                                                .getUpdatedAt()
-                                                .atZone(ZoneId.of("Asia/Seoul"))
-                                                .toOffsetDateTime()))
+                .map(TermsSignHistoryResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TermsSignHistoryResponse getTermsSignDetail(Long userId, Long termsId) {
+        TermsSign termsSign =
+                termsSignRepository
+                        .findByUserIdAndTermsIdWithTermsDetail(userId, termsId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.TERMS_SIGN_NOT_FOUND));
+
+        return TermsSignHistoryResponse.from(termsSign);
     }
 }
