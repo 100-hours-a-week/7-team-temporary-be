@@ -1,5 +1,6 @@
 package molip.server.schedule.service;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.EnumMap;
 import java.util.List;
@@ -151,6 +152,61 @@ public class ScheduleService {
         return scheduleRepository.saveAll(children);
     }
 
+    @Transactional(readOnly = true)
+    public Page<Schedule> getExcludedSchedules(
+            Long userId, String status, LocalDate fromDate, LocalDate toDate, int page, int size) {
+
+        validatePage(page, size);
+
+        AssignmentStatus assignmentStatus = parseAssignmentStatus(status);
+        validateExcludedStatus(assignmentStatus);
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+
+        return scheduleRepository.findExcludedSchedulesByUserAndDateRange(
+                userId, assignmentStatus, fromDate, toDate, pageRequest);
+    }
+
+    @Transactional
+    public void deleteSchedule(Long userId, Long scheduleId) {
+        Schedule schedule =
+                scheduleRepository
+                        .findByIdWithDayPlanUserIncludeDeleted(scheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        validateOwnership(userId, schedule);
+
+        if (schedule.getDeletedAt() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_SCHEDULE_ALREADY_DELETED);
+        }
+
+        schedule.deleteSchedule();
+    }
+
+    private ScheduleCreator resolveCreator(ScheduleType type) {
+        if (type == null || !creatorMap.containsKey(type)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+        return Objects.requireNonNull(creatorMap.get(type));
+    }
+
+    private AssignmentStatus parseAssignmentStatus(String status) {
+        if (status == null || status.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+        try {
+            return AssignmentStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+    }
+
+    private void validatePage(int page, int size) {
+        if (page < 1 || size < 1) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+        }
+    }
+
     private void validateRequired(ScheduleType type, String title) {
         if (type == null || title == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
@@ -192,32 +248,9 @@ public class ScheduleService {
         }
     }
 
-    @Transactional
-    public void deleteSchedule(Long userId, Long scheduleId) {
-        Schedule schedule =
-                scheduleRepository
-                        .findByIdWithDayPlanUserIncludeDeleted(scheduleId)
-                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
-
-        validateOwnership(userId, schedule);
-
-        if (schedule.getDeletedAt() != null) {
-            throw new BaseException(ErrorCode.CONFLICT_SCHEDULE_ALREADY_DELETED);
-        }
-
-        schedule.deleteSchedule();
-    }
-
-    private ScheduleCreator resolveCreator(ScheduleType type) {
-        if (type == null || !creatorMap.containsKey(type)) {
-            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
-        }
-        return Objects.requireNonNull(creatorMap.get(type));
-    }
-
-    private void validatePage(int page, int size) {
-        if (page < 1 || size < 1) {
-            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+    private void validateExcludedStatus(AssignmentStatus status) {
+        if (status == null || status != AssignmentStatus.EXCLUDED) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
         }
     }
 }

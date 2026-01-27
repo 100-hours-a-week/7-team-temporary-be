@@ -326,7 +326,11 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>> getExcludedSchedules(
-            String status, int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long dayPlanId,
+            String status,
+            int page,
+            int size);
 
     @Operation(summary = "일정 배정 상태 변경")
     @SecurityRequirement(name = "JWT")

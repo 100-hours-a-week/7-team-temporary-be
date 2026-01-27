@@ -182,14 +182,23 @@ public class ScheduleController implements ScheduleApi {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/schedules")
+    @GetMapping("/day-plan/{dayPlanId}/schedules")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>>
             getExcludedSchedules(
+                    @AuthenticationPrincipal UserDetails userDetails,
+                    @PathVariable Long dayPlanId,
                     @RequestParam String status,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        PageResponse<ScheduleSummaryResponse> response =
+                scheduleQueryFacade.getExcludedSchedules(userId, dayPlanId, status, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.EXCLUDED_SCHEDULE_LIST_SUCCESS, response));
     }
 
     @PatchMapping("/schedule/{scheduleId}/assignment-status")
