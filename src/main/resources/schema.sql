@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS schedule (
   assignment_status VARCHAR(20) NOT NULL,
   start_at DATETIME(6) NULL,
   end_at DATETIME(6) NULL,
-  estimated_time_range VARCHAR(20) NOT NULL,
+  estimated_time_range VARCHAR(20) NULL,
   focus_level INTEGER NULL,
   is_urgent TINYINT(1) NULL,
   created_at DATETIME(6) NOT NULL,

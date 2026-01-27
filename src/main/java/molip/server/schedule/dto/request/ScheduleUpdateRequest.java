@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import molip.server.common.enums.EstimatedTimeRange;
 import molip.server.common.enums.ScheduleType;
 
-@Schema(description = "일정 생성/수정 요청")
-public record ScheduleCreateRequest(
+@Schema(description = "일정 수정 요청")
+public record ScheduleUpdateRequest(
         @Schema(description = "제목", example = "제목") String title,
         @Schema(description = "타입", example = "FLEX") ScheduleType type,
         @Schema(description = "시작 시간", example = "2026-01-13T13:00:00")
