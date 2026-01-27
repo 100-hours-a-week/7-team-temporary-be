@@ -40,6 +40,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                     + "where s.id = :id and s.deletedAt is null")
     Optional<Schedule> findByIdWithDayPlanUser(@Param("id") Long id);
 
+    boolean existsByParentScheduleIdAndDeletedAtIsNull(Long parentScheduleId);
+
     @Query(
             value =
                     "select s from Schedule s "

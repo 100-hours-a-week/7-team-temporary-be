@@ -274,7 +274,9 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ScheduleChildrenCreateResponse>> createChildren(
-            Long scheduleId, ScheduleChildrenCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleChildrenCreateRequest request);
 
     @Operation(summary = "일정 처리 상태 변경")
     @SecurityRequirement(name = "JWT")

@@ -5,6 +5,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import molip.server.common.enums.AssignedBy;
+import molip.server.common.enums.AssignmentStatus;
 import molip.server.common.enums.EstimatedTimeRange;
 import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.enums.ScheduleType;
@@ -109,6 +111,46 @@ public class ScheduleService {
         schedule.updateStatus(status);
     }
 
+    @Transactional
+    public List<Schedule> createChildren(Long userId, Long parentScheduleId, List<String> titles) {
+        validateChildrenTitles(titles);
+
+        Schedule parentSchedule =
+                scheduleRepository
+                        .findByIdWithDayPlanUser(parentScheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND_PARENT));
+
+        validateOwnership(userId, parentSchedule);
+
+        validateSplitAllowed(parentSchedule);
+
+        if (scheduleRepository.existsByParentScheduleIdAndDeletedAtIsNull(parentScheduleId)) {
+            throw new BaseException(ErrorCode.CONFLICT_CHILDREN_ALREADY_EXISTS);
+        }
+
+        parentSchedule.updateStatus(ScheduleStatus.SPLIT_PARENT);
+
+        List<Schedule> children =
+                titles.stream()
+                        .map(
+                                title ->
+                                        Schedule.builder()
+                                                .dayPlan(parentSchedule.getDayPlan())
+                                                .parentSchedule(parentSchedule)
+                                                .title(title)
+                                                .status(ScheduleStatus.TODO)
+                                                .type(ScheduleType.FLEX)
+                                                .assignedBy(AssignedBy.USER)
+                                                .assignmentStatus(AssignmentStatus.NOT_ASSIGNED)
+                                                .estimatedTimeRange(EstimatedTimeRange.HOUR_1_TO_2)
+                                                .focusLevel(parentSchedule.getFocusLevel())
+                                                .isUrgent(parentSchedule.getIsUrgent())
+                                                .build())
+                        .toList();
+
+        return scheduleRepository.saveAll(children);
+    }
+
     private void validateRequired(ScheduleType type, String title) {
         if (type == null || title == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
@@ -135,6 +177,18 @@ public class ScheduleService {
         if (scheduleRepository.existsTimeOverlapExcludingId(
                 schedule.getDayPlan().getId(), scheduleId, startAt, endAt)) {
             throw new BaseException(ErrorCode.CONFLICT_TIME_OVERLAP);
+        }
+    }
+
+    private void validateChildrenTitles(List<String> titles) {
+        if (titles == null || titles.size() < 2) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_CHILDREN_MIN);
+        }
+    }
+
+    private void validateSplitAllowed(Schedule parentSchedule) {
+        if (parentSchedule.getType() == ScheduleType.FIXED) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_FIXED_SCHEDULE_SPLIT);
         }
     }
 

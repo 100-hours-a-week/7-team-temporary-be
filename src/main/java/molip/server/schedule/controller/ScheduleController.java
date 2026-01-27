@@ -1,5 +1,6 @@
 package molip.server.schedule.controller;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.SuccessCode;
 import molip.server.common.response.PageResponse;
@@ -146,8 +147,19 @@ public class ScheduleController implements ScheduleApi {
     @PostMapping("/schedule/{scheduleId}/children")
     @Override
     public ResponseEntity<ServerResponse<ScheduleChildrenCreateResponse>> createChildren(
-            @PathVariable Long scheduleId, @RequestBody ScheduleChildrenCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long scheduleId,
+            @RequestBody ScheduleChildrenCreateRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        List<Schedule> children =
+                scheduleService.createChildren(userId, scheduleId, request.titles());
+
+        return ResponseEntity.ok(
+                ServerResponse.success(
+                        SuccessCode.SCHEDULE_CHILDREN_CREATED,
+                        ScheduleChildrenCreateResponse.from(children)));
     }
 
     @PatchMapping("/schedule/{scheduleId}/status")
