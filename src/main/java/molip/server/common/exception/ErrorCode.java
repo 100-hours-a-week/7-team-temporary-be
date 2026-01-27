@@ -122,6 +122,8 @@ public enum ErrorCode {
     CONFLICT_CHILDREN_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONFLICT", "이미 자식 일정이 존재하는 부모 일정입니다."),
     INVALID_REQUEST_STATUS_CHECK(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "요청 상태 값을 똑바로 입력했는지 확인해주세요"),
+    INVALID_REQUEST_INVALID_TIME_FORMAT(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "시간 형식이 올바르지 않습니다."),
 
     // Reflection
     INVALID_REQUEST_REFLECTION_IMAGES(
