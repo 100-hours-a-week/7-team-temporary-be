@@ -1,21 +1,40 @@
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 spring:
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
         use_sql_comments: true
   datasource:
-    url: jdbc:mysql://localhost:3306/molip
+    url: ${MYSQL_URL}
     driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${LOCAL_MYSQL_USERNAME:root}
-    password: ${LOCAL_MYSQL_PASSWORD:00000000}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+  sql:
+    init:
+      mode: always
+      encoding: utf-8
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  cloud:
+    aws:
+      s3:
+        access-key: ${AWS_S3_ACCESS_KEY}
+        secret-key: ${AWS_S3_SECRET_KEY}
+        bucket: ${AWS_S3_BUCKET}
 
 
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration-ms: ${ACCESS_EXPIRATION_MS:3600000}
+  refresh-expiration-ms: ${REFRESH_EXPIRATION_MS:86400000}
 
 springdoc:
   api-docs:
@@ -28,3 +47,16 @@ springdoc:
     path: /swagger-ui.html
     display-request-duration: true
     persistAuthorization: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: molip   # optional label

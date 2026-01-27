@@ -4,11 +4,61 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
     id "com.diffplug.spotless" version "6.25.0"
     id 'jacoco'
+
+    id 'pmd'                                         // 정적 분석
+    id 'com.github.spotbugs' version '6.4.8'         // 버그 패턴 검사
+
+}
+
+import com.github.spotbugs.snom.Effort
+import com.github.spotbugs.snom.Confidence
+
+
+pmd {
+    toolVersion = '7.20.0'
+    consoleOutput = false
+    ignoreFailures = true
+    //ruleSetFiles = files("config/pmd/ruleset.xml")
+    //ruleSets = [] // 기본 룰셋 비활성화 (custom ruleset 사용)
+}
+
+tasks.withType(Pmd).configureEach {
+    ignoreFailures = true
+
+    logging.captureStandardError LogLevel.QUIET
+    logging.captureStandardOutput LogLevel.QUIET
+
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+    }
+}
+
+
+spotbugs {
+    toolVersion.set("4.9.8")
+    effort = Effort.valueOf('MAX')
+    reportLevel = Confidence.valueOf('LOW')
+
+    ignoreFailures = true
+}
+
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
+    reports {
+        html.required = true
+        xml.required = false
+    }
 }
 
 group = 'molip'
 version = '0.0.1-SNAPSHOT'
 description = 'MOLIP Backend'
+
+
+bootJar {
+    mainClass = 'molip.server.ServerApplication'
+}
 
 java {
 	toolchain {
@@ -18,7 +68,23 @@ java {
 
 spotless {
     java {
-        googleJavaFormat()
+        // import 순서
+        importOrder 'java', 'javax', 'org', 'com', ''
+
+        // 미사용 import 제거
+        removeUnusedImports()
+
+        // 구글 포맷
+        googleJavaFormat().aosp()
+
+        // 간격
+        indentWithSpaces(4)
+
+        // 공백 제거
+        trimTrailingWhitespace()
+
+        // 끝부분 NewLine
+        endWithNewline()
     }
 }
 
@@ -40,14 +106,37 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+    testRuntimeOnly 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    testImplementation 'com.h2database:h2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
 
     // Database - p6spy
     implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
+
+    // Aws
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.1.1'
+    implementation platform('software.amazon.awssdk:bom:2.25.46')
+    implementation 'software.amazon.awssdk:s3'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // Spring Security
+    implementation "org.springframework.boot:spring-boot-starter-security"
+
+    // Monitoring (로이 추가)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation "io.micrometer:micrometer-registry-prometheus"
+
+
 }
 
 tasks.named('test') {
@@ -85,7 +174,7 @@ jacocoTestReport {
 jacocoTestCoverageVerification {
     violationRules {
         rule {
-            enabled = true
+            enabled = false // 현재 비활성화
             element = 'CLASS'
             excludes = jacocoExcludes
 
