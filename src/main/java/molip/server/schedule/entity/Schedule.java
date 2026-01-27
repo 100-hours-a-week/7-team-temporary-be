@@ -90,4 +90,32 @@ public class Schedule extends BaseEntity {
         this.focusLevel = focusLevel;
         this.isUrgent = isUrgent;
     }
+
+    public void updateAsFixed(String title, LocalDateTime startAt, LocalDateTime endAt) {
+        this.title = title;
+        this.type = ScheduleType.FIXED;
+        this.assignedBy = AssignedBy.USER;
+        this.assignmentStatus = AssignmentStatus.FIXED;
+        this.startAt = startAt;
+        this.endAt = endAt;
+        this.estimatedTimeRange = null;
+        this.focusLevel = null;
+        this.isUrgent = null;
+    }
+
+    public void updateAsFlex(
+            String title,
+            EstimatedTimeRange estimatedTimeRange,
+            Integer focusLevel,
+            Boolean isUrgent) {
+        this.title = title;
+        this.type = ScheduleType.FLEX;
+        this.assignedBy = AssignedBy.USER;
+        this.assignmentStatus = AssignmentStatus.NOT_ASSIGNED;
+        this.startAt = null;
+        this.endAt = null;
+        this.estimatedTimeRange = estimatedTimeRange;
+        this.focusLevel = focusLevel;
+        this.isUrgent = isUrgent;
+    }
 }

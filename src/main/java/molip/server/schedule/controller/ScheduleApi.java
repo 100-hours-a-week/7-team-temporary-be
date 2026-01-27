@@ -14,6 +14,7 @@ import molip.server.schedule.dto.request.ScheduleAssignmentStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleChildrenCreateRequest;
 import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
+import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
@@ -140,7 +141,10 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateSchedule(Long scheduleId, ScheduleCreateRequest request);
+    ResponseEntity<Void> updateSchedule(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleUpdateRequest request);
 
     @Operation(summary = "일정 삭제")
     @SecurityRequirement(name = "JWT")

@@ -1,6 +1,7 @@
 package molip.server.schedule.repository;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import molip.server.schedule.entity.Schedule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,25 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("dayPlanId") Long dayPlanId,
             @Param("startAt") LocalDateTime startAt,
             @Param("endAt") LocalDateTime endAt);
+
+    @Query(
+            "select count(s) > 0 from Schedule s "
+                    + "where s.dayPlan.id = :dayPlanId and s.deletedAt is null "
+                    + "and s.startAt is not null and s.endAt is not null "
+                    + "and s.startAt < :endAt and s.endAt > :startAt "
+                    + "and s.id <> :scheduleId")
+    boolean existsTimeOverlapExcludingId(
+            @Param("dayPlanId") Long dayPlanId,
+            @Param("scheduleId") Long scheduleId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt);
+
+    @Query(
+            "select s from Schedule s "
+                    + "join fetch s.dayPlan dp "
+                    + "join fetch dp.user u "
+                    + "where s.id = :id and s.deletedAt is null")
+    Optional<Schedule> findByIdWithDayPlanUser(@Param("id") Long id);
 
     @Query(
             value =
