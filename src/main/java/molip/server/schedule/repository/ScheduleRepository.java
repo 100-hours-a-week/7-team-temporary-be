@@ -1,6 +1,6 @@
 package molip.server.schedule.repository;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Optional;
 import molip.server.schedule.entity.Schedule;
 import org.springframework.data.domain.Page;
@@ -18,8 +18,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                     + "and s.startAt < :endAt and s.endAt > :startAt")
     boolean existsTimeOverlap(
             @Param("dayPlanId") Long dayPlanId,
-            @Param("startAt") LocalDateTime startAt,
-            @Param("endAt") LocalDateTime endAt);
+            @Param("startAt") LocalTime startAt,
+            @Param("endAt") LocalTime endAt);
 
     @Query(
             "select count(s) > 0 from Schedule s "
@@ -30,8 +30,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     boolean existsTimeOverlapExcludingId(
             @Param("dayPlanId") Long dayPlanId,
             @Param("scheduleId") Long scheduleId,
-            @Param("startAt") LocalDateTime startAt,
-            @Param("endAt") LocalDateTime endAt);
+            @Param("startAt") LocalTime startAt,
+            @Param("endAt") LocalTime endAt);
 
     @Query(
             "select s from Schedule s "
