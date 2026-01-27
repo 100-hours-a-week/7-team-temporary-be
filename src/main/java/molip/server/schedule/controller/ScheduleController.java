@@ -125,7 +125,13 @@ public class ScheduleController implements ScheduleApi {
 
     @DeleteMapping("/schedule/{scheduleId}")
     @Override
-    public ResponseEntity<Void> deleteSchedule(@PathVariable Long scheduleId) {
+    public ResponseEntity<Void> deleteSchedule(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long scheduleId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        scheduleService.deleteSchedule(userId, scheduleId);
+
         return ResponseEntity.noContent().build();
     }
 

@@ -171,7 +171,8 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> deleteSchedule(Long scheduleId);
+    ResponseEntity<Void> deleteSchedule(
+            @AuthenticationPrincipal UserDetails userDetails, Long scheduleId);
 
     @Operation(summary = "일정 AI 배치 Job 생성")
     @SecurityRequirement(name = "JWT")

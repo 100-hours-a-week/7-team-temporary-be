@@ -192,6 +192,22 @@ public class ScheduleService {
         }
     }
 
+    @Transactional
+    public void deleteSchedule(Long userId, Long scheduleId) {
+        Schedule schedule =
+                scheduleRepository
+                        .findByIdWithDayPlanUserIncludeDeleted(scheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        validateOwnership(userId, schedule);
+
+        if (schedule.getDeletedAt() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_SCHEDULE_ALREADY_DELETED);
+        }
+
+        schedule.deleteSchedule();
+    }
+
     private ScheduleCreator resolveCreator(ScheduleType type) {
         if (type == null || !creatorMap.containsKey(type)) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
