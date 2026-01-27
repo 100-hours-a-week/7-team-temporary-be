@@ -118,4 +118,8 @@ public class Schedule extends BaseEntity {
         this.focusLevel = focusLevel;
         this.isUrgent = isUrgent;
     }
+
+    public void updateStatus(ScheduleStatus status) {
+        this.status = status;
+    }
 }

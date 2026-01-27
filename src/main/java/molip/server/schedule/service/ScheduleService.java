@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import molip.server.common.enums.EstimatedTimeRange;
+import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -90,6 +91,22 @@ public class ScheduleService {
         } else {
             schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
         }
+    }
+
+    @Transactional
+    public void updateStatus(Long userId, Long scheduleId, ScheduleStatus status) {
+        if (status == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+
+        Schedule schedule =
+                scheduleRepository
+                        .findByIdWithDayPlanUser(scheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        validateOwnership(userId, schedule);
+
+        schedule.updateStatus(status);
     }
 
     private void validateRequired(ScheduleType type, String title) {

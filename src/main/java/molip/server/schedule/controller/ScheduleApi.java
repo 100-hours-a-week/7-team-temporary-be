@@ -301,7 +301,10 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateStatus(Long scheduleId, ScheduleStatusUpdateRequest request);
+    ResponseEntity<Void> updateStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleStatusUpdateRequest request);
 
     @Operation(summary = "제외된 일정 조회")
     @SecurityRequirement(name = "JWT")
