@@ -1,5 +1,6 @@
 package molip.server.schedule.service;
 
+import java.time.LocalDateTime;
 import molip.server.common.enums.EstimatedTimeRange;
 import molip.server.common.enums.ScheduleType;
 import molip.server.schedule.entity.DayPlan;
@@ -11,8 +12,8 @@ public interface ScheduleCreator {
     Schedule create(
             DayPlan dayPlan,
             String title,
-            String startAt,
-            String endAt,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent);

@@ -9,7 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -52,9 +52,9 @@ public class Schedule extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private AssignmentStatus assignmentStatus;
 
-    private LocalTime startAt;
+    private LocalDateTime startAt;
 
-    private LocalTime endAt;
+    private LocalDateTime endAt;
 
     @Enumerated(EnumType.STRING)
     private EstimatedTimeRange estimatedTimeRange;
@@ -72,8 +72,8 @@ public class Schedule extends BaseEntity {
             ScheduleType type,
             AssignedBy assignedBy,
             AssignmentStatus assignmentStatus,
-            LocalTime startAt,
-            LocalTime endAt,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {

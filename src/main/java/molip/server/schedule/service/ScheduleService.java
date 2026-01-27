@@ -1,5 +1,6 @@
 package molip.server.schedule.service;
 
+import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +40,8 @@ public class ScheduleService {
             Long dayPlanId,
             ScheduleType type,
             String title,
-            String startAt,
-            String endAt,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {

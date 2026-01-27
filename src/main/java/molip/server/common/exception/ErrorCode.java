@@ -124,6 +124,8 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "요청 상태 값을 똑바로 입력했는지 확인해주세요"),
     INVALID_REQUEST_INVALID_TIME_FORMAT(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "시간 형식이 올바르지 않습니다."),
+    INVALID_REQUEST_INVALID_TIME_RANGE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "종료 시간이 시작 시간보다 빨라질 수 없습니다."),
 
     // Reflection
     INVALID_REQUEST_REFLECTION_IMAGES(

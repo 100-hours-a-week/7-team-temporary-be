@@ -1,6 +1,6 @@
 package molip.server.schedule.repository;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import molip.server.schedule.entity.Schedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +15,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                     + "and s.startAt < :endAt and s.endAt > :startAt")
     boolean existsTimeOverlap(
             @Param("dayPlanId") Long dayPlanId,
-            @Param("startAt") LocalTime startAt,
-            @Param("endAt") LocalTime endAt);
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt);
 }

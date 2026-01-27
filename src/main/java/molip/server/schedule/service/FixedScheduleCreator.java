@@ -1,6 +1,6 @@
 package molip.server.schedule.service;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.AssignedBy;
 import molip.server.common.enums.AssignmentStatus;
@@ -29,17 +29,20 @@ public class FixedScheduleCreator implements ScheduleCreator {
     public Schedule create(
             DayPlan dayPlan,
             String title,
-            String startAt,
-            String endAt,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {
 
-        LocalTime startAtValue = timeParser.parseOrThrow(startAt);
-        LocalTime endAtValue = timeParser.parseOrThrow(endAt);
+        LocalDateTime startAtValue = timeParser.parse(startAt);
+        LocalDateTime endAtValue = timeParser.parse(endAt);
 
         if (startAtValue == null || endAtValue == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+        if (!endAtValue.isAfter(startAtValue)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_TIME_RANGE);
         }
 
         if (scheduleRepository.existsTimeOverlap(dayPlan.getId(), startAtValue, endAtValue)) {

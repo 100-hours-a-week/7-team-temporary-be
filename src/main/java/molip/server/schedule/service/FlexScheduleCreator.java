@@ -1,5 +1,6 @@
 package molip.server.schedule.service;
 
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.AssignedBy;
 import molip.server.common.enums.AssignmentStatus;
@@ -23,8 +24,8 @@ public class FlexScheduleCreator implements ScheduleCreator {
     public Schedule create(
             DayPlan dayPlan,
             String title,
-            String startAt,
-            String endAt,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {
