@@ -20,6 +20,8 @@ import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
 import molip.server.schedule.dto.response.ScheduleItemResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Schedule", description = "일정 API")
 public interface ScheduleApi {
@@ -50,7 +52,9 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ScheduleCreateResponse>> createSchedule(
-            Long dayPlanId, ScheduleCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long dayPlanId,
+            ScheduleCreateRequest request);
 
     @Operation(summary = "특정 일자 일정 TodoList 조회")
     @SecurityRequirement(name = "JWT")

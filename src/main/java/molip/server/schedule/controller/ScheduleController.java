@@ -1,5 +1,7 @@
 package molip.server.schedule.controller;
 
+import lombok.RequiredArgsConstructor;
+import molip.server.common.SuccessCode;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.schedule.dto.request.ScheduleArrangementJobCreateRequest;
@@ -12,8 +14,12 @@ import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
 import molip.server.schedule.dto.response.ScheduleItemResponse;
+import molip.server.schedule.entity.Schedule;
+import molip.server.schedule.service.ScheduleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,13 +31,35 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 public class ScheduleController implements ScheduleApi {
+
+    private final ScheduleService scheduleService;
 
     @PostMapping("/day-plan/{dayPlanId}/schedule")
     @Override
     public ResponseEntity<ServerResponse<ScheduleCreateResponse>> createSchedule(
-            @PathVariable Long dayPlanId, @RequestBody ScheduleCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long dayPlanId,
+            @RequestBody ScheduleCreateRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        Schedule schedule =
+                scheduleService.createSchedule(
+                        userId,
+                        dayPlanId,
+                        request.type(),
+                        request.title(),
+                        request.startAt(),
+                        request.endAt(),
+                        request.estimatedTimeRange(),
+                        request.focusLevel(),
+                        request.isUrgent());
+
+        return ResponseEntity.ok(
+                ServerResponse.success(
+                        SuccessCode.SCHEDULE_CREATED, ScheduleCreateResponse.from(schedule)));
     }
 
     @GetMapping("/day-plan/{dayPlanId}/schedule")
