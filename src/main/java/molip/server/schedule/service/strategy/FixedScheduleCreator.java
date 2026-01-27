@@ -1,6 +1,6 @@
 package molip.server.schedule.service.strategy;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.AssignedBy;
 import molip.server.common.enums.AssignmentStatus;
@@ -29,14 +29,14 @@ public class FixedScheduleCreator implements ScheduleCreator {
     public Schedule create(
             DayPlan dayPlan,
             String title,
-            LocalDateTime startAt,
-            LocalDateTime endAt,
+            LocalTime startAt,
+            LocalTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {
 
-        LocalDateTime startAtValue = timeParser.parse(startAt);
-        LocalDateTime endAtValue = timeParser.parse(endAt);
+        LocalTime startAtValue = timeParser.parse(startAt);
+        LocalTime endAtValue = timeParser.parse(endAt);
 
         if (startAtValue == null || endAtValue == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
