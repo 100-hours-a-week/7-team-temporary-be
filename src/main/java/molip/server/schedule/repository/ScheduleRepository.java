@@ -33,7 +33,12 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("startAt") LocalDateTime startAt,
             @Param("endAt") LocalDateTime endAt);
 
-    Optional<Schedule> findByIdAndDeletedAtIsNull(Long id);
+    @Query(
+            "select s from Schedule s "
+                    + "join fetch s.dayPlan dp "
+                    + "join fetch dp.user u "
+                    + "where s.id = :id and s.deletedAt is null")
+    Optional<Schedule> findByIdWithDayPlanUser(@Param("id") Long id);
 
     @Query(
             value =

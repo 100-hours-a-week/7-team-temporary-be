@@ -73,33 +73,50 @@ public class ScheduleService {
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {
-        if (type == null || title == null) {
-            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
-        }
+        validateRequired(type, title);
 
         Schedule schedule =
                 scheduleRepository
-                        .findByIdAndDeletedAtIsNull(scheduleId)
+                        .findByIdWithDayPlanUser(scheduleId)
                         .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
 
-        if (!schedule.getDayPlan().getUser().getId().equals(userId)) {
-            throw new BaseException(ErrorCode.FORBIDDEN_OWN_SCHEDULE_ONLY);
-        }
+        validateOwnership(userId, schedule);
 
         if (type == ScheduleType.FIXED) {
-            if (startAt == null || endAt == null) {
-                throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
-            }
-            if (!endAt.isAfter(startAt)) {
-                throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_TIME_RANGE);
-            }
-            if (scheduleRepository.existsTimeOverlapExcludingId(
-                    schedule.getDayPlan().getId(), scheduleId, startAt, endAt)) {
-                throw new BaseException(ErrorCode.CONFLICT_TIME_OVERLAP);
-            }
+            validateFixedRange(startAt, endAt);
+            validateTimeOverlap(schedule, scheduleId, startAt, endAt);
             schedule.updateAsFixed(title, startAt, endAt);
         } else {
             schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
+        }
+    }
+
+    private void validateRequired(ScheduleType type, String title) {
+        if (type == null || title == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+    }
+
+    private void validateOwnership(Long userId, Schedule schedule) {
+        if (!schedule.getDayPlan().getUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_OWN_SCHEDULE_ONLY);
+        }
+    }
+
+    private void validateFixedRange(LocalDateTime startAt, LocalDateTime endAt) {
+        if (startAt == null || endAt == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+        if (!endAt.isAfter(startAt)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_TIME_RANGE);
+        }
+    }
+
+    private void validateTimeOverlap(
+            Schedule schedule, Long scheduleId, LocalDateTime startAt, LocalDateTime endAt) {
+        if (scheduleRepository.existsTimeOverlapExcludingId(
+                schedule.getDayPlan().getId(), scheduleId, startAt, endAt)) {
+            throw new BaseException(ErrorCode.CONFLICT_TIME_OVERLAP);
         }
     }
 
