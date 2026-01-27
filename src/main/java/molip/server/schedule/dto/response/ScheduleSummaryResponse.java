@@ -1,7 +1,7 @@
 package molip.server.schedule.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import molip.server.common.enums.AssignedBy;
 import molip.server.common.enums.AssignmentStatus;
@@ -45,10 +45,10 @@ public record ScheduleSummaryResponse(
                 schedule.getIsUrgent());
     }
 
-    private static String formatTime(LocalDateTime time) {
+    private static String formatTime(LocalTime time) {
         if (time == null) {
             return null;
         }
-        return time.toLocalTime().format(TIME_FORMATTER);
+        return time.format(TIME_FORMATTER);
     }
 }

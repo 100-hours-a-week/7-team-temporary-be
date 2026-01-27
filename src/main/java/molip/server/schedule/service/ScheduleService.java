@@ -1,6 +1,6 @@
 package molip.server.schedule.service;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +40,8 @@ public class ScheduleService {
             DayPlan dayPlan,
             ScheduleType type,
             String title,
-            LocalDateTime startAt,
-            LocalDateTime endAt,
+            LocalTime startAt,
+            LocalTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {
@@ -71,8 +71,8 @@ public class ScheduleService {
             Long scheduleId,
             ScheduleType type,
             String title,
-            LocalDateTime startAt,
-            LocalDateTime endAt,
+            LocalTime startAt,
+            LocalTime endAt,
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {
@@ -163,7 +163,7 @@ public class ScheduleService {
         }
     }
 
-    private void validateFixedRange(LocalDateTime startAt, LocalDateTime endAt) {
+    private void validateFixedRange(LocalTime startAt, LocalTime endAt) {
         if (startAt == null || endAt == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
         }
@@ -173,7 +173,7 @@ public class ScheduleService {
     }
 
     private void validateTimeOverlap(
-            Schedule schedule, Long scheduleId, LocalDateTime startAt, LocalDateTime endAt) {
+            Schedule schedule, Long scheduleId, LocalTime startAt, LocalTime endAt) {
         if (scheduleRepository.existsTimeOverlapExcludingId(
                 schedule.getDayPlan().getId(), scheduleId, startAt, endAt)) {
             throw new BaseException(ErrorCode.CONFLICT_TIME_OVERLAP);
