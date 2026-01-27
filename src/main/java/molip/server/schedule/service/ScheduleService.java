@@ -62,6 +62,47 @@ public class ScheduleService {
         return scheduleRepository.findTimeAssignedByDayPlanId(dayPlanId, pageRequest);
     }
 
+    @Transactional
+    public void updateSchedule(
+            Long userId,
+            Long scheduleId,
+            ScheduleType type,
+            String title,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
+            EstimatedTimeRange estimatedTimeRange,
+            Integer focusLevel,
+            Boolean isUrgent) {
+        if (type == null || title == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+
+        Schedule schedule =
+                scheduleRepository
+                        .findByIdAndDeletedAtIsNull(scheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        if (!schedule.getDayPlan().getUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_OWN_SCHEDULE_ONLY);
+        }
+
+        if (type == ScheduleType.FIXED) {
+            if (startAt == null || endAt == null) {
+                throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+            }
+            if (!endAt.isAfter(startAt)) {
+                throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_TIME_RANGE);
+            }
+            if (scheduleRepository.existsTimeOverlapExcludingId(
+                    schedule.getDayPlan().getId(), scheduleId, startAt, endAt)) {
+                throw new BaseException(ErrorCode.CONFLICT_TIME_OVERLAP);
+            }
+            schedule.updateAsFixed(title, startAt, endAt);
+        } else {
+            schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
+        }
+    }
+
     private ScheduleCreator resolveCreator(ScheduleType type) {
         if (type == null || !creatorMap.containsKey(type)) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
