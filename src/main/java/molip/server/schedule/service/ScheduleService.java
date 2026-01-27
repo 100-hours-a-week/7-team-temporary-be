@@ -73,6 +73,7 @@ public class ScheduleService {
             EstimatedTimeRange estimatedTimeRange,
             Integer focusLevel,
             Boolean isUrgent) {
+
         validateRequired(type, title);
 
         Schedule schedule =
