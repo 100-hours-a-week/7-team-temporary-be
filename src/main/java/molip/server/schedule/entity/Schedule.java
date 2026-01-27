@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -121,5 +122,9 @@ public class Schedule extends BaseEntity {
 
     public void updateStatus(ScheduleStatus status) {
         this.status = status;
+    }
+
+    public void deleteSchedule() {
+        this.deletedAt = LocalDateTime.now();
     }
 }
