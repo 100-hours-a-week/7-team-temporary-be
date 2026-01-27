@@ -1,8 +1,10 @@
 package molip.server.schedule.dto.response;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import molip.server.schedule.entity.Schedule;
 
-@Schema(description = "자식 일정 응답")
-public record ScheduleChildResponse(
-        @Schema(description = "일정 ID", example = "101") Long scheduleId,
-        @Schema(description = "제목", example = "API 설계하기") String title) {}
+public record ScheduleChildResponse(Long scheduleId, String title) {
+
+    public static ScheduleChildResponse from(Schedule schedule) {
+        return new ScheduleChildResponse(schedule.getId(), schedule.getTitle());
+    }
+}

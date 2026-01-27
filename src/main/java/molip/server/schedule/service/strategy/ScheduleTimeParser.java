@@ -1,11 +1,11 @@
 package molip.server.schedule.service.strategy;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ScheduleTimeParser {
-    public LocalDateTime parse(LocalDateTime time) {
+    public LocalTime parse(LocalTime time) {
         return time;
     }
 }
