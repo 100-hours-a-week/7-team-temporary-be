@@ -8,4 +8,7 @@ public interface DayPlanRepository extends JpaRepository<DayPlan, Long> {
     Optional<DayPlan> findByIdAndDeletedAtIsNull(Long id);
 
     Optional<DayPlan> findByIdAndUserIdAndDeletedAtIsNull(Long id, Long userId);
+
+    Optional<DayPlan> findByUserIdAndPlanDateAndDeletedAtIsNull(
+            Long userId, java.time.LocalDate planDate);
 }

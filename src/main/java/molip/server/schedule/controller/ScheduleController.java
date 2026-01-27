@@ -9,12 +9,16 @@ import molip.server.schedule.dto.request.ScheduleAssignmentStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleChildrenCreateRequest;
 import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
-import molip.server.schedule.dto.response.DayPlanScheduleListResponse;
+import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
-import molip.server.schedule.dto.response.ScheduleItemResponse;
+import molip.server.schedule.dto.response.ScheduleSummaryResponse;
+import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
+import molip.server.schedule.facade.DayPlanQueryFacade;
+import molip.server.schedule.facade.ScheduleQueryFacade;
+import molip.server.schedule.service.DayPlanService;
 import molip.server.schedule.service.ScheduleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +39,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScheduleController implements ScheduleApi {
 
     private final ScheduleService scheduleService;
+    private final DayPlanService dayPlanService;
+    private final DayPlanQueryFacade dayPlanQueryFacade;
+    private final ScheduleQueryFacade scheduleQueryFacade;
 
     @PostMapping("/day-plan/{dayPlanId}/schedule")
     @Override
@@ -45,10 +52,11 @@ public class ScheduleController implements ScheduleApi {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
+        DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
+
         Schedule schedule =
                 scheduleService.createSchedule(
-                        userId,
-                        dayPlanId,
+                        dayPlan,
                         request.type(),
                         request.title(),
                         request.startAt(),
@@ -64,20 +72,30 @@ public class ScheduleController implements ScheduleApi {
 
     @GetMapping("/day-plan/{dayPlanId}/schedule")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<ScheduleItemResponse>>> getDayPlanSchedules(
-            @PathVariable Long dayPlanId,
-            @RequestParam(required = false, defaultValue = "1") int page,
-            @RequestParam(required = false, defaultValue = "10") int size) {
+    public ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>>
+            getAllSchedulesByDayPlan(
+                    @AuthenticationPrincipal UserDetails userDetails,
+                    @PathVariable Long dayPlanId,
+                    @RequestParam(required = false, defaultValue = "1") int page,
+                    @RequestParam(required = false, defaultValue = "10") int size) {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
     @GetMapping("/day-plan/schedule")
     @Override
-    public ResponseEntity<ServerResponse<DayPlanScheduleListResponse>> getDaySchedulesByDate(
-            @RequestParam String date,
-            @RequestParam(required = false, defaultValue = "1") int page,
-            @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<DayPlanSchedulePageResponse>>
+            getOnlyTimeAssignedSchedulesByDate(
+                    @AuthenticationPrincipal UserDetails userDetails,
+                    @RequestParam String date,
+                    @RequestParam(required = false, defaultValue = "1") int page,
+                    @RequestParam(required = false, defaultValue = "10") int size) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+        DayPlan dayPlan = dayPlanQueryFacade.getOrCreateDayPlan(userId, date);
+        DayPlanSchedulePageResponse response =
+                scheduleQueryFacade.getTimeAssignedSchedulesByDate(dayPlan.getId(), page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.DAY_SCHEDULE_LIST_SUCCESS, response));
     }
 
     @PutMapping("/schedule/{scheduleId}")
@@ -124,10 +142,11 @@ public class ScheduleController implements ScheduleApi {
 
     @GetMapping("/schedules")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<ScheduleItemResponse>>> getExcludedSchedules(
-            @RequestParam String status,
-            @RequestParam(required = false, defaultValue = "1") int page,
-            @RequestParam(required = false, defaultValue = "10") int size) {
+    public ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>>
+            getExcludedSchedules(
+                    @RequestParam String status,
+                    @RequestParam(required = false, defaultValue = "1") int page,
+                    @RequestParam(required = false, defaultValue = "10") int size) {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 

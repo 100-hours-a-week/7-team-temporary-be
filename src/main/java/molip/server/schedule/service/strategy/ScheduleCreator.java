@@ -1,4 +1,4 @@
-package molip.server.schedule.service;
+package molip.server.schedule.service.strategy;
 
 import java.time.LocalDateTime;
 import molip.server.common.enums.EstimatedTimeRange;
