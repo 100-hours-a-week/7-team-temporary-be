@@ -55,7 +55,7 @@ public class FixedScheduleCreator implements ScheduleCreator {
                 .status(ScheduleStatus.TODO)
                 .type(ScheduleType.FIXED)
                 .assignedBy(AssignedBy.USER)
-                .assignmentStatus(AssignmentStatus.FIXED)
+                .assignmentStatus(AssignmentStatus.ASSIGNED)
                 .startAt(startAtValue)
                 .endAt(endAtValue)
                 .build();
