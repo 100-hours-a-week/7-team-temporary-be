@@ -297,48 +297,94 @@ jobs:
 
             // (B) Writes occasionally
             if (__ITER % 3 === 0) {
-              // Generate non-overlapping-ish times to avoid business-rule collisions.
-              // Keep within a safe window (06:00 ~ 21:30) so endAt doesn't wrap.
-              const windowStartMin = 6 * 60;     // 06:00
-              const windowSpanMin = 15 * 60;     // 900 minutes window
-              const slotLenMin = 30;             // 30-minute schedules
+              // Create: avoid time-overlap collisions by using a larger time window + retries.
+              // We do NOT count business-rule overlap (409 / overlap-message) as availability errors.
+              const slotLenMin = 5;           // shorter slots reduce overlap probability
+              const windowStartMin = 0 * 60;  // 00:00
+              const windowEndMin = 23 * 60 + 55; // 23:55
+              const windowSpan = (windowEndMin - windowStartMin) - slotLenMin;
 
-              // Deterministic spread by VU/ITER.
-              const offset = ((__VU - 1) * 97 + __ITER * 13) % (windowSpanMin - slotLenMin);
-              const startMin = windowStartMin + offset;
-              const endMin = startMin + slotLenMin;
-
-              const sh = String(Math.floor(startMin / 60)).padStart(2, '0');
-              const sm = String(startMin % 60).padStart(2, '0');
-              const eh = String(Math.floor(endMin / 60)).padStart(2, '0');
-              const em = String(endMin % 60).padStart(2, '0');
-
-              const startAt = `${sh}:${sm}`;
-              const endAt = `${eh}:${em}`;
-
-              const createRes = http.post(
-                `${BASE_URL}/day-plan/${dayPlanId}/schedule`,
-                JSON.stringify({
-                  title: `k6 일정 ${__VU}-${__ITER}`,
-                  type: 'FIXED',
-                  startAt,
-                  endAt,
-                  estimatedTimeRange: 'HOUR_1_TO_2',
-                  focusLevel: 5,
-                  isUrgent: false,
-                }),
-                { ...auth, tags: { name: 'schedule_create' } }
-              );
-
-              const createOk = check(createRes, {
-                'schedule create 2xx': (r) => r.status === 200 || r.status === 201,
-              });
-              if (!createOk) {
-                console.error(`create failed status=${createRes.status} body=${(createRes.body || '').slice(0, 200)}`);
+              function fmt(min) {
+                const h = String(Math.floor(min / 60)).padStart(2, '0');
+                const m = String(min % 60).padStart(2, '0');
+                return `${h}:${m}`;
               }
+
+              function isOverlapBusinessError(res) {
+                const s = res?.status || 0;
+                if (s === 409) return true;
+                if (s === 400) {
+                  const b = (res.body || '').toLowerCase();
+                  // common patterns: "overlap", "conflict", Korean "겹"
+                  if (b.includes('overlap') || b.includes('conflict') || b.includes('겹')) return true;
+                }
+                return false;
+              }
+
+              const title = `k6 일정 ${__VU}-${__ITER}-${Date.now()}`;
+              let created = false;
+              let lastRes = null;
+
+              for (let attempt = 0; attempt < 10; attempt++) {
+                // Spread times by VU/ITER and add a time-based component so repeated runs don't collide.
+                const epochMin = Math.floor(Date.now() / 60000);
+                const offset = (epochMin + (__VU * 97) + (__ITER * 13) + (attempt * 7)) % windowSpan;
+                const startMin = windowStartMin + offset;
+                const endMin = startMin + slotLenMin;
+
+                const startAt = fmt(startMin);
+                const endAt = fmt(endMin);
+
+                lastRes = http.post(
+                  `${BASE_URL}/day-plan/${dayPlanId}/schedule`,
+                  JSON.stringify({
+                    title,
+                    type: 'FIXED',
+                    startAt,
+                    endAt,
+                    estimatedTimeRange: 'HOUR_1_TO_2',
+                    focusLevel: 5,
+                    isUrgent: false,
+                  }),
+                  { ...auth, tags: { name: 'schedule_create' } }
+                );
+
+                // Success
+                if (lastRes.status === 200 || lastRes.status === 201) {
+                  created = true;
+                  break;
+                }
+
+                // Overlap/business conflict: retry with different slot; do NOT count as availability error
+                if (isOverlapBusinessError(lastRes)) {
+                  console.warn(`create overlap/conflict (attempt ${attempt + 1}/10) status=${lastRes.status}`);
+                  sleep(0.1);
+                  continue;
+                }
+
+                // Other errors: treat as availability error and stop retrying
+                break;
+              }
+
+              const createOk = check(lastRes, {
+                'schedule create 2xx': (r) => r && (r.status === 200 || r.status === 201),
+              });
+
               scheduleCreateSuccess.add(createOk);
-              scheduleCreateLatency.add(createRes.timings.duration);
-              errorRate.add(!createOk);
+              if (createOk) {
+                scheduleCreateLatency.add(lastRes.timings.duration);
+              }
+
+              // Only count non-business failures as availability errors
+              if (!createOk && lastRes && !isOverlapBusinessError(lastRes)) {
+                console.error(`create failed status=${lastRes.status} body=${(lastRes.body || '').slice(0, 200)}`);
+                errorRate.add(true);
+              }
+
+              // If we never managed to create due to overlaps, log and continue without failing availability
+              if (!createOk && lastRes && isOverlapBusinessError(lastRes)) {
+                console.warn('create skipped due to repeated overlaps; not counted as availability error');
+              }
 
               const listRes = http.get(
                 `${BASE_URL}/day-plan/schedule?date=${DATE}&page=1&size=10`,
