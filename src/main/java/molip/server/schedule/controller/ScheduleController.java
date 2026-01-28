@@ -91,8 +91,11 @@ public class ScheduleController implements ScheduleApi {
                     @RequestParam String date,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
+
         Long userId = Long.valueOf(userDetails.getUsername());
+
         DayPlan dayPlan = dayPlanQueryFacade.getOrCreateDayPlan(userId, date);
+
         DayPlanSchedulePageResponse response =
                 scheduleQueryFacade.getTimeAssignedSchedulesByDate(dayPlan.getId(), page, size);
 
@@ -182,21 +185,37 @@ public class ScheduleController implements ScheduleApi {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/schedules")
+    @GetMapping("/day-plan/{dayPlanId}/schedules")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>>
             getExcludedSchedules(
+                    @AuthenticationPrincipal UserDetails userDetails,
+                    @PathVariable Long dayPlanId,
                     @RequestParam String status,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        PageResponse<ScheduleSummaryResponse> response =
+                scheduleQueryFacade.getExcludedSchedules(userId, dayPlanId, status, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.EXCLUDED_SCHEDULE_LIST_SUCCESS, response));
     }
 
-    @PatchMapping("/schedule/{scheduleId}/assignment-status")
+    @PatchMapping("/schedule/{targetScheduleId}/assignment-status")
     @Override
     public ResponseEntity<Void> updateAssignmentStatus(
-            @PathVariable Long scheduleId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long targetScheduleId,
             @RequestBody ScheduleAssignmentStatusUpdateRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        scheduleService.updateAssignmentStatus(
+                userId, targetScheduleId, request.excludedScheduleId());
+
         return ResponseEntity.noContent().build();
     }
 }
