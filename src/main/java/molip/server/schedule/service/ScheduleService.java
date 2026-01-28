@@ -14,10 +14,12 @@ import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.repository.ScheduleRepository;
 import molip.server.schedule.service.strategy.ScheduleCreator;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -29,10 +31,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final Map<ScheduleType, ScheduleCreator> creatorMap;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public ScheduleService(ScheduleRepository scheduleRepository, List<ScheduleCreator> creators) {
+    public ScheduleService(
+            ScheduleRepository scheduleRepository,
+            List<ScheduleCreator> creators,
+            ApplicationEventPublisher eventPublisher) {
+
         this.scheduleRepository = scheduleRepository;
         this.creatorMap = new EnumMap<>(ScheduleType.class);
+        this.eventPublisher = eventPublisher;
+
         for (ScheduleCreator creator : creators) {
             this.creatorMap.put(creator.supports(), creator);
         }
@@ -55,7 +64,11 @@ public class ScheduleService {
                 creator.create(
                         dayPlan, title, startAt, endAt, estimatedTimeRange, focusLevel, isUrgent);
 
-        return scheduleRepository.save(schedule);
+        Schedule savedSchedule = scheduleRepository.save(schedule);
+
+        publishScheduleCreatedEvent(savedSchedule.getId());
+
+        return savedSchedule;
     }
 
     @Transactional(readOnly = true)
@@ -270,6 +283,11 @@ public class ScheduleService {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
         }
         return Objects.requireNonNull(creatorMap.get(type));
+    }
+
+    private void publishScheduleCreatedEvent(Long scheduleId) {
+
+        eventPublisher.publishEvent(new NotificationCreatedEvent(scheduleId));
     }
 
     private AssignmentStatus parseAssignmentStatus(String status) {
