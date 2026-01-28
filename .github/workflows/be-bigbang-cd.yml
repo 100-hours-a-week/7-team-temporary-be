@@ -297,9 +297,24 @@ jobs:
 
             // (B) Writes occasionally
             if (__ITER % 3 === 0) {
-              const startHour = 13 + (__VU % 4);
-              const startAt = `${String(startHour).padStart(2, '0')}:00`;
-              const endAt = `${String(startHour + 1).padStart(2, '0')}:00`;
+              // Generate non-overlapping-ish times to avoid business-rule collisions.
+              // Keep within a safe window (06:00 ~ 21:30) so endAt doesn't wrap.
+              const windowStartMin = 6 * 60;     // 06:00
+              const windowSpanMin = 15 * 60;     // 900 minutes window
+              const slotLenMin = 30;             // 30-minute schedules
+
+              // Deterministic spread by VU/ITER.
+              const offset = ((__VU - 1) * 97 + __ITER * 13) % (windowSpanMin - slotLenMin);
+              const startMin = windowStartMin + offset;
+              const endMin = startMin + slotLenMin;
+
+              const sh = String(Math.floor(startMin / 60)).padStart(2, '0');
+              const sm = String(startMin % 60).padStart(2, '0');
+              const eh = String(Math.floor(endMin / 60)).padStart(2, '0');
+              const em = String(endMin % 60).padStart(2, '0');
+
+              const startAt = `${sh}:${sm}`;
+              const endAt = `${eh}:${em}`;
 
               const createRes = http.post(
                 `${BASE_URL}/day-plan/${dayPlanId}/schedule`,
@@ -315,7 +330,12 @@ jobs:
                 { ...auth, tags: { name: 'schedule_create' } }
               );
 
-              const createOk = check(createRes, { 'schedule create 200': (r) => r.status === 200 });
+              const createOk = check(createRes, {
+                'schedule create 2xx': (r) => r.status === 200 || r.status === 201,
+              });
+              if (!createOk) {
+                console.error(`create failed status=${createRes.status} body=${(createRes.body || '').slice(0, 200)}`);
+              }
               scheduleCreateSuccess.add(createOk);
               scheduleCreateLatency.add(createRes.timings.duration);
               errorRate.add(!createOk);
