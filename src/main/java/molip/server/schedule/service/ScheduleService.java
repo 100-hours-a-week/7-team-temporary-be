@@ -66,7 +66,7 @@ public class ScheduleService {
 
         Schedule savedSchedule = scheduleRepository.save(schedule);
 
-        publishScheduleCreatedEvent(savedSchedule.getId());
+        publishScheduleCreatedEvent(savedSchedule);
 
         return savedSchedule;
     }
@@ -285,9 +285,15 @@ public class ScheduleService {
         return Objects.requireNonNull(creatorMap.get(type));
     }
 
-    private void publishScheduleCreatedEvent(Long scheduleId) {
+    private void publishScheduleCreatedEvent(Schedule schedule) {
 
-        eventPublisher.publishEvent(new NotificationCreatedEvent(scheduleId));
+        eventPublisher.publishEvent(
+                new NotificationCreatedEvent(
+                        schedule.getId(),
+                        schedule.getDayPlan().getUser().getId(),
+                        schedule.getTitle(),
+                        schedule.getDayPlan().getPlanDate(),
+                        schedule.getStartAt()));
     }
 
     private AssignmentStatus parseAssignmentStatus(String status) {
