@@ -1,7 +1,9 @@
 package molip.server.schedule.repository;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
+import molip.server.common.enums.AssignmentStatus;
 import molip.server.schedule.entity.Schedule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -55,12 +57,39 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                             + "left join fetch s.parentSchedule "
                             + "where s.dayPlan.id = :dayPlanId "
                             + "and s.deletedAt is null "
-                            + "and s.startAt is not null",
+                            + "and s.startAt is not null "
+                            + "and s.assignmentStatus <> AssignmentStatus.EXCLUDED",
             countQuery =
                     "select count(s) from Schedule s "
                             + "where s.dayPlan.id = :dayPlanId "
                             + "and s.deletedAt is null "
-                            + "and s.startAt is not null")
+                            + "and s.startAt is not null "
+                            + "and s.assignmentStatus <> AssignmentStatus.EXCLUDED")
     Page<Schedule> findTimeAssignedByDayPlanId(
             @Param("dayPlanId") Long dayPlanId, Pageable pageable);
+
+    @Query(
+            value =
+                    "select s from Schedule s "
+                            + "left join fetch s.parentSchedule "
+                            + "join s.dayPlan dp "
+                            + "join dp.user u "
+                            + "where u.id = :userId "
+                            + "and s.deletedAt is null "
+                            + "and s.assignmentStatus = :status "
+                            + "and dp.planDate between :fromDate and :toDate",
+            countQuery =
+                    "select count(s) from Schedule s "
+                            + "join s.dayPlan dp "
+                            + "join dp.user u "
+                            + "where u.id = :userId "
+                            + "and s.deletedAt is null "
+                            + "and s.assignmentStatus = :status "
+                            + "and dp.planDate between :fromDate and :toDate")
+    Page<Schedule> findExcludedSchedulesByUserAndDateRange(
+            @Param("userId") Long userId,
+            @Param("status") AssignmentStatus status,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            Pageable pageable);
 }

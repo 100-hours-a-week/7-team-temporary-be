@@ -18,7 +18,7 @@ public record ScheduleSummaryResponse(
         @Schema(description = "상태", example = "TODO") ScheduleStatus status,
         @Schema(description = "타입", example = "FIXED") ScheduleType type,
         @Schema(description = "배정 주체", example = "USER") AssignedBy assignedBy,
-        @Schema(description = "배정 상태", example = "FIXED") AssignmentStatus assignmentStatus,
+        @Schema(description = "배정 상태", example = "ASSIGNED") AssignmentStatus assignmentStatus,
         @Schema(description = "시작 시간", example = "13:00") String startAt,
         @Schema(description = "종료 시간", example = "14:30") String endAt,
         @Schema(description = "예상 소요 시간", example = "HOUR_1_TO_2")
