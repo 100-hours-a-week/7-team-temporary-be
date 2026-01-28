@@ -57,12 +57,14 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                             + "left join fetch s.parentSchedule "
                             + "where s.dayPlan.id = :dayPlanId "
                             + "and s.deletedAt is null "
-                            + "and s.startAt is not null",
+                            + "and s.startAt is not null "
+                            + "and s.assignmentStatus <> AssignmentStatus.EXCLUDED",
             countQuery =
                     "select count(s) from Schedule s "
                             + "where s.dayPlan.id = :dayPlanId "
                             + "and s.deletedAt is null "
-                            + "and s.startAt is not null")
+                            + "and s.startAt is not null "
+                            + "and s.assignmentStatus <> AssignmentStatus.EXCLUDED")
     Page<Schedule> findTimeAssignedByDayPlanId(
             @Param("dayPlanId") Long dayPlanId, Pageable pageable);
 

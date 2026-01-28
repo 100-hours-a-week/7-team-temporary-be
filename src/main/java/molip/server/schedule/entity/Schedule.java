@@ -96,7 +96,7 @@ public class Schedule extends BaseEntity {
         this.title = title;
         this.type = ScheduleType.FIXED;
         this.assignedBy = AssignedBy.USER;
-        this.assignmentStatus = AssignmentStatus.FIXED;
+        this.assignmentStatus = AssignmentStatus.ASSIGNED;
         this.startAt = startAt;
         this.endAt = endAt;
         this.estimatedTimeRange = null;
