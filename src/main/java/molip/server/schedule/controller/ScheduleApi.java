@@ -358,5 +358,7 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<Void> updateAssignmentStatus(
-            Long scheduleId, ScheduleAssignmentStatusUpdateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleAssignmentStatusUpdateRequest request);
 }

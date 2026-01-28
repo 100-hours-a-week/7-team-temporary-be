@@ -23,6 +23,7 @@ public class ScheduleQueryFacade {
     @Transactional(readOnly = true)
     public DayPlanSchedulePageResponse getTimeAssignedSchedulesByDate(
             Long dayPlanId, int page, int size) {
+
         Page<Schedule> schedules =
                 scheduleService.getTimeAssignedSchedulesByDayPlan(dayPlanId, page, size);
 

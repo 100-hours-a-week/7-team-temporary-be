@@ -119,6 +119,8 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "자식은 적어도 2개 이상이여야합니다. titles를 2개 이상 입력해주세요"),
     INVALID_REQUEST_FIXED_SCHEDULE_SPLIT(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "고정 일정은 분할할 수 없습니다."),
+    INVALID_REQUEST_EXCLUDED_ONLY_FLEX(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "제외된 일정은 FLEX만 가능합니다."),
     FORBIDDEN_OWN_SCHEDULE_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 일정만 수정이 가능합니다."),
     SCHEDULE_NOT_FOUND_PARENT(HttpStatus.NOT_FOUND, "SCHEDULE_NOT_FOUND", "부모 일정을 찾을 수 없습니다."),
     CONFLICT_CHILDREN_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONFLICT", "이미 자식 일정이 존재하는 부모 일정입니다."),
