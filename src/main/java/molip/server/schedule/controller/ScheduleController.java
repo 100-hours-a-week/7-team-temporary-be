@@ -201,16 +201,17 @@ public class ScheduleController implements ScheduleApi {
                 ServerResponse.success(SuccessCode.EXCLUDED_SCHEDULE_LIST_SUCCESS, response));
     }
 
-    @PatchMapping("/schedule/{scheduleId}/assignment-status")
+    @PatchMapping("/schedule/{targetScheduleId}/assignment-status")
     @Override
     public ResponseEntity<Void> updateAssignmentStatus(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long scheduleId,
+            @PathVariable Long targetScheduleId,
             @RequestBody ScheduleAssignmentStatusUpdateRequest request) {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        scheduleService.updateAssignmentStatus(userId, scheduleId, request.excludedScheduleId());
+        scheduleService.updateAssignmentStatus(
+                userId, targetScheduleId, request.excludedScheduleId());
 
         return ResponseEntity.noContent().build();
     }
