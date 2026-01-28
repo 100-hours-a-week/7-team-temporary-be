@@ -6,7 +6,6 @@ import molip.server.common.SuccessCode;
 import molip.server.common.response.ServerResponse;
 import molip.server.terms.dto.request.TermsSignRequest;
 import molip.server.terms.dto.response.TermsSignHistoryResponse;
-import molip.server.terms.dto.response.TermsSignResponse;
 import molip.server.terms.dto.response.TermsSummaryResponse;
 import molip.server.terms.service.TermsService;
 import molip.server.terms.service.TermsSignService;
@@ -16,7 +15,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,20 +30,6 @@ public class TermsController implements TermsApi {
         List<TermsSummaryResponse> content = termsService.getActiveTerms();
 
         return ResponseEntity.ok(ServerResponse.success(SuccessCode.TERMS_LIST_SUCCESS, content));
-    }
-
-    @PostMapping("/terms-sign/{termsId}")
-    @Override
-    public ResponseEntity<ServerResponse<TermsSignResponse>> createTermsSign(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long termsId,
-            @RequestBody TermsSignRequest request) {
-        Long userId = Long.valueOf(userDetails.getUsername());
-
-        TermsSignResponse response =
-                termsService.createTermsSign(userId, termsId, request.isAgreed());
-
-        return ResponseEntity.ok(ServerResponse.success(SuccessCode.TERMS_SIGN_CREATED, response));
     }
 
     @PatchMapping("/terms-sign/{termsId}")

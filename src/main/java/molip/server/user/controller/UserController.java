@@ -71,11 +71,14 @@ public class UserController implements UserApi {
                         request.birth(),
                         request.focusTimeZone(),
                         request.dayEndTime(),
-                        request.profileImageKey());
+                        request.profileImageKey(),
+                        request.terms());
 
         AuthResponse tokens =
                 authService.login(new LoginRequest(request.email(), request.password()), deviceId);
+
         SignUpResponse response = SignUpResponse.from(user.getId(), tokens.accessToken());
+
         ResponseCookie refreshCookie =
                 ResponseCookie.from("refreshToken", tokens.refreshToken())
                         .httpOnly(true)
@@ -84,6 +87,7 @@ public class UserController implements UserApi {
                         .path("/token")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
+
         ResponseCookie deviceCookie =
                 ResponseCookie.from("deviceId", tokens.deviceId())
                         .httpOnly(true)
