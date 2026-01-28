@@ -131,7 +131,7 @@ jobs:
         env:
           # Assumes HOST_STAGING is a public IP or resolvable hostname.
           # If your staging uses HTTPS and a domain, change this to https://<domain>/api
-          BASE_URL: http://stg.molip.today/api
+          BASE_URL: https://stg.molip.today/api
         run: |
           set -euo pipefail
           echo "== Install k6 on runner =="
