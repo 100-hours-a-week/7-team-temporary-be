@@ -183,6 +183,50 @@ public class ScheduleService {
         schedule.deleteSchedule();
     }
 
+    @Transactional
+    public void updateAssignmentStatus(
+            Long userId, Long targetScheduleId, Long excludedScheduleId) {
+
+        if (targetScheduleId.equals(excludedScheduleId)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+
+        Schedule targetSchedule =
+                scheduleRepository
+                        .findByIdWithDayPlanUser(targetScheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        Schedule excludedSchedule =
+                scheduleRepository
+                        .findByIdWithDayPlanUser(excludedScheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        validateOwnership(userId, targetSchedule);
+        validateOwnership(userId, excludedSchedule);
+
+        validateAssignmentSwap(targetSchedule, excludedSchedule);
+
+        excludedSchedule.moveDayPlan(targetSchedule.getDayPlan());
+        excludedSchedule.updateTime(targetSchedule.getStartAt(), targetSchedule.getEndAt());
+        excludedSchedule.updateAssignmentStatus(AssignmentStatus.ASSIGNED);
+
+        targetSchedule.updateAssignmentStatus(AssignmentStatus.EXCLUDED);
+    }
+
+    private void validateAssignmentSwap(Schedule targetSchedule, Schedule excludedSchedule) {
+        if (excludedSchedule.getAssignmentStatus() != AssignmentStatus.EXCLUDED) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+
+        if (targetSchedule.getAssignmentStatus() == AssignmentStatus.EXCLUDED) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+
+        if (targetSchedule.getStartAt() == null || targetSchedule.getEndAt() == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+    }
+
     private ScheduleCreator resolveCreator(ScheduleType type) {
         if (type == null || !creatorMap.containsKey(type)) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);

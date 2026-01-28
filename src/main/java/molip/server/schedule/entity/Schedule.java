@@ -124,6 +124,19 @@ public class Schedule extends BaseEntity {
         this.status = status;
     }
 
+    public void updateAssignmentStatus(AssignmentStatus status) {
+        this.assignmentStatus = status;
+    }
+
+    public void updateTime(LocalTime startAt, LocalTime endAt) {
+        this.startAt = startAt;
+        this.endAt = endAt;
+    }
+
+    public void moveDayPlan(DayPlan dayPlan) {
+        this.dayPlan = dayPlan;
+    }
+
     public void deleteSchedule() {
         this.deletedAt = LocalDateTime.now();
     }
