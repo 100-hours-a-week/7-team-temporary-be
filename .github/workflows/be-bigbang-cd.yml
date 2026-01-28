@@ -134,7 +134,7 @@ jobs:
           BASE_URL: http://stg.molip.today/api
         run: |
           set -euo pipefail
-                    echo "== Install k6 on runner =="
+          echo "== Install k6 on runner =="
           sudo apt-get update
           sudo apt-get install -y gnupg ca-certificates curl
           curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
@@ -145,6 +145,26 @@ jobs:
           TEST_DATE="$(date +%F)"
           echo "BASE_URL=${BASE_URL}"
           echo "TEST_DATE=${TEST_DATE}"
+          
+          echo "== Wait for backend to be ready (avoid 502 right after deploy) =="
+          # We expect one of: 200/400/401/403 when backend is reachable.
+          # We want to avoid 502/503/504 which usually indicates Nginx upstream not ready.
+          READY_URL="${BASE_URL}/day-plan/schedule?date=${TEST_DATE}&page=1&size=1"
+          for i in {1..30}; do
+            CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${READY_URL}" || echo "000")
+            if [ "${CODE}" = "200" ] || [ "${CODE}" = "400" ] || [ "${CODE}" = "401" ] || [ "${CODE}" = "403" ]; then
+              echo "Backend ready (http ${CODE})";
+              break
+            fi
+            echo "Not ready yet (http ${CODE}), retry..."
+            sleep 2
+          done
+          CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${READY_URL}" || echo "000")
+          if [ "${CODE}" = "502" ] || [ "${CODE}" = "503" ] || [ "${CODE}" = "504" ] || [ "${CODE}" = "000" ]; then
+            echo "FAIL: backend still not ready (http ${CODE}). Abort k6.";
+            exit 1;
+          fi
+
 
           # Light-load SLO gate script (post-deploy verification)
           cat > k6-slo-gate.js <<'K6'
