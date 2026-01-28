@@ -12,7 +12,6 @@ import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.terms.dto.request.TermsSignRequest;
 import molip.server.terms.dto.response.TermsSignHistoryResponse;
-import molip.server.terms.dto.response.TermsSignResponse;
 import molip.server.terms.dto.response.TermsSummaryResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,39 +32,6 @@ public interface TermsApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<List<TermsSummaryResponse>>> getTerms();
-
-    @Operation(summary = "약관 동의 내역 생성")
-    @SecurityRequirement(name = "JWT")
-    @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "생성 성공",
-                content = @Content(schema = @Schema(implementation = TermsSignResponse.class))),
-        @ApiResponse(
-                responseCode = "400",
-                description = "필수 값 누락",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "401",
-                description = "유효하지 않은 토큰",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "404",
-                description = "약관 없음",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "409",
-                description = "이미 동의 내역 존재",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "500",
-                description = "서버 오류",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
-    })
-    ResponseEntity<ServerResponse<TermsSignResponse>> createTermsSign(
-            @AuthenticationPrincipal UserDetails userDetails,
-            Long termsId,
-            TermsSignRequest request);
 
     @Operation(summary = "약관 동의 내역 변경")
     @SecurityRequirement(name = "JWT")
