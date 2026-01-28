@@ -14,12 +14,15 @@ import molip.server.schedule.dto.request.ScheduleAssignmentStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleChildrenCreateRequest;
 import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
-import molip.server.schedule.dto.response.DayPlanScheduleListResponse;
+import molip.server.schedule.dto.request.ScheduleUpdateRequest;
+import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
-import molip.server.schedule.dto.response.ScheduleItemResponse;
+import molip.server.schedule.dto.response.ScheduleSummaryResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Schedule", description = "일정 API")
 public interface ScheduleApi {
@@ -50,9 +53,43 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ScheduleCreateResponse>> createSchedule(
-            Long dayPlanId, ScheduleCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long dayPlanId,
+            ScheduleCreateRequest request);
 
     @Operation(summary = "특정 일자 일정 TodoList 조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content =
+                        @Content(
+                                schema =
+                                        @Schema(
+                                                implementation =
+                                                        DayPlanSchedulePageResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "페이지 정보 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "일자 플랜 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>> getAllSchedulesByDayPlan(
+            @AuthenticationPrincipal UserDetails userDetails, Long dayPlanId, int page, int size);
+
+    @Operation(summary = "특정 일자 일정 전체 조회")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
         @ApiResponse(
@@ -76,40 +113,8 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<ScheduleItemResponse>>> getDayPlanSchedules(
-            Long dayPlanId, int page, int size);
-
-    @Operation(summary = "특정 일자 일정 전체 조회")
-    @SecurityRequirement(name = "JWT")
-    @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "조회 성공",
-                content =
-                        @Content(
-                                schema =
-                                        @Schema(
-                                                implementation =
-                                                        DayPlanScheduleListResponse.class))),
-        @ApiResponse(
-                responseCode = "400",
-                description = "페이지 정보 오류",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "401",
-                description = "유효하지 않은 토큰",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "404",
-                description = "일자 플랜 없음",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "500",
-                description = "서버 오류",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
-    })
-    ResponseEntity<ServerResponse<DayPlanScheduleListResponse>> getDaySchedulesByDate(
-            String date, int page, int size);
+    ResponseEntity<ServerResponse<DayPlanSchedulePageResponse>> getOnlyTimeAssignedSchedulesByDate(
+            @AuthenticationPrincipal UserDetails userDetails, String date, int page, int size);
 
     @Operation(summary = "일정 정보 수정")
     @SecurityRequirement(name = "JWT")
@@ -136,7 +141,10 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateSchedule(Long scheduleId, ScheduleCreateRequest request);
+    ResponseEntity<Void> updateSchedule(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleUpdateRequest request);
 
     @Operation(summary = "일정 삭제")
     @SecurityRequirement(name = "JWT")
@@ -266,7 +274,9 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ScheduleChildrenCreateResponse>> createChildren(
-            Long scheduleId, ScheduleChildrenCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleChildrenCreateRequest request);
 
     @Operation(summary = "일정 처리 상태 변경")
     @SecurityRequirement(name = "JWT")
@@ -293,7 +303,10 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateStatus(Long scheduleId, ScheduleStatusUpdateRequest request);
+    ResponseEntity<Void> updateStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleStatusUpdateRequest request);
 
     @Operation(summary = "제외된 일정 조회")
     @SecurityRequirement(name = "JWT")
@@ -311,7 +324,7 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<ScheduleItemResponse>>> getExcludedSchedules(
+    ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>> getExcludedSchedules(
             String status, int page, int size);
 
     @Operation(summary = "일정 배정 상태 변경")
