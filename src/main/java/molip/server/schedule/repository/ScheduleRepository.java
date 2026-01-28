@@ -2,8 +2,10 @@ package molip.server.schedule.repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 import molip.server.common.enums.AssignmentStatus;
+import molip.server.common.enums.ScheduleStatus;
 import molip.server.schedule.entity.Schedule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -92,4 +94,38 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             Pageable pageable);
+
+    @Query(
+            value =
+                    "select s from Schedule s "
+                            + "left join fetch s.parentSchedule "
+                            + "join s.dayPlan dp "
+                            + "join dp.user u "
+                            + "where u.id = :userId "
+                            + "and s.deletedAt is null "
+                            + "and s.status <> :splitParentStatus "
+                            + "and dp.planDate = :planDate "
+                            + "and s.assignmentStatus <> :excludedStatus")
+    List<Schedule> findTodoListSchedulesByUserAndPlanDateExcludingStatus(
+            @Param("userId") Long userId,
+            @Param("planDate") LocalDate planDate,
+            @Param("excludedStatus") AssignmentStatus excludedStatus,
+            @Param("splitParentStatus") ScheduleStatus splitParentStatus);
+
+    @Query(
+            "select s from Schedule s "
+                    + "left join fetch s.parentSchedule "
+                    + "join s.dayPlan dp "
+                    + "join dp.user u "
+                    + "where u.id = :userId "
+                    + "and s.deletedAt is null "
+                    + "and s.status <> :splitParentStatus "
+                    + "and dp.planDate between :fromDate and :toDate "
+                    + "and s.assignmentStatus = :excludedStatus")
+    List<Schedule> findTodoListExcludedSchedulesByUserAndDateRange(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("excludedStatus") AssignmentStatus excludedStatus,
+            @Param("splitParentStatus") ScheduleStatus splitParentStatus);
 }

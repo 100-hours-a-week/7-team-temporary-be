@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class ScheduleQueryFacade {
+
     private final ScheduleService scheduleService;
     private final DayPlanService dayPlanService;
 
@@ -42,6 +43,27 @@ public class ScheduleQueryFacade {
                 size,
                 schedules.getTotalElements(),
                 schedules.getTotalPages());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ScheduleSummaryResponse> getTodoSchedulesByDayPlan(
+            Long userId, Long dayPlanId, int page, int size) {
+
+        DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
+
+        LocalDate toDate = dayPlan.getPlanDate();
+        LocalDate fromDate = toDate.minusDays(1);
+
+        Page<Schedule> schedules =
+                scheduleService.getTodoListSchedules(userId, fromDate, toDate, page, size);
+
+        Page<ScheduleSummaryResponse> mapped =
+                schedules.map(
+                        schedule ->
+                                ScheduleSummaryResponse.from(
+                                        schedule, schedule.getParentSchedule()));
+
+        return PageResponse.from(mapped, page, size);
     }
 
     @Transactional(readOnly = true)

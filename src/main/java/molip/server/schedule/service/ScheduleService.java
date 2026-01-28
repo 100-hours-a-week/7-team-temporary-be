@@ -2,6 +2,7 @@ package molip.server.schedule.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.repository.ScheduleRepository;
 import molip.server.schedule.service.strategy.ScheduleCreator;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -165,6 +167,42 @@ public class ScheduleService {
 
         return scheduleRepository.findExcludedSchedulesByUserAndDateRange(
                 userId, assignmentStatus, fromDate, toDate, pageRequest);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Schedule> getTodoListSchedules(
+            Long userId, LocalDate fromDate, LocalDate toDate, int page, int size) {
+
+        validatePage(page, size);
+
+        List<Schedule> todaySchedules =
+                scheduleRepository.findTodoListSchedulesByUserAndPlanDateExcludingStatus(
+                        userId, toDate, AssignmentStatus.EXCLUDED, ScheduleStatus.SPLIT_PARENT);
+
+        List<Schedule> excludedSchedules =
+                scheduleRepository.findTodoListExcludedSchedulesByUserAndDateRange(
+                        userId,
+                        fromDate,
+                        toDate,
+                        AssignmentStatus.EXCLUDED,
+                        ScheduleStatus.SPLIT_PARENT);
+
+        List<Schedule> mergedSchedules =
+                new ArrayList<>(todaySchedules.size() + excludedSchedules.size());
+
+        mergedSchedules.addAll(todaySchedules);
+        mergedSchedules.addAll(excludedSchedules);
+
+        int totalElements = mergedSchedules.size();
+        int fromIndex = (page - 1) * size;
+        int toIndex = Math.min(fromIndex + size, totalElements);
+
+        List<Schedule> pageContent =
+                fromIndex >= totalElements
+                        ? List.of()
+                        : mergedSchedules.subList(fromIndex, toIndex);
+
+        return new PageImpl<>(pageContent, PageRequest.of(page - 1, size), totalElements);
     }
 
     @Transactional
