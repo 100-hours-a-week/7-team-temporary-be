@@ -146,6 +146,7 @@ public class ScheduleController implements ScheduleApi {
     }
 
     @PostMapping("/day-plan/{dayPlanId}/schedule/arrangement-jobs")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ScheduleArrangementJobResponse>> createArrangementJob(
             @PathVariable Long dayPlanId,
@@ -154,6 +155,7 @@ public class ScheduleController implements ScheduleApi {
     }
 
     @GetMapping("/schedule/arrangement-jobs/{jobId}")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ScheduleArrangementJobResponse>> getArrangementJob(
             @PathVariable Long jobId) {
