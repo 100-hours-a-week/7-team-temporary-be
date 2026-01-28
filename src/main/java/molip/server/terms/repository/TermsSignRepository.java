@@ -21,6 +21,8 @@ public interface TermsSignRepository extends JpaRepository<TermsSign, Long> {
     @EntityGraph(attributePaths = "terms")
     List<TermsSign> findByUserIdAndDeletedAtIsNullOrderByIdDesc(Long userId);
 
+    boolean existsByUserIdAndTermsIdInAndDeletedAtIsNull(Long userId, List<Long> termsIds);
+
     @Query(
             "select ts from TermsSign ts "
                     + "join fetch ts.terms t "

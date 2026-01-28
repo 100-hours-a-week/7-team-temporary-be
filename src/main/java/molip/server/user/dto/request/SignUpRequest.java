@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -24,4 +25,9 @@ public record SignUpRequest(
                 @DateTimeFormat(pattern = "HH:mm")
                 LocalTime dayEndTime,
         @Schema(description = "프로필 이미지 키", example = "550e8400-e29b-41d4-a716-446655440000")
-                String profileImageKey) {}
+                String profileImageKey,
+        @Schema(
+                        description = "약관 동의 목록",
+                        example =
+                                "[{\"termsId\":1,\"isAgreed\":true},{\"termsId\":2,\"isAgreed\":false}]")
+                List<TermsAgreementRequest> terms) {}

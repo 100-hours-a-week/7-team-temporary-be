@@ -2,12 +2,15 @@ package molip.server.user.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.terms.event.UserTermsAgreedEvent;
+import molip.server.user.dto.request.TermsAgreementRequest;
 import molip.server.user.entity.Users;
 import molip.server.user.event.UserProfileImageLinkedEvent;
 import molip.server.user.repository.UserRepository;
@@ -37,7 +40,9 @@ public class UserService {
             LocalDate birth,
             FocusTimeZone focusTimeZone,
             LocalTime dayEndTime,
-            String profileImageKey) {
+            String profileImageKey,
+            List<TermsAgreementRequest> terms) {
+
         validateEmail(email);
         validatePassword(password);
         validateDuplicatedEmail(email);
@@ -54,7 +59,11 @@ public class UserService {
                                 birth,
                                 focusTimeZone,
                                 dayEndTime));
+
         publishProfileImageEvent(savedUser.getId(), profileImageKey);
+
+        publishTermsAgreementEvent(savedUser.getId(), terms);
+
         return savedUser;
     }
 
@@ -131,9 +140,15 @@ public class UserService {
     }
 
     private void publishProfileImageEvent(Long userId, String profileImageKey) {
+
         if (profileImageKey == null || profileImageKey.isBlank()) {
             return;
         }
         eventPublisher.publishEvent(new UserProfileImageLinkedEvent(userId, profileImageKey));
+    }
+
+    private void publishTermsAgreementEvent(Long userId, List<TermsAgreementRequest> terms) {
+
+        eventPublisher.publishEvent(new UserTermsAgreedEvent(userId, terms));
     }
 }
