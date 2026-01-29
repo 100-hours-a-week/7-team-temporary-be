@@ -124,6 +124,10 @@ public class Schedule extends BaseEntity {
         this.status = status;
     }
 
+    public void updateType(ScheduleType type) {
+        this.type = type;
+    }
+
     public void updateAssignmentStatus(AssignmentStatus status) {
         this.assignmentStatus = status;
     }

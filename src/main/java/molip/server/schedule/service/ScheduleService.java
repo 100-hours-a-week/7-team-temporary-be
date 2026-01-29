@@ -364,6 +364,7 @@ public class ScheduleService {
         excludedSchedule.updateAssignmentStatus(AssignmentStatus.ASSIGNED);
 
         targetSchedule.updateAssignmentStatus(AssignmentStatus.EXCLUDED);
+        targetSchedule.updateType(ScheduleType.FLEX);
         targetSchedule.updateTime(null, null);
     }
 
