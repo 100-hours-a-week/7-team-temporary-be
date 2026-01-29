@@ -2,8 +2,10 @@ package molip.server.notification.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import molip.server.common.enums.NotificationStatus;
 import molip.server.common.enums.NotificationType;
+import molip.server.notification.entity.Notification;
 
 @Schema(description = "알림 항목")
 public record NotificationItemResponse(
@@ -15,4 +17,29 @@ public record NotificationItemResponse(
         @Schema(description = "예약 시간", example = "2026-01-13T18:19:50+09:00")
                 OffsetDateTime scheduledAt,
         @Schema(description = "발송 시간", example = "2026-01-13T18:20:00+09:00")
-                OffsetDateTime sentAt) {}
+                OffsetDateTime sentAt) {
+
+    public static NotificationItemResponse from(Notification notification) {
+
+        ZoneId zoneId = ZoneId.of("Asia/Seoul");
+
+        OffsetDateTime scheduledAt =
+                notification.getScheduledAt() == null
+                        ? null
+                        : notification.getScheduledAt().atZone(zoneId).toOffsetDateTime();
+
+        OffsetDateTime sentAt =
+                notification.getSentAt() == null
+                        ? null
+                        : notification.getSentAt().atZone(zoneId).toOffsetDateTime();
+
+        return new NotificationItemResponse(
+                notification.getId(),
+                notification.getType(),
+                notification.getTitle(),
+                notification.getContent(),
+                notification.getStatus(),
+                scheduledAt,
+                sentAt);
+    }
+}

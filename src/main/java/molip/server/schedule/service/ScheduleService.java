@@ -20,6 +20,7 @@ import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.entity.ScheduleHistory;
@@ -71,7 +72,11 @@ public class ScheduleService {
                 creator.create(
                         dayPlan, title, startAt, endAt, estimatedTimeRange, focusLevel, isUrgent);
 
-        return scheduleRepository.save(schedule);
+        Schedule savedSchedule = scheduleRepository.save(schedule);
+
+        publishScheduleCreatedEvent(savedSchedule);
+
+        return savedSchedule;
     }
 
     @Transactional(readOnly = true)
@@ -450,6 +455,17 @@ public class ScheduleService {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
         }
         return Objects.requireNonNull(creatorMap.get(type));
+    }
+
+    private void publishScheduleCreatedEvent(Schedule schedule) {
+
+        eventPublisher.publishEvent(
+                new NotificationCreatedEvent(
+                        schedule.getId(),
+                        schedule.getDayPlan().getUser().getId(),
+                        schedule.getTitle(),
+                        schedule.getDayPlan().getPlanDate(),
+                        schedule.getStartAt()));
     }
 
     private void validatePage(int page, int size) {
