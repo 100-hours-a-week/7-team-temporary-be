@@ -212,12 +212,10 @@ jobs:
           const DATE = __ENV.TEST_DATE;
 
           export function setup() {
-            const email = `k6_user_${Date.now()}@test.com`;
-
             const signupRes = http.post(
               `${BASE_URL}/users`,
               JSON.stringify({
-                email,
+                email: 'email@email5.com',
                 password: 'password@12A',
                 nickname: 'nickname',
                 gender: 'MALE',
