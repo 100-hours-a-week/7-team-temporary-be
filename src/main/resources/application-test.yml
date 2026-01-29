@@ -24,3 +24,8 @@ jwt:
   secret: test-secret-key-test-secret-key-test-secret-key-test-secret-key
   access-expiration-ms: 3600000
   refresh-expiration-ms: 86400000
+
+ai:
+  planner:
+    base-url: http://localhost
+    timeout-ms: 300000

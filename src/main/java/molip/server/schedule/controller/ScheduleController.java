@@ -12,12 +12,14 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
+import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
 import molip.server.schedule.dto.response.ScheduleSummaryResponse;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
+import molip.server.schedule.facade.AiPlannerFacade;
 import molip.server.schedule.facade.DayPlanQueryFacade;
 import molip.server.schedule.facade.ScheduleQueryFacade;
 import molip.server.schedule.service.DayPlanService;
@@ -44,6 +46,7 @@ public class ScheduleController implements ScheduleApi {
     private final DayPlanService dayPlanService;
     private final DayPlanQueryFacade dayPlanQueryFacade;
     private final ScheduleQueryFacade scheduleQueryFacade;
+    private final AiPlannerFacade aiPlannerFacade;
 
     @PostMapping("/day-plan/{dayPlanId}/schedule")
     @Override
@@ -211,6 +214,19 @@ public class ScheduleController implements ScheduleApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.EXCLUDED_SCHEDULE_LIST_SUCCESS, response));
+    }
+
+    @PostMapping("/day-plan/{dayPlanId}/schedules/ai-arrangement")
+    @Override
+    public ResponseEntity<ServerResponse<ScheduleArrangeResponse>> arrangeSchedules(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long dayPlanId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ScheduleArrangeResponse response = aiPlannerFacade.arrangeSchedules(userId, dayPlanId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.AI_ARRANGEMENT_COMPLETED, response));
     }
 
     @PatchMapping("/schedule/{targetScheduleId}/assignment-status")
