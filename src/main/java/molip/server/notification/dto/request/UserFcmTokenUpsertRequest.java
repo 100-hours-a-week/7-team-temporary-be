@@ -8,4 +8,4 @@ import molip.server.common.enums.Platform;
 @Schema(description = "FCM 토큰 등록/갱신 요청")
 public record UserFcmTokenUpsertRequest(
         @Schema(description = "FCM 토큰", example = "fcm-token-value") @NotBlank String fcmToken,
-        @Schema(description = "플랫폼", example = "ANDROID") @NotNull Platform platform) {}
+        @Schema(description = "플랫폼", example = "WEB") @NotNull Platform platform) {}
