@@ -59,6 +59,7 @@ public enum ErrorCode {
     // Notification
     INVALID_REQUEST_NOTIFICATION_PAGE(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "페이지 정보가 올바르지 않습니다."),
+    FCM_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM_TOKEN_NOT_FOUND", "FCM 토큰을 찾을 수 없습니다."),
 
     // AI Planner
     PLANNER_BAD_REQUEST(HttpStatus.BAD_REQUEST, "PLANNER_BAD_REQUEST", "요청 형식이 올바르지 않습니다."),

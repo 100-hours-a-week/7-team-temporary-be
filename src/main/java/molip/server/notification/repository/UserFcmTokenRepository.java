@@ -1,6 +1,7 @@
 package molip.server.notification.repository;
 
 import java.util.List;
+import java.util.Optional;
 import molip.server.notification.entity.UserFcmToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,4 +15,6 @@ public interface UserFcmTokenRepository extends JpaRepository<UserFcmToken, Long
                     + "and u.isActive = true "
                     + "and u.deletedAt is null")
     List<String> findActiveTokensByUserId(@Param("userId") Long userId);
+
+    Optional<UserFcmToken> findByUserIdAndFcmTokenAndDeletedAtIsNull(Long userId, String fcmToken);
 }

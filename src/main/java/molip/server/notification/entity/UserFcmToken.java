@@ -58,6 +58,13 @@ public class UserFcmToken extends BaseEntity {
         this.isActive = false;
     }
 
+    public void activate(LocalDateTime lastSeenAt, Platform platform) {
+
+        this.isActive = true;
+        this.lastSeenAt = lastSeenAt;
+        this.platform = platform;
+    }
+
     public void updateLastSeen(LocalDateTime lastSeenAt) {
 
         this.lastSeenAt = lastSeenAt;
