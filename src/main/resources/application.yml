@@ -61,7 +61,12 @@ management:
         enabled: true
   metrics:
     tags:
-      application: molip   # optional label
+      application: molip
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
 
 ai:
   planner:
