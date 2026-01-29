@@ -24,3 +24,14 @@ jwt:
   secret: test-secret-key-test-secret-key-test-secret-key-test-secret-key
   access-expiration-ms: 3600000
   refresh-expiration-ms: 86400000
+
+
+fcm:
+  enabled: false
+  project-id: test-id
+  credentials-json: test-json
+
+notification:
+  dispatch:
+    fixed-delay-ms: 60000
+    batch-size: 100

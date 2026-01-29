@@ -2,7 +2,7 @@ package molip.server.notification.event.handler;
 
 import lombok.RequiredArgsConstructor;
 import molip.server.notification.event.NotificationCreatedEvent;
-import molip.server.notification.service.NotificationCommandService;
+import molip.server.notification.facade.NotificationCommandFacade;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -10,11 +10,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class NotificationCreatedEventHandler {
 
-    private final NotificationCommandService notificationCommandService;
+    private final NotificationCommandFacade notificationCommandFacade;
 
     @TransactionalEventListener
     public void handleNotificationCreated(NotificationCreatedEvent event) {
 
-        notificationCommandService.createScheduleNotifications(event);
+        notificationCommandFacade.createScheduleNotifications(event);
     }
 }

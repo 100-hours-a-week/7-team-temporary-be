@@ -10,24 +10,28 @@ import molip.server.notification.entity.Notification;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.repository.NotificationRepository;
 import molip.server.user.entity.Users;
-import molip.server.user.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class NotificationCommandService {
+public class NotificationService {
+
+    private final NotificationRepository notificationRepository;
 
     private static final String CREATED_TITLE = "일정이 생성되었습니다.";
     private static final String REMINDER_TITLE = "일정이 곧 시작됩니다.";
 
-    private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository;
+    @Transactional
+    public List<Notification> getPendingNotifications(LocalDateTime now, int batchSize) {
+
+        return notificationRepository.findPendingNotifications(
+                NotificationStatus.PENDING, now, PageRequest.of(0, batchSize));
+    }
 
     @Transactional
-    public void createScheduleNotifications(NotificationCreatedEvent event) {
-
-        Users user = userRepository.getReferenceById(event.userId());
+    public void createScheduleNotifications(Users user, NotificationCreatedEvent event) {
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -58,5 +62,17 @@ public class NotificationCommandService {
         }
 
         notificationRepository.saveAll(notifications);
+    }
+
+    @Transactional
+    public void markSent(Notification notification, LocalDateTime sentAt) {
+
+        notification.markSent(sentAt);
+    }
+
+    @Transactional
+    public void markFailed(Notification notification) {
+
+        notification.markFailed();
     }
 }
