@@ -59,6 +59,21 @@ public enum ErrorCode {
     // Notification
     INVALID_REQUEST_NOTIFICATION_PAGE(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "페이지 정보가 올바르지 않습니다."),
+    FCM_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM_TOKEN_NOT_FOUND", "FCM 토큰을 찾을 수 없습니다."),
+
+    // AI Planner
+    PLANNER_BAD_REQUEST(HttpStatus.BAD_REQUEST, "PLANNER_BAD_REQUEST", "요청 형식이 올바르지 않습니다."),
+    PLANNER_CONFLICT(HttpStatus.CONFLICT, "PLANNER_CONFLICT", "요청 데이터가 서로 충돌합니다."),
+    PLANNER_VALIDATION_ERROR(
+            HttpStatus.UNPROCESSABLE_ENTITY, "PLANNER_VALIDATION_ERROR", "입력 값 검증에 실패했습니다."),
+    PLANNER_INTERNAL_SERVER_ERROR(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "PLANNER_INTERNAL_SERVER_ERROR",
+            "서버 처리 중 오류가 발생했습니다."),
+    PLANNER_SERVICE_UNAVAILABLE(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "PLANNER_SERVICE_UNAVAILABLE",
+            "현재 배치 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
 
     // Terms
     TERMS_NOT_FOUND(HttpStatus.NOT_FOUND, "TERMS_NOT_FOUND", "존재하지않는 약관에 대한 요청입니다."),
@@ -119,6 +134,10 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "자식은 적어도 2개 이상이여야합니다. titles를 2개 이상 입력해주세요"),
     INVALID_REQUEST_FIXED_SCHEDULE_SPLIT(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "고정 일정은 분할할 수 없습니다."),
+    INVALID_REQUEST_MANDATORY_TERMS_REQUIRED(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "필수 약관에 동의해야 합니다."),
+    INVALID_REQUEST_EXCLUDED_ONLY_FLEX(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "제외된 일정은 FLEX만 가능합니다."),
     FORBIDDEN_OWN_SCHEDULE_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 일정만 수정이 가능합니다."),
     SCHEDULE_NOT_FOUND_PARENT(HttpStatus.NOT_FOUND, "SCHEDULE_NOT_FOUND", "부모 일정을 찾을 수 없습니다."),
     CONFLICT_CHILDREN_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONFLICT", "이미 자식 일정이 존재하는 부모 일정입니다."),

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Deprecated
 public class ReflectionController implements ReflectionApi {
 
     @PostMapping("/day-plan/{dayPlanId}/reflection")

@@ -12,12 +12,14 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
+import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
 import molip.server.schedule.dto.response.ScheduleSummaryResponse;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
+import molip.server.schedule.facade.AiPlannerFacade;
 import molip.server.schedule.facade.DayPlanQueryFacade;
 import molip.server.schedule.facade.ScheduleQueryFacade;
 import molip.server.schedule.service.DayPlanService;
@@ -44,6 +46,7 @@ public class ScheduleController implements ScheduleApi {
     private final DayPlanService dayPlanService;
     private final DayPlanQueryFacade dayPlanQueryFacade;
     private final ScheduleQueryFacade scheduleQueryFacade;
+    private final AiPlannerFacade aiPlannerFacade;
 
     @PostMapping("/day-plan/{dayPlanId}/schedule")
     @Override
@@ -80,7 +83,14 @@ public class ScheduleController implements ScheduleApi {
                     @PathVariable Long dayPlanId,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        PageResponse<ScheduleSummaryResponse> response =
+                scheduleQueryFacade.getTodoSchedulesByDayPlan(userId, dayPlanId, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.DAY_TODO_LIST_SUCCESS, response));
     }
 
     @GetMapping("/day-plan/schedule")
@@ -91,8 +101,11 @@ public class ScheduleController implements ScheduleApi {
                     @RequestParam String date,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
+
         Long userId = Long.valueOf(userDetails.getUsername());
+
         DayPlan dayPlan = dayPlanQueryFacade.getOrCreateDayPlan(userId, date);
+
         DayPlanSchedulePageResponse response =
                 scheduleQueryFacade.getTimeAssignedSchedulesByDate(dayPlan.getId(), page, size);
 
@@ -125,11 +138,18 @@ public class ScheduleController implements ScheduleApi {
 
     @DeleteMapping("/schedule/{scheduleId}")
     @Override
-    public ResponseEntity<Void> deleteSchedule(@PathVariable Long scheduleId) {
+    public ResponseEntity<Void> deleteSchedule(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long scheduleId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        scheduleService.deleteSchedule(userId, scheduleId);
+
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/day-plan/{dayPlanId}/schedule/arrangement-jobs")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ScheduleArrangementJobResponse>> createArrangementJob(
             @PathVariable Long dayPlanId,
@@ -138,6 +158,7 @@ public class ScheduleController implements ScheduleApi {
     }
 
     @GetMapping("/schedule/arrangement-jobs/{jobId}")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ScheduleArrangementJobResponse>> getArrangementJob(
             @PathVariable Long jobId) {
@@ -176,21 +197,50 @@ public class ScheduleController implements ScheduleApi {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/schedules")
+    @GetMapping("/day-plan/{dayPlanId}/schedules")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>>
             getExcludedSchedules(
+                    @AuthenticationPrincipal UserDetails userDetails,
+                    @PathVariable Long dayPlanId,
                     @RequestParam String status,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        PageResponse<ScheduleSummaryResponse> response =
+                scheduleQueryFacade.getExcludedSchedules(userId, dayPlanId, status, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.EXCLUDED_SCHEDULE_LIST_SUCCESS, response));
     }
 
-    @PatchMapping("/schedule/{scheduleId}/assignment-status")
+    @PostMapping("/day-plan/{dayPlanId}/schedules/ai-arrangement")
+    @Override
+    public ResponseEntity<ServerResponse<ScheduleArrangeResponse>> arrangeSchedules(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long dayPlanId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ScheduleArrangeResponse response = aiPlannerFacade.arrangeSchedules(userId, dayPlanId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.AI_ARRANGEMENT_COMPLETED, response));
+    }
+
+    @PatchMapping("/schedule/{targetScheduleId}/assignment-status")
     @Override
     public ResponseEntity<Void> updateAssignmentStatus(
-            @PathVariable Long scheduleId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long targetScheduleId,
             @RequestBody ScheduleAssignmentStatusUpdateRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        scheduleService.updateAssignmentStatus(
+                userId, targetScheduleId, request.excludedScheduleId());
+
         return ResponseEntity.noContent().build();
     }
 }

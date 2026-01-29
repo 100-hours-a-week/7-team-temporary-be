@@ -9,10 +9,12 @@ import static org.mockito.Mockito.times;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.user.dto.request.TermsAgreementRequest;
 import molip.server.user.entity.Users;
 import molip.server.user.event.UserProfileImageLinkedEvent;
 import molip.server.user.repository.UserRepository;
@@ -46,6 +48,7 @@ class UserServiceTest {
         FocusTimeZone focusTimeZone = FocusTimeZone.MORNING;
         LocalTime dayEndTime = LocalTime.of(22, 40);
         String imageKey = "550e8400-e29b-41d4-a716-446655440000";
+        List<TermsAgreementRequest> terms = List.of(new TermsAgreementRequest(1L, true));
 
         given(userRepository.existsByEmailAndDeletedAtIsNull(email)).willReturn(false);
         given(passwordEncoder.encode(password)).willReturn("encoded");
@@ -58,7 +61,15 @@ class UserServiceTest {
 
         // when
         userService.registerUser(
-                email, password, nickname, gender, birth, focusTimeZone, dayEndTime, imageKey);
+                email,
+                password,
+                nickname,
+                gender,
+                birth,
+                focusTimeZone,
+                dayEndTime,
+                imageKey,
+                terms);
 
         // then
         then(eventPublisher).should(times(1)).publishEvent(any(UserProfileImageLinkedEvent.class));
@@ -86,7 +97,8 @@ class UserServiceTest {
                                         LocalDate.of(1990, 1, 1),
                                         FocusTimeZone.MORNING,
                                         LocalTime.of(22, 40),
-                                        null));
+                                        null,
+                                        List.of(new TermsAgreementRequest(1L, true))));
 
         // then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.EMAIL_CONFLICT);
@@ -112,7 +124,8 @@ class UserServiceTest {
                                         LocalDate.of(1990, 1, 1),
                                         FocusTimeZone.MORNING,
                                         LocalTime.of(22, 40),
-                                        null));
+                                        null,
+                                        List.of(new TermsAgreementRequest(1L, true))));
 
         // then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST_PASSWORD_TOO_LONG);
@@ -138,7 +151,8 @@ class UserServiceTest {
                                         LocalDate.of(1990, 1, 1),
                                         FocusTimeZone.MORNING,
                                         LocalTime.of(22, 40),
-                                        null));
+                                        null,
+                                        List.of(new TermsAgreementRequest(1L, true))));
 
         // then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST_PASSWORD_POLICY);

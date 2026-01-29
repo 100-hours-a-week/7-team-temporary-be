@@ -16,6 +16,7 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
+import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
@@ -63,12 +64,7 @@ public interface ScheduleApi {
         @ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content =
-                        @Content(
-                                schema =
-                                        @Schema(
-                                                implementation =
-                                                        DayPlanSchedulePageResponse.class))),
+                content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
                 description = "페이지 정보 오류",
@@ -171,7 +167,8 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> deleteSchedule(Long scheduleId);
+    ResponseEntity<Void> deleteSchedule(
+            @AuthenticationPrincipal UserDetails userDetails, Long scheduleId);
 
     @Operation(summary = "일정 AI 배치 Job 생성")
     @SecurityRequirement(name = "JWT")
@@ -325,7 +322,35 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>> getExcludedSchedules(
-            String status, int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long dayPlanId,
+            String status,
+            int page,
+            int size);
+
+    @Operation(summary = "AI 일정 배치")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "배치 성공",
+                content =
+                        @Content(schema = @Schema(implementation = ScheduleArrangeResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "일자 플랜 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "503",
+                description = "AI 엔진 장애/타임아웃",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ScheduleArrangeResponse>> arrangeSchedules(
+            @AuthenticationPrincipal UserDetails userDetails, Long dayPlanId);
 
     @Operation(summary = "일정 배정 상태 변경")
     @SecurityRequirement(name = "JWT")
@@ -353,5 +378,7 @@ public interface ScheduleApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<Void> updateAssignmentStatus(
-            Long scheduleId, ScheduleAssignmentStatusUpdateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            ScheduleAssignmentStatusUpdateRequest request);
 }

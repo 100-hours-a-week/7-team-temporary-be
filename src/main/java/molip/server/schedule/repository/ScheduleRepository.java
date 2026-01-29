@@ -1,7 +1,11 @@
 package molip.server.schedule.repository;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
+import molip.server.common.enums.AssignmentStatus;
+import molip.server.common.enums.ScheduleStatus;
 import molip.server.schedule.entity.Schedule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +44,13 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                     + "where s.id = :id and s.deletedAt is null")
     Optional<Schedule> findByIdWithDayPlanUser(@Param("id") Long id);
 
+    @Query(
+            "select s from Schedule s "
+                    + "join fetch s.dayPlan dp "
+                    + "join fetch dp.user u "
+                    + "where s.id = :id")
+    Optional<Schedule> findByIdWithDayPlanUserIncludeDeleted(@Param("id") Long id);
+
     boolean existsByParentScheduleIdAndDeletedAtIsNull(Long parentScheduleId);
 
     @Query(
@@ -48,12 +59,87 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                             + "left join fetch s.parentSchedule "
                             + "where s.dayPlan.id = :dayPlanId "
                             + "and s.deletedAt is null "
-                            + "and s.startAt is not null",
+                            + "and s.startAt is not null "
+                            + "and s.assignmentStatus <> AssignmentStatus.EXCLUDED",
             countQuery =
                     "select count(s) from Schedule s "
                             + "where s.dayPlan.id = :dayPlanId "
                             + "and s.deletedAt is null "
-                            + "and s.startAt is not null")
+                            + "and s.startAt is not null "
+                            + "and s.assignmentStatus <> AssignmentStatus.EXCLUDED")
     Page<Schedule> findTimeAssignedByDayPlanId(
             @Param("dayPlanId") Long dayPlanId, Pageable pageable);
+
+    @Query(
+            value =
+                    "select s from Schedule s "
+                            + "left join fetch s.parentSchedule "
+                            + "join s.dayPlan dp "
+                            + "join dp.user u "
+                            + "where u.id = :userId "
+                            + "and s.deletedAt is null "
+                            + "and s.assignmentStatus = :status "
+                            + "and dp.planDate between :fromDate and :toDate",
+            countQuery =
+                    "select count(s) from Schedule s "
+                            + "join s.dayPlan dp "
+                            + "join dp.user u "
+                            + "where u.id = :userId "
+                            + "and s.deletedAt is null "
+                            + "and s.assignmentStatus = :status "
+                            + "and dp.planDate between :fromDate and :toDate")
+    Page<Schedule> findExcludedSchedulesByUserAndDateRange(
+            @Param("userId") Long userId,
+            @Param("status") AssignmentStatus status,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            Pageable pageable);
+
+    @Query(
+            "select s from Schedule s "
+                    + "left join fetch s.parentSchedule "
+                    + "join s.dayPlan dp "
+                    + "join dp.user u "
+                    + "where u.id = :userId "
+                    + "and s.deletedAt is null "
+                    + "and s.status not in (:excludeStatuses) "
+                    + "and dp.planDate = :planDate "
+                    + "and s.assignmentStatus not in (:excludeAssignmentStatuses)")
+    List<Schedule> findSchedulesByUserAndPlanDateExcludingStatuses(
+            @Param("userId") Long userId,
+            @Param("planDate") LocalDate planDate,
+            @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses,
+            @Param("excludeAssignmentStatuses") List<AssignmentStatus> excludeAssignmentStatuses);
+
+    @Query(
+            "select s from Schedule s "
+                    + "left join fetch s.parentSchedule "
+                    + "join s.dayPlan dp "
+                    + "where dp.id = :dayPlanId "
+                    + "and s.deletedAt is null "
+                    + "and s.assignmentStatus in (:statuses) "
+                    + "and s.status not in (:excludeStatuses) "
+                    + "and (s.endAt is null or s.endAt >= :startArrangeTime)")
+    List<Schedule> findSchedulesByDayPlanIdAndStatusInExcludingStatusesAfterTime(
+            @Param("dayPlanId") Long dayPlanId,
+            @Param("statuses") List<AssignmentStatus> statuses,
+            @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses,
+            @Param("startArrangeTime") LocalTime startArrangeTime);
+
+    @Query(
+            "select s from Schedule s "
+                    + "left join fetch s.parentSchedule "
+                    + "join s.dayPlan dp "
+                    + "join dp.user u "
+                    + "where u.id = :userId "
+                    + "and s.deletedAt is null "
+                    + "and s.assignmentStatus in (:statuses) "
+                    + "and s.status not in (:excludeStatuses) "
+                    + "and dp.planDate between :fromDate and :toDate")
+    List<Schedule> findSchedulesByUserAndDateRangeAndStatusInExcludingStatuses(
+            @Param("userId") Long userId,
+            @Param("statuses") List<AssignmentStatus> statuses,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses);
 }

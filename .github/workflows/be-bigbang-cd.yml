@@ -126,6 +126,308 @@ jobs:
             # 오래된 릴리즈 정리 (최근 3개만 유지)
             ls -dt "${RELEASE_ROOT}"/* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
 
+      - name: Post-deploy k6 SLO check (staging)
+        shell: bash
+        env:
+          # Assumes HOST_STAGING is a public IP or resolvable hostname.
+          # If your staging uses HTTPS and a domain, change this to https://<domain>/api
+          BASE_URL: https://stg.molip.today/api
+        run: |
+          set -euo pipefail
+          echo "== Install k6 on runner =="
+          sudo apt-get update
+          sudo apt-get install -y gnupg ca-certificates curl
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+          TEST_DATE="$(date +%F)"
+          echo "BASE_URL=${BASE_URL}"
+          echo "TEST_DATE=${TEST_DATE}"
+          
+          echo "== Wait for backend to be ready (avoid 502 right after deploy) =="
+          # We expect one of: 200/400/401/403 when backend is reachable.
+          # We want to avoid 502/503/504 which usually indicates Nginx upstream not ready.
+          READY_URL="${BASE_URL}/day-plan/schedule?date=${TEST_DATE}&page=1&size=1"
+          for i in {1..30}; do
+            CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${READY_URL}" || echo "000")
+            if [ "${CODE}" = "200" ] || [ "${CODE}" = "400" ] || [ "${CODE}" = "401" ] || [ "${CODE}" = "403" ]; then
+              echo "Backend ready (http ${CODE})";
+              break
+            fi
+            echo "Not ready yet (http ${CODE}), retry..."
+            sleep 2
+          done
+          CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${READY_URL}" || echo "000")
+          if [ "${CODE}" = "502" ] || [ "${CODE}" = "503" ] || [ "${CODE}" = "504" ] || [ "${CODE}" = "000" ]; then
+            echo "FAIL: backend still not ready (http ${CODE}). Abort k6.";
+            exit 1;
+          fi
+
+
+          # Light-load SLO gate script (post-deploy verification)
+          cat > k6-slo-gate.js <<'K6'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          import { Rate, Trend } from 'k6/metrics';
+
+          // 1) Custom metrics (SLI)
+          const errorRate = new Rate('errors');
+          const signupSuccess = new Rate('signup_success');
+          const loginSuccess = new Rate('login_success');
+          const scheduleCreateSuccess = new Rate('schedule_create_success');
+          const scheduleQuerySuccess = new Rate('schedule_query_success');
+          const scheduleUpdateSuccess = new Rate('schedule_update_success');
+          const scheduleCompleteSuccess = new Rate('schedule_complete_success');
+
+          const scheduleQueryLatency = new Trend('schedule_query_latency');
+          const scheduleCreateLatency = new Trend('schedule_create_latency');
+          const scheduleUpdateLatency = new Trend('schedule_update_latency');
+          const scheduleCompleteLatency = new Trend('schedule_complete_latency');
+
+          // SLO PASS conditions (provided)
+          // - Availability >= 99.9% => errors rate <= 0.001
+          // - Query p95 < 300ms
+          // - Complete success >= 99.95% => rate >= 0.9995
+          // - Write p95 < 300ms (create/update)
+          export const options = {
+            stages: [
+              { duration: '20s', target: 2 },
+              { duration: '2m', target: 3 },
+              { duration: '20s', target: 0 },
+            ],
+            thresholds: {
+              errors: ['rate<=0.001'],
+              schedule_query_latency: ['p(95)<300'],
+              schedule_complete_success: ['rate>=0.9995'],
+              schedule_create_latency: ['p(95)<300'],
+              schedule_update_latency: ['p(95)<300'],
+              signup_success: ['rate>0.99'],
+              login_success: ['rate>0.99'],
+            },
+          };
+
+          const BASE_URL = __ENV.BASE_URL;
+          const DATE = __ENV.TEST_DATE;
+
+          export function setup() {
+            
+
+            const loginRes = http.post(
+              `${BASE_URL}/token`,
+              JSON.stringify({ email: 'email@email5.com', password: 'password@12A' }),
+              { headers: { 'Content-Type': 'application/json' }, tags: { name: 'login' } }
+            );
+
+            const loginOk = check(loginRes, { 'login 200': (r) => r.status === 200 });
+            loginSuccess.add(loginOk);
+            errorRate.add(!loginOk);
+            if (!loginOk) throw new Error(`Login failed: ${loginRes.status}`);
+
+            const accessToken = loginRes.json('data.accessToken');
+            if (!accessToken) throw new Error('No accessToken in login response');
+
+            const authHeaders = {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+              },
+            };
+
+            const firstGetRes = http.get(
+              `${BASE_URL}/day-plan/schedule?date=${DATE}&page=1&size=10`,
+              { ...authHeaders, tags: { name: 'schedule_query' } }
+            );
+
+            const firstQueryOk = check(firstGetRes, { 'initial query 200': (r) => r.status === 200 });
+            scheduleQuerySuccess.add(firstQueryOk);
+            scheduleQueryLatency.add(firstGetRes.timings.duration);
+            errorRate.add(!firstQueryOk);
+            if (!firstQueryOk) throw new Error(`Initial query failed: ${firstGetRes.status}`);
+
+            const dayPlanId = firstGetRes.json('data.dayPlanId');
+            if (!dayPlanId) throw new Error('No dayPlanId found');
+
+            return { accessToken, dayPlanId };
+          }
+
+          export default function (data) {
+            const { accessToken, dayPlanId } = data;
+
+            const auth = {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+              },
+            };
+
+            // (A) Query 2x
+            for (let i = 0; i < 2; i++) {
+              const res = http.get(
+                `${BASE_URL}/day-plan/schedule?date=${DATE}&page=1&size=10`,
+                { ...auth, tags: { name: 'schedule_query' } }
+              );
+
+              const ok = check(res, { 'schedule query 200': (r) => r.status === 200 });
+              scheduleQuerySuccess.add(ok);
+              scheduleQueryLatency.add(res.timings.duration);
+              errorRate.add(!ok);
+              sleep(0.2);
+            }
+
+            // (B) Writes occasionally
+            if (__ITER % 3 === 0) {
+              // Create: avoid time-overlap collisions by using a larger time window + retries.
+              // We do NOT count business-rule overlap (409 / overlap-message) as availability errors.
+              const slotLenMin = 5;           // shorter slots reduce overlap probability
+              const windowStartMin = 0 * 60;  // 00:00
+              const windowEndMin = 23 * 60 + 55; // 23:55
+              const windowSpan = (windowEndMin - windowStartMin) - slotLenMin;
+
+              function fmt(min) {
+                const h = String(Math.floor(min / 60)).padStart(2, '0');
+                const m = String(min % 60).padStart(2, '0');
+                return `${h}:${m}`;
+              }
+
+              function isOverlapBusinessError(res) {
+                const s = res?.status || 0;
+                if (s === 409) return true;
+                if (s === 400) {
+                  const b = (res.body || '').toLowerCase();
+                  // common patterns: "overlap", "conflict", Korean "겹"
+                  if (b.includes('overlap') || b.includes('conflict') || b.includes('겹')) return true;
+                }
+                return false;
+              }
+
+              const title = `k6 일정 ${__VU}-${__ITER}-${Date.now()}`;
+              let created = false;
+              let lastRes = null;
+
+              for (let attempt = 0; attempt < 10; attempt++) {
+                // Spread times by VU/ITER and add a time-based component so repeated runs don't collide.
+                const epochMin = Math.floor(Date.now() / 60000);
+                const offset = (epochMin + (__VU * 97) + (__ITER * 13) + (attempt * 7)) % windowSpan;
+                const startMin = windowStartMin + offset;
+                const endMin = startMin + slotLenMin;
+
+                const startAt = fmt(startMin);
+                const endAt = fmt(endMin);
+
+                lastRes = http.post(
+                  `${BASE_URL}/day-plan/${dayPlanId}/schedule`,
+                  JSON.stringify({
+                    title,
+                    type: 'FIXED',
+                    startAt,
+                    endAt,
+                    estimatedTimeRange: 'HOUR_1_TO_2',
+                    focusLevel: 5,
+                    isUrgent: false,
+                  }),
+                  { ...auth, tags: { name: 'schedule_create' } }
+                );
+
+                // Success
+                if (lastRes.status === 200 || lastRes.status === 201) {
+                  created = true;
+                  break;
+                }
+
+                // Overlap/business conflict: retry with different slot; do NOT count as availability error
+                if (isOverlapBusinessError(lastRes)) {
+                  console.warn(`create overlap/conflict (attempt ${attempt + 1}/10) status=${lastRes.status}`);
+                  sleep(0.1);
+                  continue;
+                }
+
+                // Other errors: treat as availability error and stop retrying
+                break;
+              }
+
+              const createOk = check(lastRes, {
+                'schedule create 2xx': (r) => r && (r.status === 200 || r.status === 201),
+              });
+
+              scheduleCreateSuccess.add(createOk);
+              if (createOk) {
+                scheduleCreateLatency.add(lastRes.timings.duration);
+              }
+
+              // Only count non-business failures as availability errors
+              if (!createOk && lastRes && !isOverlapBusinessError(lastRes)) {
+                console.error(`create failed status=${lastRes.status} body=${(lastRes.body || '').slice(0, 200)}`);
+                errorRate.add(true);
+              }
+
+              // If we never managed to create due to overlaps, log and continue without failing availability
+              if (!createOk && lastRes && isOverlapBusinessError(lastRes)) {
+                console.warn('create skipped due to repeated overlaps; not counted as availability error');
+              }
+
+              const listRes = http.get(
+                `${BASE_URL}/day-plan/schedule?date=${DATE}&page=1&size=10`,
+                { ...auth, tags: { name: 'schedule_query' } }
+              );
+
+              const listOk = check(listRes, { 'schedule list 200': (r) => r.status === 200 });
+              scheduleQuerySuccess.add(listOk);
+              scheduleQueryLatency.add(listRes.timings.duration);
+              errorRate.add(!listOk);
+
+              const schedule = listOk ? listRes.json('data.content.0') : null;
+              const scheduleId = schedule?.scheduleId;
+
+              if (scheduleId && __ITER % 6 === 0) {
+                const updatePayload = {
+                  title: `k6 변경 ${Date.now()}`,
+                  type: schedule.type,
+                  startAt: schedule.startAt,
+                  endAt: schedule.endAt,
+                  estimatedTimeRange: schedule.estimatedTimeRange,
+                  focusLevel: schedule.focusLevel,
+                  isUrgent: schedule.isUrgent,
+                };
+
+                const updateRes = http.put(
+                  `${BASE_URL}/schedule/${scheduleId}`,
+                  JSON.stringify(updatePayload),
+                  { ...auth, tags: { name: 'schedule_update' } }
+                );
+
+                const updateOk = check(updateRes, {
+                  'schedule update 2xx': (r) => r.status === 200 || r.status === 204,
+                });
+                scheduleUpdateSuccess.add(updateOk);
+                scheduleUpdateLatency.add(updateRes.timings.duration);
+                errorRate.add(!updateOk);
+
+                const completeRes = http.patch(
+                  `${BASE_URL}/schedule/${scheduleId}/status`,
+                  JSON.stringify({ status: 'TODO' }),
+                  { ...auth, tags: { name: 'schedule_complete' } }
+                );
+
+                const completeOk = check(completeRes, {
+                  'schedule complete 204': (r) => r.status === 204,
+                });
+                scheduleCompleteSuccess.add(completeOk);
+                scheduleCompleteLatency.add(completeRes.timings.duration);
+                errorRate.add(!completeOk);
+              }
+            }
+
+            sleep(0.6);
+          }
+          K6
+
+          # Run. If k6 thresholds fail, this step (and job) fails.
+          BASE_URL="${BASE_URL}" TEST_DATE="${TEST_DATE}" k6 run k6-slo-gate.js
+
+
+
 
   deploy_gcp:
     name: Deploy to GCP (main)
