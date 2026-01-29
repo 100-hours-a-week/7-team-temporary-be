@@ -66,4 +66,5 @@ management:
 ai:
   planner:
     base-url: ${AI_PLANNER_BASE_URL}
+    path: ${AI_PLANNER_PATH}
     timeout-ms: ${AI_PLANNER_TIMEOUT_MS}

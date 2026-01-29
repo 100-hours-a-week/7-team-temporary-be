@@ -28,4 +28,5 @@ jwt:
 ai:
   planner:
     base-url: http://localhost
+    path: /test/planner
     timeout-ms: 300000

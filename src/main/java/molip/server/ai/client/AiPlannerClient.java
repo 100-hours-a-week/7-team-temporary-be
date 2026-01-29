@@ -18,12 +18,16 @@ public class AiPlannerClient {
 
     private final RestTemplate restTemplate;
     private final String baseUrl;
+    private final String plannerPath;
 
     public AiPlannerClient(
-            RestTemplate restTemplate, @Value("${ai.planner.base-url}") String baseUrl) {
+            RestTemplate restTemplate,
+            @Value("${ai.planner.base-url}") String baseUrl,
+            @Value("${ai.planner.path}") String plannerPath) {
 
         this.restTemplate = restTemplate;
         this.baseUrl = baseUrl;
+        this.plannerPath = plannerPath;
     }
 
     public AiPlannerResponse requestPlanner(AiPlannerRequest request) {
@@ -31,7 +35,7 @@ public class AiPlannerClient {
         try {
             ResponseEntity<AiPlannerResponse> response =
                     restTemplate.exchange(
-                            baseUrl + "/ai/v1/planners",
+                            baseUrl + plannerPath,
                             HttpMethod.POST,
                             new HttpEntity<>(request),
                             AiPlannerResponse.class);
