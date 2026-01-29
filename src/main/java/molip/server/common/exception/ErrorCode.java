@@ -60,6 +60,20 @@ public enum ErrorCode {
     INVALID_REQUEST_NOTIFICATION_PAGE(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "페이지 정보가 올바르지 않습니다."),
 
+    // AI Planner
+    PLANNER_BAD_REQUEST(HttpStatus.BAD_REQUEST, "PLANNER_BAD_REQUEST", "요청 형식이 올바르지 않습니다."),
+    PLANNER_CONFLICT(HttpStatus.CONFLICT, "PLANNER_CONFLICT", "요청 데이터가 서로 충돌합니다."),
+    PLANNER_VALIDATION_ERROR(
+            HttpStatus.UNPROCESSABLE_ENTITY, "PLANNER_VALIDATION_ERROR", "입력 값 검증에 실패했습니다."),
+    PLANNER_INTERNAL_SERVER_ERROR(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "PLANNER_INTERNAL_SERVER_ERROR",
+            "서버 처리 중 오류가 발생했습니다."),
+    PLANNER_SERVICE_UNAVAILABLE(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "PLANNER_SERVICE_UNAVAILABLE",
+            "현재 배치 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
+
     // Terms
     TERMS_NOT_FOUND(HttpStatus.NOT_FOUND, "TERMS_NOT_FOUND", "존재하지않는 약관에 대한 요청입니다."),
     TERMS_SIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "TERMS_SIGN_NOT_FOUND", "약관 동의 내역을 찾을 수 없습니다."),

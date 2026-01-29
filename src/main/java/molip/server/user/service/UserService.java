@@ -90,6 +90,14 @@ public class UserService {
         user.modifyUserDetails(gender, birth, focusTimeZone, dayEndTime, nickname);
     }
 
+    @Transactional(readOnly = true)
+    public Users getUser(Long userId) {
+
+        return userRepository
+                .findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+    }
+
     @Transactional
     public void modifyPassword(Long userId, String passwowrd) {
         validatePassword(passwowrd);

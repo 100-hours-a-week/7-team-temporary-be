@@ -133,6 +133,20 @@ public class Schedule extends BaseEntity {
         this.endAt = endAt;
     }
 
+    public void applyAiResult(
+            AssignedBy assignedBy,
+            AssignmentStatus assignmentStatus,
+            String title,
+            LocalTime startAt,
+            LocalTime endAt) {
+
+        this.assignedBy = assignedBy;
+        this.assignmentStatus = assignmentStatus;
+        this.title = title;
+        this.startAt = startAt;
+        this.endAt = endAt;
+    }
+
     public void moveDayPlan(DayPlan dayPlan) {
         this.dayPlan = dayPlan;
     }

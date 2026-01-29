@@ -96,21 +96,35 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             Pageable pageable);
 
     @Query(
-            value =
-                    "select s from Schedule s "
-                            + "left join fetch s.parentSchedule "
-                            + "join s.dayPlan dp "
-                            + "join dp.user u "
-                            + "where u.id = :userId "
-                            + "and s.deletedAt is null "
-                            + "and s.status <> :splitParentStatus "
-                            + "and dp.planDate = :planDate "
-                            + "and s.assignmentStatus <> :excludedStatus")
-    List<Schedule> findTodoListSchedulesByUserAndPlanDateExcludingStatus(
+            "select s from Schedule s "
+                    + "left join fetch s.parentSchedule "
+                    + "join s.dayPlan dp "
+                    + "join dp.user u "
+                    + "where u.id = :userId "
+                    + "and s.deletedAt is null "
+                    + "and s.status not in (:excludeStatuses) "
+                    + "and dp.planDate = :planDate "
+                    + "and s.assignmentStatus not in (:excludeAssignmentStatuses)")
+    List<Schedule> findSchedulesByUserAndPlanDateExcludingStatuses(
             @Param("userId") Long userId,
             @Param("planDate") LocalDate planDate,
-            @Param("excludedStatus") AssignmentStatus excludedStatus,
-            @Param("splitParentStatus") ScheduleStatus splitParentStatus);
+            @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses,
+            @Param("excludeAssignmentStatuses") List<AssignmentStatus> excludeAssignmentStatuses);
+
+    @Query(
+            "select s from Schedule s "
+                    + "left join fetch s.parentSchedule "
+                    + "join s.dayPlan dp "
+                    + "where dp.id = :dayPlanId "
+                    + "and s.deletedAt is null "
+                    + "and s.assignmentStatus in (:statuses) "
+                    + "and s.status not in (:excludeStatuses) "
+                    + "and (s.endAt is null or s.endAt >= :startArrangeTime)")
+    List<Schedule> findSchedulesByDayPlanIdAndStatusInExcludingStatusesAfterTime(
+            @Param("dayPlanId") Long dayPlanId,
+            @Param("statuses") List<AssignmentStatus> statuses,
+            @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses,
+            @Param("startArrangeTime") LocalTime startArrangeTime);
 
     @Query(
             "select s from Schedule s "
@@ -119,13 +133,13 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                     + "join dp.user u "
                     + "where u.id = :userId "
                     + "and s.deletedAt is null "
-                    + "and s.status <> :splitParentStatus "
-                    + "and dp.planDate between :fromDate and :toDate "
-                    + "and s.assignmentStatus = :excludedStatus")
-    List<Schedule> findTodoListExcludedSchedulesByUserAndDateRange(
+                    + "and s.assignmentStatus in (:statuses) "
+                    + "and s.status not in (:excludeStatuses) "
+                    + "and dp.planDate between :fromDate and :toDate")
+    List<Schedule> findSchedulesByUserAndDateRangeAndStatusInExcludingStatuses(
             @Param("userId") Long userId,
+            @Param("statuses") List<AssignmentStatus> statuses,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
-            @Param("excludedStatus") AssignmentStatus excludedStatus,
-            @Param("splitParentStatus") ScheduleStatus splitParentStatus);
+            @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses);
 }
