@@ -468,7 +468,6 @@ public class ScheduleService {
                         schedule.getStartAt()));
     }
 
-
     private void validatePage(int page, int size) {
         if (page < 1 || size < 1) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
