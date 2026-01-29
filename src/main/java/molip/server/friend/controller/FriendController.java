@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Deprecated
 public class FriendController implements FriendApi {
 
     @PostMapping("/friend-requests/{targetUserId}")

@@ -63,12 +63,7 @@ public interface ScheduleApi {
         @ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content =
-                        @Content(
-                                schema =
-                                        @Schema(
-                                                implementation =
-                                                        DayPlanSchedulePageResponse.class))),
+                content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
                 description = "페이지 정보 오류",

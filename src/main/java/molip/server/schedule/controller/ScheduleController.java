@@ -80,7 +80,14 @@ public class ScheduleController implements ScheduleApi {
                     @PathVariable Long dayPlanId,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        PageResponse<ScheduleSummaryResponse> response =
+                scheduleQueryFacade.getTodoSchedulesByDayPlan(userId, dayPlanId, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.DAY_TODO_LIST_SUCCESS, response));
     }
 
     @GetMapping("/day-plan/schedule")
@@ -139,6 +146,7 @@ public class ScheduleController implements ScheduleApi {
     }
 
     @PostMapping("/day-plan/{dayPlanId}/schedule/arrangement-jobs")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ScheduleArrangementJobResponse>> createArrangementJob(
             @PathVariable Long dayPlanId,
@@ -147,6 +155,7 @@ public class ScheduleController implements ScheduleApi {
     }
 
     @GetMapping("/schedule/arrangement-jobs/{jobId}")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ScheduleArrangementJobResponse>> getArrangementJob(
             @PathVariable Long jobId) {
