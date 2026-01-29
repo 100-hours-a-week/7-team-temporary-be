@@ -68,3 +68,14 @@ ai:
     base-url: ${AI_PLANNER_BASE_URL}
     path: ${AI_PLANNER_PATH}
     timeout-ms: ${AI_PLANNER_TIMEOUT_MS}
+
+
+fcm:
+  enabled: ${FCM_ENABLED}
+  project-id: ${FCM_PROJECT_ID}
+  credentials-json: ${FCM_CREDENTIALS_JSON}
+
+notification:
+  dispatch:
+    fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
+    batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}

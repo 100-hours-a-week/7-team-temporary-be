@@ -11,6 +11,8 @@ import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.notification.dto.response.NotificationItemResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Notification", description = "알림 API")
 public interface NotificationApi {
@@ -36,5 +38,5 @@ public interface NotificationApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<NotificationItemResponse>>> getNotifications(
-            int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 }
