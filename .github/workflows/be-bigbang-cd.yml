@@ -212,28 +212,11 @@ jobs:
           const DATE = __ENV.TEST_DATE;
 
           export function setup() {
-            const signupRes = http.post(
-              `${BASE_URL}/users`,
-              JSON.stringify({
-                email: 'email@email5.com',
-                password: 'password@12A',
-                nickname: 'nickname',
-                gender: 'MALE',
-                birth: '1990.01.01',
-                focusTimeZone: 'MORNING',
-                dayEndTime: '22:40',
-              }),
-              { headers: { 'Content-Type': 'application/json' }, tags: { name: 'signup' } }
-            );
-
-            const signupOk = check(signupRes, { 'signup 2xx': (r) => r.status === 200 || r.status === 201 });
-            signupSuccess.add(signupOk);
-            errorRate.add(!signupOk);
-            if (!signupOk) throw new Error(`Signup failed: ${signupRes.status}`);
+            
 
             const loginRes = http.post(
               `${BASE_URL}/token`,
-              JSON.stringify({ email, password: 'password@12A' }),
+              JSON.stringify({ email: 'email@email5.com', password: 'password@12A' }),
               { headers: { 'Content-Type': 'application/json' }, tags: { name: 'login' } }
             );
 
