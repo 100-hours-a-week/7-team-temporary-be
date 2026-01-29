@@ -124,11 +124,29 @@ public class Schedule extends BaseEntity {
         this.status = status;
     }
 
+    public void updateType(ScheduleType type) {
+        this.type = type;
+    }
+
     public void updateAssignmentStatus(AssignmentStatus status) {
         this.assignmentStatus = status;
     }
 
     public void updateTime(LocalTime startAt, LocalTime endAt) {
+        this.startAt = startAt;
+        this.endAt = endAt;
+    }
+
+    public void applyAiResult(
+            AssignedBy assignedBy,
+            AssignmentStatus assignmentStatus,
+            String title,
+            LocalTime startAt,
+            LocalTime endAt) {
+
+        this.assignedBy = assignedBy;
+        this.assignmentStatus = assignmentStatus;
+        this.title = title;
         this.startAt = startAt;
         this.endAt = endAt;
     }

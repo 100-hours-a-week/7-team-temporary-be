@@ -1,6 +1,8 @@
 server:
   port: 8080
   forward-headers-strategy: framework
+  tomcat:
+    connection-timeout: 5m
 
 spring:
   jpa:
@@ -60,6 +62,13 @@ management:
   metrics:
     tags:
       application: molip   # optional label
+
+ai:
+  planner:
+    base-url: ${AI_PLANNER_BASE_URL}
+    path: ${AI_PLANNER_PATH}
+    timeout-ms: ${AI_PLANNER_TIMEOUT_MS}
+
 
 fcm:
   enabled: ${FCM_ENABLED}

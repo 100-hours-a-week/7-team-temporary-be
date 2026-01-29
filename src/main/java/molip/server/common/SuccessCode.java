@@ -40,6 +40,7 @@ public enum SuccessCode {
     ARRANGEMENT_JOB_FETCH_SUCCESS("SUCCESS", "AI 배치 작업 조회 성공"),
     ARRANGEMENT_JOB_RUNNING_SUCCESS("SUCCESS", "AI 배치 작업을 성공적으로 조회했습니다."),
     ARRANGEMENT_JOB_COMPLETED("SUCCESS", "AI 배치가 완료되었습니다."),
+    AI_ARRANGEMENT_COMPLETED("SUCCESS", "AI 배치가 완료되었습니다."),
     SCHEDULE_CHILDREN_CREATED("SUCCESS", "자식 일정이 생성되었습니다."),
     EXCLUDED_SCHEDULE_LIST_SUCCESS("SUCCESS", "제외된 일정 목록을 성공적으로 조회했습니다."),
 
