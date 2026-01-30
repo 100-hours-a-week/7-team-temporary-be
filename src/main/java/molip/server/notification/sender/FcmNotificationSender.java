@@ -3,6 +3,7 @@ package molip.server.notification.sender;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.MulticastMessage;
+import com.google.firebase.messaging.Notification;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,11 +23,12 @@ public class FcmNotificationSender implements NotificationSender {
             return;
         }
 
+        Notification notification = Notification.builder().setTitle(title).setBody(content).build();
+
         MulticastMessage message =
                 MulticastMessage.builder()
                         .addAllTokens(tokens)
-                        .putData("title", title)
-                        .putData("content", content)
+                        .setNotification(notification)
                         .build();
 
         try {
