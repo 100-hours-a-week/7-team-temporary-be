@@ -625,3 +625,49 @@ jobs:
           
           echo "== DEPLOY SUCCESS =="
           EOSSH
+
+  notify:
+    name: Notify CD result
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - deploy-staging
+      - deploy_gcp
+    if: always()
+
+    steps:
+      - name: Send Discord Webhook
+        run: |
+          ACTOR="${{ github.actor }}"
+          SHA="${{ github.sha }}"
+          SHORT_SHA=$(echo "$SHA" | cut -c1-7)
+          
+          RESULT="success"
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            RESULT="failure"
+          fi
+          
+          if [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            if [ "${{ needs.deploy-staging.result }}" != "success" ]; then
+              RESULT="failure"
+            fi
+          fi
+          
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            if [ "${{ needs.deploy_gcp.result }}" != "success" ]; then
+              RESULT="failure"
+            fi
+          fi
+          
+          if [ "$RESULT" = "success" ]; then
+            STATUS="✅ CD 성공"
+          else
+            STATUS="🚨 CD 실패"
+          fi
+          
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"content\": \"$STATUS\nRepo: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nActor: $ACTOR\nCommit: $SHORT_SHA\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+            }" || true

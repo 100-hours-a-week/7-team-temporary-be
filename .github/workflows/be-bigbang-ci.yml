@@ -95,3 +95,33 @@ jobs:
         with:
           name: coverage-report
           path: backend/build/reports/jacoco/test/html/
+
+
+      # 디스코드 알림
+      - name: Notify CI result (PR + push)
+        if: always()
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PREFIX="PR CI"
+            CONTEXT="PR #${{ github.event.pull_request.number }} (${{ github.head_ref }} → ${{ github.base_ref }})"
+          else
+            PREFIX="CI"
+            CONTEXT="Branch: ${{ github.ref_name }}"
+          fi
+
+          ACTOR="${{ github.actor }}"
+          SHA="${{ github.sha }}"
+          SHORT_SHA=$(echo "$SHA" | cut -c1-7)
+
+          if [ "${{ job.status }}" = "success" ]; then
+            STATUS="✅ ${PREFIX} 성공"
+          else
+            STATUS="🚨 ${PREFIX} 실패"
+          fi
+
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"content\": \"$STATUS\nRepo: ${{ github.repository }}\n$CONTEXT\nActor: $ACTOR\nCommit: $SHORT_SHA\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+            }" || true
+
