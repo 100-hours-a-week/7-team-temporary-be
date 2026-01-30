@@ -28,7 +28,8 @@ public class FcmNotificationSender implements NotificationSender {
         MulticastMessage message =
                 MulticastMessage.builder()
                         .addAllTokens(tokens)
-                        .setNotification(notification)
+                        .putData("title", title)
+                        .putData("content", content)
                         .build();
 
         try {
