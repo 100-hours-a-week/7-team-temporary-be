@@ -26,10 +26,10 @@ public class FcmNotificationSender implements NotificationSender {
         Notification notification = Notification.builder().setTitle(title).setBody(content).build();
 
         MulticastMessage message =
-            MulticastMessage.builder()
-                .addAllTokens(tokens)
-                .setNotification(notification)
-                .build();
+                MulticastMessage.builder()
+                        .addAllTokens(tokens)
+                        .setNotification(notification)
+                        .build();
 
         try {
             firebaseMessaging.sendEachForMulticast(message);
