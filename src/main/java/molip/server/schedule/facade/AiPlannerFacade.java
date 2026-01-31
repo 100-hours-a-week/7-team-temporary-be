@@ -1,5 +1,6 @@
 package molip.server.schedule.facade;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -42,7 +43,7 @@ public class AiPlannerFacade {
         DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
         Users user = userService.getUser(userId);
 
-        LocalDateTime startArrangeDateTime = LocalDateTime.now().plusMinutes(10);
+        LocalDateTime startArrangeDateTime = resolveStartArrangeDateTime(dayPlan);
 
         List<Schedule> schedules =
                 scheduleService.getAiInputSchedules(userId, dayPlan, startArrangeDateTime);
@@ -76,6 +77,16 @@ public class AiPlannerFacade {
                         .filter(schedule -> schedule.getStatus() != ScheduleStatus.SPLIT_PARENT)
                         .map(this::toResultResponse)
                         .toList());
+    }
+
+    private LocalDateTime resolveStartArrangeDateTime(DayPlan dayPlan) {
+
+        LocalDate today = LocalDate.now();
+        if (!dayPlan.getPlanDate().equals(today)) {
+            return LocalDateTime.of(dayPlan.getPlanDate(), LocalTime.of(9, 0));
+        }
+
+        return LocalDateTime.now().plusMinutes(10);
     }
 
     private AiPlannerTaskRequest toAiTaskRequest(Schedule schedule) {
