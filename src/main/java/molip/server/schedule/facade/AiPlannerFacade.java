@@ -80,8 +80,12 @@ public class AiPlannerFacade {
 
     private AiPlannerTaskRequest toAiTaskRequest(Schedule schedule) {
 
+        Long parentScheduleId =
+                schedule.getParentSchedule() == null ? null : schedule.getParentSchedule().getId();
+
         return new AiPlannerTaskRequest(
                 schedule.getId(),
+                parentScheduleId,
                 schedule.getDayPlan().getId(),
                 schedule.getTitle(),
                 schedule.getType().name(),
