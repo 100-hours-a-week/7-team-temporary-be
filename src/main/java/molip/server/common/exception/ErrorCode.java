@@ -139,6 +139,8 @@ public enum ErrorCode {
     INVALID_REQUEST_EXCLUDED_ONLY_FLEX(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "제외된 일정은 FLEX만 가능합니다."),
     FORBIDDEN_OWN_SCHEDULE_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 일정만 수정이 가능합니다."),
+    INVALID_REQUEST_DUPLICATED_PARENT_SCHEDULE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "부모 일정 ID가 중복되었습니다."),
     SCHEDULE_NOT_FOUND_PARENT(HttpStatus.NOT_FOUND, "SCHEDULE_NOT_FOUND", "부모 일정을 찾을 수 없습니다."),
     CONFLICT_CHILDREN_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONFLICT", "이미 자식 일정이 존재하는 부모 일정입니다."),
     INVALID_REQUEST_STATUS_CHECK(

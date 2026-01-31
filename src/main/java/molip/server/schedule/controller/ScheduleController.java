@@ -14,13 +14,14 @@ import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
-import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
+import molip.server.schedule.dto.response.ScheduleChildrenCreateGroupResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
 import molip.server.schedule.dto.response.ScheduleSummaryResponse;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.facade.AiPlannerFacade;
 import molip.server.schedule.facade.DayPlanQueryFacade;
+import molip.server.schedule.facade.ScheduleCommandFacade;
 import molip.server.schedule.facade.ScheduleQueryFacade;
 import molip.server.schedule.service.DayPlanService;
 import molip.server.schedule.service.ScheduleService;
@@ -46,6 +47,7 @@ public class ScheduleController implements ScheduleApi {
     private final DayPlanService dayPlanService;
     private final DayPlanQueryFacade dayPlanQueryFacade;
     private final ScheduleQueryFacade scheduleQueryFacade;
+    private final ScheduleCommandFacade scheduleCommandFacade;
     private final AiPlannerFacade aiPlannerFacade;
 
     @PostMapping("/day-plan/{dayPlanId}/schedule")
@@ -165,22 +167,19 @@ public class ScheduleController implements ScheduleApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
-    @PostMapping("/schedule/{scheduleId}/children")
+    @PostMapping("/schedule/children")
     @Override
-    public ResponseEntity<ServerResponse<ScheduleChildrenCreateResponse>> createChildren(
+    public ResponseEntity<ServerResponse<List<ScheduleChildrenCreateGroupResponse>>> createChildren(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long scheduleId,
             @RequestBody ScheduleChildrenCreateRequest request) {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        List<Schedule> children =
-                scheduleService.createChildren(userId, scheduleId, request.titles());
+        List<ScheduleChildrenCreateGroupResponse> schedules =
+                scheduleCommandFacade.createChildrenBatch(userId, request.schedules());
 
         return ResponseEntity.ok(
-                ServerResponse.success(
-                        SuccessCode.SCHEDULE_CHILDREN_CREATED,
-                        ScheduleChildrenCreateResponse.from(children)));
+                ServerResponse.success(SuccessCode.SCHEDULE_CHILDREN_CREATED, schedules));
     }
 
     @PatchMapping("/schedule/{scheduleId}/status")

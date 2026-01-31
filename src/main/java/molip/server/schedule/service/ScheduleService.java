@@ -145,12 +145,8 @@ public class ScheduleService {
                         .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND_PARENT));
 
         validateOwnership(userId, parentSchedule);
-
         validateSplitAllowed(parentSchedule);
-
-        if (scheduleRepository.existsByParentScheduleIdAndDeletedAtIsNull(parentScheduleId)) {
-            throw new BaseException(ErrorCode.CONFLICT_CHILDREN_ALREADY_EXISTS);
-        }
+        validateChildrenNotExists(parentScheduleId);
 
         parentSchedule.updateStatus(ScheduleStatus.SPLIT_PARENT);
 
@@ -512,6 +508,13 @@ public class ScheduleService {
     private void validateSplitAllowed(Schedule parentSchedule) {
         if (parentSchedule.getType() == ScheduleType.FIXED) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_FIXED_SCHEDULE_SPLIT);
+        }
+    }
+
+    private void validateChildrenNotExists(Long parentScheduleId) {
+
+        if (scheduleRepository.existsByParentScheduleIdAndDeletedAtIsNull(parentScheduleId)) {
+            throw new BaseException(ErrorCode.CONFLICT_CHILDREN_ALREADY_EXISTS);
         }
     }
 
