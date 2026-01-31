@@ -2,6 +2,7 @@ package molip.server.ai.dto.request;
 
 public record AiPlannerTaskRequest(
         Long taskId,
+        Long parentScheduleId,
         Long dayPlanId,
         String title,
         String type,
