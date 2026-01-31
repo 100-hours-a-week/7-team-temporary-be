@@ -260,7 +260,7 @@ public class ScheduleService {
         validateCurrentScheduleParams(dayPlanId, currentTime);
 
         List<ScheduleStatus> excludeStatuses =
-                List.of(ScheduleStatus.SPLIT_PARENT, ScheduleStatus.DONE);
+                List.of(ScheduleStatus.SPLIT_PARENT);
 
         List<AssignmentStatus> excludeAssignmentStatuses = List.of(AssignmentStatus.EXCLUDED);
 
