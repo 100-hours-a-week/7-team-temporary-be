@@ -29,5 +29,5 @@ public record SignUpRequest(
         @Schema(
                         description = "약관 동의 목록",
                         example =
-                                "[{\"termsId\":1,\"isAgreed\":true},{\"termsId\":2,\"isAgreed\":false}]")
+                                "[{\"termsId\":1,\"isAgreed\":true},{\"termsId\":2,\"isAgreed\":true},{\"termsId\":3,\"isAgreed\":false}]")
                 List<TermsAgreementRequest> terms) {}

@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import molip.server.ai.dto.response.AiPlannerChildResponse;
 import molip.server.ai.dto.response.AiPlannerResultResponse;
 import molip.server.common.enums.AssignedBy;
@@ -145,12 +146,8 @@ public class ScheduleService {
                         .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND_PARENT));
 
         validateOwnership(userId, parentSchedule);
-
         validateSplitAllowed(parentSchedule);
-
-        if (scheduleRepository.existsByParentScheduleIdAndDeletedAtIsNull(parentScheduleId)) {
-            throw new BaseException(ErrorCode.CONFLICT_CHILDREN_ALREADY_EXISTS);
-        }
+        validateChildrenNotExists(parentScheduleId);
 
         parentSchedule.updateStatus(ScheduleStatus.SPLIT_PARENT);
 
@@ -255,6 +252,19 @@ public class ScheduleService {
                         List.of(ScheduleStatus.SPLIT_PARENT, ScheduleStatus.DONE));
 
         return mergeSchedules(todaySchedules, yesterdayExcludedSchedules);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Schedule> getCurrentSchedule(Long dayPlanId, LocalTime currentTime) {
+
+        validateCurrentScheduleParams(dayPlanId, currentTime);
+
+        List<ScheduleStatus> excludeStatuses = List.of(ScheduleStatus.SPLIT_PARENT);
+
+        List<AssignmentStatus> excludeAssignmentStatuses = List.of(AssignmentStatus.EXCLUDED);
+
+        return scheduleRepository.findCurrentSchedule(
+                dayPlanId, currentTime, excludeStatuses, excludeAssignmentStatuses);
     }
 
     @Transactional
@@ -515,9 +525,23 @@ public class ScheduleService {
         }
     }
 
+    private void validateChildrenNotExists(Long parentScheduleId) {
+
+        if (scheduleRepository.existsByParentScheduleIdAndDeletedAtIsNull(parentScheduleId)) {
+            throw new BaseException(ErrorCode.CONFLICT_CHILDREN_ALREADY_EXISTS);
+        }
+    }
+
     private void validateExcludedStatus(AssignmentStatus status) {
         if (status == null || status != AssignmentStatus.EXCLUDED) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+    }
+
+    private void validateCurrentScheduleParams(Long dayPlanId, LocalTime currentTime) {
+
+        if (dayPlanId == null || currentTime == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
         }
     }
 

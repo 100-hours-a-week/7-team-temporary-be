@@ -2,11 +2,14 @@ package molip.server.schedule.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.schedule.dto.request.ScheduleArrangementJobCreateRequest;
@@ -18,7 +21,7 @@ import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
-import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
+import molip.server.schedule.dto.response.ScheduleChildrenCreateGroupResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
 import molip.server.schedule.dto.response.ScheduleSummaryResponse;
 import org.springframework.http.ResponseEntity;
@@ -241,13 +244,33 @@ public interface ScheduleApi {
                 description = "생성 성공",
                 content =
                         @Content(
-                                schema =
-                                        @Schema(
-                                                implementation =
-                                                        ScheduleChildrenCreateResponse.class))),
+                                schema = @Schema(implementation = ServerResponse.class),
+                                examples =
+                                        @ExampleObject(
+                                                value =
+                                                        "{\n"
+                                                                + "  \"status\": \"SUCCESS\",\n"
+                                                                + "  \"message\": \"자식 일정이 생성되었습니다.\",\n"
+                                                                + "  \"data\": [\n"
+                                                                + "    {\n"
+                                                                + "      \"parentScheduleId\": 3,\n"
+                                                                + "      \"children\": [\n"
+                                                                + "        {\"scheduleId\": 101, \"title\": \"API 설계하기\"},\n"
+                                                                + "        {\"scheduleId\": 102, \"title\": \"ERD짜기\"}\n"
+                                                                + "      ]\n"
+                                                                + "    },\n"
+                                                                + "    {\n"
+                                                                + "      \"parentScheduleId\": 5,\n"
+                                                                + "      \"children\": [\n"
+                                                                + "        {\"scheduleId\": 201, \"title\": \"API 문서화\"},\n"
+                                                                + "        {\"scheduleId\": 202, \"title\": \"테스트 작성\"}\n"
+                                                                + "      ]\n"
+                                                                + "    }\n"
+                                                                + "  ]\n"
+                                                                + "}"))),
         @ApiResponse(
                 responseCode = "400",
-                description = "자식 일정 조건 오류",
+                description = "자식 일정 조건 오류/요청 값 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
                 responseCode = "401",
@@ -270,10 +293,19 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ScheduleChildrenCreateResponse>> createChildren(
+    ResponseEntity<ServerResponse<List<ScheduleChildrenCreateGroupResponse>>> createChildren(
             @AuthenticationPrincipal UserDetails userDetails,
-            Long scheduleId,
-            ScheduleChildrenCreateRequest request);
+            @RequestBody(
+                            description = "부모 일정별 자식 일정 생성 요청",
+                            required = true,
+                            content =
+                                    @Content(
+                                            schema =
+                                                    @Schema(
+                                                            implementation =
+                                                                    ScheduleChildrenCreateRequest
+                                                                            .class)))
+                    ScheduleChildrenCreateRequest request);
 
     @Operation(summary = "일정 처리 상태 변경")
     @SecurityRequirement(name = "JWT")
@@ -327,6 +359,48 @@ public interface ScheduleApi {
             String status,
             int page,
             int size);
+
+    @Operation(summary = "현재 진행 중인 일정 조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content =
+                        @Content(
+                                schema = @Schema(implementation = ServerResponse.class),
+                                examples =
+                                        @ExampleObject(
+                                                value =
+                                                        "{\n"
+                                                                + "  \"status\": \"SUCCESS\",\n"
+                                                                + "  \"message\": \"현재 일정 조회에 성공했습니다.\",\n"
+                                                                + "  \"data\": {\n"
+                                                                + "    \"scheduleId\": 3,\n"
+                                                                + "    \"parentTitle\": null,\n"
+                                                                + "    \"title\": \"알고리즘 문제 풀기\",\n"
+                                                                + "    \"status\": \"TODO\",\n"
+                                                                + "    \"type\": \"FLEX\",\n"
+                                                                + "    \"assignedBy\": \"AI\",\n"
+                                                                + "    \"assignmentStatus\": \"ASSIGNED\",\n"
+                                                                + "    \"startAt\": \"15:00\",\n"
+                                                                + "    \"endAt\": \"16:30\",\n"
+                                                                + "    \"estimatedTimeRange\": \"HOUR_1_TO_2\",\n"
+                                                                + "    \"focusLevel\": 4,\n"
+                                                                + "    \"isUrgent\": true\n"
+                                                                + "  }\n"
+                                                                + "}"))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ScheduleSummaryResponse>> getCurrentSchedule(
+            @AuthenticationPrincipal UserDetails userDetails);
 
     @Operation(summary = "AI 일정 배치")
     @SecurityRequirement(name = "JWT")
