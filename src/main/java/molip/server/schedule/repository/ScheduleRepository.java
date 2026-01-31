@@ -142,4 +142,22 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses);
+
+    @Query(
+            "select s from Schedule s "
+                    + "left join fetch s.parentSchedule "
+                    + "join s.dayPlan dp "
+                    + "where dp.id = :dayPlanId "
+                    + "and s.deletedAt is null "
+                    + "and s.startAt is not null "
+                    + "and s.endAt is not null "
+                    + "and s.startAt <= :currentTime "
+                    + "and s.endAt > :currentTime "
+                    + "and s.status not in (:excludeStatuses) "
+                    + "and s.assignmentStatus not in (:excludeAssignmentStatuses) ")
+    Optional<Schedule> findCurrentSchedule(
+            @Param("dayPlanId") Long dayPlanId,
+            @Param("currentTime") LocalTime currentTime,
+            @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses,
+            @Param("excludeAssignmentStatuses") List<AssignmentStatus> excludeAssignmentStatuses);
 }

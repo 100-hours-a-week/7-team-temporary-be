@@ -360,6 +360,48 @@ public interface ScheduleApi {
             int page,
             int size);
 
+    @Operation(summary = "현재 진행 중인 일정 조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content =
+                        @Content(
+                                schema = @Schema(implementation = ServerResponse.class),
+                                examples =
+                                        @ExampleObject(
+                                                value =
+                                                        "{\n"
+                                                                + "  \"status\": \"SUCCESS\",\n"
+                                                                + "  \"message\": \"현재 일정 조회에 성공했습니다.\",\n"
+                                                                + "  \"data\": {\n"
+                                                                + "    \"scheduleId\": 3,\n"
+                                                                + "    \"parentTitle\": null,\n"
+                                                                + "    \"title\": \"알고리즘 문제 풀기\",\n"
+                                                                + "    \"status\": \"TODO\",\n"
+                                                                + "    \"type\": \"FLEX\",\n"
+                                                                + "    \"assignedBy\": \"AI\",\n"
+                                                                + "    \"assignmentStatus\": \"ASSIGNED\",\n"
+                                                                + "    \"startAt\": \"15:00\",\n"
+                                                                + "    \"endAt\": \"16:30\",\n"
+                                                                + "    \"estimatedTimeRange\": \"HOUR_1_TO_2\",\n"
+                                                                + "    \"focusLevel\": 4,\n"
+                                                                + "    \"isUrgent\": true\n"
+                                                                + "  }\n"
+                                                                + "}"))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ScheduleSummaryResponse>> getCurrentSchedule(
+            @AuthenticationPrincipal UserDetails userDetails);
+
     @Operation(summary = "AI 일정 배치")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({

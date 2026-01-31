@@ -1,5 +1,6 @@
 package molip.server.schedule.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.SuccessCode;
@@ -213,6 +214,22 @@ public class ScheduleController implements ScheduleApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.EXCLUDED_SCHEDULE_LIST_SUCCESS, response));
+    }
+
+    @GetMapping("/schedule")
+    @Override
+    public ResponseEntity<ServerResponse<ScheduleSummaryResponse>> getCurrentSchedule(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        String today = LocalDate.now().toString();
+        DayPlan dayPlan = dayPlanQueryFacade.getOrCreateDayPlan(userId, today);
+
+        ScheduleSummaryResponse response = scheduleQueryFacade.getCurrentSchedule(dayPlan.getId());
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CURRENT_SCHEDULE_FETCH_SUCCESS, response));
     }
 
     @PostMapping("/day-plan/{dayPlanId}/schedules/ai-arrangement")

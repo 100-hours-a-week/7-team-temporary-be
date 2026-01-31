@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import molip.server.ai.dto.response.AiPlannerChildResponse;
 import molip.server.ai.dto.response.AiPlannerResultResponse;
 import molip.server.common.enums.AssignedBy;
@@ -251,6 +252,19 @@ public class ScheduleService {
                         List.of(ScheduleStatus.SPLIT_PARENT, ScheduleStatus.DONE));
 
         return mergeSchedules(todaySchedules, yesterdayExcludedSchedules);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Schedule> getCurrentSchedule(Long dayPlanId, LocalTime currentTime) {
+
+        validateCurrentScheduleParams(dayPlanId, currentTime);
+
+        List<ScheduleStatus> excludeStatuses = List.of(ScheduleStatus.SPLIT_PARENT);
+
+        List<AssignmentStatus> excludeAssignmentStatuses = List.of(AssignmentStatus.EXCLUDED);
+
+        return scheduleRepository.findCurrentSchedule(
+                dayPlanId, currentTime, excludeStatuses, excludeAssignmentStatuses);
     }
 
     @Transactional
@@ -521,6 +535,13 @@ public class ScheduleService {
     private void validateExcludedStatus(AssignmentStatus status) {
         if (status == null || status != AssignmentStatus.EXCLUDED) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+    }
+
+    private void validateCurrentScheduleParams(Long dayPlanId, LocalTime currentTime) {
+
+        if (dayPlanId == null || currentTime == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
         }
     }
 
