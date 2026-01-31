@@ -88,17 +88,13 @@ public class ScheduleQueryFacade {
     }
 
     @Transactional(readOnly = true)
-    public List<ScheduleSummaryResponse> getCurrentSchedules(Long dayPlanId) {
+    public ScheduleSummaryResponse getCurrentSchedule(Long dayPlanId) {
 
         LocalTime currentTime = LocalTime.now();
 
-        List<Schedule> schedules = scheduleService.getCurrentSchedules(dayPlanId, currentTime);
-
-        return schedules.stream()
-                .map(
-                        schedule ->
-                                ScheduleSummaryResponse.from(
-                                        schedule, schedule.getParentSchedule()))
-                .toList();
+        return scheduleService
+                .getCurrentSchedule(dayPlanId, currentTime)
+                .map(value -> ScheduleSummaryResponse.from(value, value.getParentSchedule()))
+                .orElse(null);
     }
 }

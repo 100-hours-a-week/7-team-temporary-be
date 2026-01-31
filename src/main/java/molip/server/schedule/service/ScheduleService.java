@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import molip.server.ai.dto.response.AiPlannerChildResponse;
 import molip.server.ai.dto.response.AiPlannerResultResponse;
 import molip.server.common.enums.AssignedBy;
@@ -254,7 +255,7 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public List<Schedule> getCurrentSchedules(Long dayPlanId, LocalTime currentTime) {
+    public Optional<Schedule> getCurrentSchedule(Long dayPlanId, LocalTime currentTime) {
 
         validateCurrentScheduleParams(dayPlanId, currentTime);
 
@@ -263,7 +264,7 @@ public class ScheduleService {
 
         List<AssignmentStatus> excludeAssignmentStatuses = List.of(AssignmentStatus.EXCLUDED);
 
-        return scheduleRepository.findCurrentSchedules(
+        return scheduleRepository.findCurrentSchedule(
                 dayPlanId, currentTime, excludeStatuses, excludeAssignmentStatuses);
     }
 

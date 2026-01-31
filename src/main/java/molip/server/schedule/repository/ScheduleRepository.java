@@ -154,8 +154,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                     + "and s.startAt <= :currentTime "
                     + "and s.endAt > :currentTime "
                     + "and s.status not in (:excludeStatuses) "
-                    + "and s.assignmentStatus not in (:excludeAssignmentStatuses)")
-    List<Schedule> findCurrentSchedules(
+                    + "and s.assignmentStatus not in (:excludeAssignmentStatuses) ")
+    Optional<Schedule> findCurrentSchedule(
             @Param("dayPlanId") Long dayPlanId,
             @Param("currentTime") LocalTime currentTime,
             @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses,
