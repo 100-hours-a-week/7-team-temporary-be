@@ -1,6 +1,7 @@
 package molip.server.schedule.facade;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.response.PageResponse;
@@ -17,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class ScheduleQueryFacade {
-
     private final ScheduleService scheduleService;
     private final DayPlanService dayPlanService;
 
@@ -85,5 +85,20 @@ public class ScheduleQueryFacade {
                                         schedule, schedule.getParentSchedule()));
 
         return PageResponse.from(mapped, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ScheduleSummaryResponse> getCurrentSchedules(Long dayPlanId) {
+
+        LocalTime currentTime = LocalTime.now();
+
+        List<Schedule> schedules = scheduleService.getCurrentSchedules(dayPlanId, currentTime);
+
+        return schedules.stream()
+                .map(
+                        schedule ->
+                                ScheduleSummaryResponse.from(
+                                        schedule, schedule.getParentSchedule()))
+                .toList();
     }
 }

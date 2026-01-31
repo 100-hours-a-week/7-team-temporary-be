@@ -253,6 +253,20 @@ public class ScheduleService {
         return mergeSchedules(todaySchedules, yesterdayExcludedSchedules);
     }
 
+    @Transactional(readOnly = true)
+    public List<Schedule> getCurrentSchedules(Long dayPlanId, LocalTime currentTime) {
+
+        validateCurrentScheduleParams(dayPlanId, currentTime);
+
+        List<ScheduleStatus> excludeStatuses =
+                List.of(ScheduleStatus.SPLIT_PARENT, ScheduleStatus.DONE);
+
+        List<AssignmentStatus> excludeAssignmentStatuses = List.of(AssignmentStatus.EXCLUDED);
+
+        return scheduleRepository.findCurrentSchedules(
+                dayPlanId, currentTime, excludeStatuses, excludeAssignmentStatuses);
+    }
+
     @Transactional
     public List<Schedule> applyAiArrangement(
             Long userId, DayPlan targetDayPlan, List<AiPlannerResultResponse> results) {
@@ -521,6 +535,13 @@ public class ScheduleService {
     private void validateExcludedStatus(AssignmentStatus status) {
         if (status == null || status != AssignmentStatus.EXCLUDED) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
+        }
+    }
+
+    private void validateCurrentScheduleParams(Long dayPlanId, LocalTime currentTime) {
+
+        if (dayPlanId == null || currentTime == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
         }
     }
 
