@@ -43,7 +43,6 @@ public class FcmNotificationSender implements NotificationSender {
                     "FCM send completed. successCount={}, failureCount={}",
                     response.getSuccessCount(),
                     response.getFailureCount());
-            firebaseMessaging.sendEachForMulticast(message);
         } catch (FirebaseMessagingException e) {
             throw new IllegalStateException("FCM_SEND_FAILED", e);
         }

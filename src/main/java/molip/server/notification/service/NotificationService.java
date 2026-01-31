@@ -1,10 +1,13 @@
 package molip.server.notification.service;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.NotificationStatus;
+import molip.server.common.enums.NotificationTitle;
 import molip.server.common.enums.NotificationType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -23,8 +26,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
-    private static final String CREATED_TITLE = "일정이 생성되었습니다.";
-    private static final String REMINDER_TITLE = "일정이 곧 시작됩니다.";
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 
     @Transactional
     public List<Notification> getPendingNotifications(LocalDateTime now, int batchSize) {
@@ -53,7 +55,7 @@ public class NotificationService {
                 new Notification(
                         user,
                         NotificationType.SCHEDULE_CREATED,
-                        CREATED_TITLE,
+                        NotificationTitle.SCHEDULE_CREATED.getValue(),
                         event.title(),
                         NotificationStatus.PENDING,
                         now));
@@ -67,8 +69,8 @@ public class NotificationService {
                     new Notification(
                             user,
                             NotificationType.SCHEDULE_REMINDER,
-                            REMINDER_TITLE,
-                            event.title(),
+                            NotificationTitle.SCHEDULE_REMINDER.getValue(),
+                            buildReminderContent(event.title(), event.startAt()),
                             NotificationStatus.PENDING,
                             scheduledAt));
         }
@@ -93,5 +95,14 @@ public class NotificationService {
         if (page < 1 || size < 1) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
+    }
+
+    private String buildReminderContent(String title, LocalTime startAt) {
+
+        String time = startAt == null ? "" : startAt.format(TIME_FORMATTER);
+        if (time.isBlank()) {
+            return title;
+        }
+        return time + " " + title;
     }
 }
