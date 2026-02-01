@@ -116,7 +116,7 @@ public class ScheduleService {
             validateTimeOverlap(schedule, scheduleId, startAt, endAt);
             schedule.updateAsFixed(title, startAt, endAt);
         } else {
-            schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
+            schedule.updateAsFlex(title, startAt, endAt, estimatedTimeRange, focusLevel, isUrgent);
         }
     }
 
