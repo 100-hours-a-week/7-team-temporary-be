@@ -1,10 +1,14 @@
 package molip.server.notification.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.NotificationStatus;
+import molip.server.common.enums.NotificationTitle;
 import molip.server.common.enums.NotificationType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -23,8 +27,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
-    private static final String CREATED_TITLE = "일정이 생성되었습니다.";
-    private static final String REMINDER_TITLE = "일정이 곧 시작됩니다.";
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 
     @Transactional
     public List<Notification> getPendingNotifications(LocalDateTime now, int batchSize) {
@@ -45,18 +48,7 @@ public class NotificationService {
     @Transactional
     public void createScheduleNotifications(Users user, NotificationCreatedEvent event) {
 
-        LocalDateTime now = LocalDateTime.now();
-
         List<Notification> notifications = new ArrayList<>();
-
-        notifications.add(
-                new Notification(
-                        user,
-                        NotificationType.SCHEDULE_CREATED,
-                        CREATED_TITLE,
-                        event.title(),
-                        NotificationStatus.PENDING,
-                        now));
 
         if (event.startAt() != null && event.planDate() != null) {
 
@@ -66,14 +58,38 @@ public class NotificationService {
             notifications.add(
                     new Notification(
                             user,
+                            event.scheduleId(),
                             NotificationType.SCHEDULE_REMINDER,
-                            REMINDER_TITLE,
-                            event.title(),
+                            NotificationTitle.SCHEDULE_REMINDER.getValue(),
+                            buildReminderContent(event.title(), event.startAt()),
                             NotificationStatus.PENDING,
                             scheduledAt));
         }
 
         notificationRepository.saveAll(notifications);
+    }
+
+    @Transactional
+    public void resetScheduleReminder(
+            Users user, Long scheduleId, String title, LocalDate planDate, LocalTime startAt) {
+
+        deleteScheduleReminders(scheduleId);
+
+        if (startAt == null || planDate == null) {
+            return;
+        }
+
+        LocalDateTime scheduledAt = LocalDateTime.of(planDate, startAt).minusMinutes(5);
+
+        notificationRepository.save(
+                new Notification(
+                        user,
+                        scheduleId,
+                        NotificationType.SCHEDULE_REMINDER,
+                        NotificationTitle.SCHEDULE_REMINDER.getValue(),
+                        buildReminderContent(title, startAt),
+                        NotificationStatus.PENDING,
+                        scheduledAt));
     }
 
     @Transactional
@@ -88,10 +104,28 @@ public class NotificationService {
         notification.markFailed();
     }
 
+    @Transactional
+    public void deleteScheduleReminders(Long scheduleId) {
+
+        notificationRepository
+                .findByScheduleIdAndTypeAndDeletedAtIsNull(
+                        scheduleId, NotificationType.SCHEDULE_REMINDER)
+                .forEach(Notification::deleteNotification);
+    }
+
     private void validatePage(int page, int size) {
 
         if (page < 1 || size < 1) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
+    }
+
+    private String buildReminderContent(String title, LocalTime startAt) {
+
+        String time = startAt == null ? "" : startAt.format(TIME_FORMATTER);
+        if (time.isBlank()) {
+            return title;
+        }
+        return time + " " + title;
     }
 }

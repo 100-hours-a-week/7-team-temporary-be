@@ -107,7 +107,8 @@ public class UserService {
                         .findById(userId)
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-        user.modifyPassword(passwowrd);
+        String encodedPassword = passwordEncoder.encode(passwowrd);
+        user.modifyPassword(encodedPassword);
     }
 
     @Transactional

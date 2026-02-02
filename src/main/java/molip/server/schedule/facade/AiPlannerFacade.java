@@ -1,5 +1,6 @@
 package molip.server.schedule.facade;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -42,7 +43,9 @@ public class AiPlannerFacade {
         DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
         Users user = userService.getUser(userId);
 
-        LocalDateTime startArrangeDateTime = LocalDateTime.now().plusMinutes(10);
+        validateAiUsageRemaining(dayPlan);
+
+        LocalDateTime startArrangeDateTime = resolveStartArrangeDateTime(dayPlan);
 
         List<Schedule> schedules =
                 scheduleService.getAiInputSchedules(userId, dayPlan, startArrangeDateTime);
@@ -50,6 +53,8 @@ public class AiPlannerFacade {
         if (schedules.isEmpty()) {
             throw new BaseException(ErrorCode.PLANNER_BAD_REQUEST);
         }
+
+        dayPlan.decreaseAiUsageRemainingCount();
 
         AiPlannerRequest request =
                 new AiPlannerRequest(
@@ -78,10 +83,32 @@ public class AiPlannerFacade {
                         .toList());
     }
 
+    private void validateAiUsageRemaining(DayPlan dayPlan) {
+
+        Integer remainingCount = dayPlan.getAiUsageRemainingCount();
+        if (remainingCount == null || remainingCount <= 0) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_AI_USAGE_EXCEEDED);
+        }
+    }
+
+    private LocalDateTime resolveStartArrangeDateTime(DayPlan dayPlan) {
+
+        LocalDate today = LocalDate.now();
+        if (!dayPlan.getPlanDate().equals(today)) {
+            return LocalDateTime.of(dayPlan.getPlanDate(), LocalTime.of(9, 0));
+        }
+
+        return LocalDateTime.now().plusMinutes(10);
+    }
+
     private AiPlannerTaskRequest toAiTaskRequest(Schedule schedule) {
+
+        Long parentScheduleId =
+                schedule.getParentSchedule() == null ? null : schedule.getParentSchedule().getId();
 
         return new AiPlannerTaskRequest(
                 schedule.getId(),
+                parentScheduleId,
                 schedule.getDayPlan().getId(),
                 schedule.getTitle(),
                 schedule.getType().name(),

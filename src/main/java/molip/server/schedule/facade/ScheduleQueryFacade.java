@@ -1,10 +1,12 @@
 package molip.server.schedule.facade;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.response.PageResponse;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
+import molip.server.schedule.dto.response.DayPlanTodoListResponse;
 import molip.server.schedule.dto.response.ScheduleSummaryResponse;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
@@ -17,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class ScheduleQueryFacade {
-
     private final ScheduleService scheduleService;
     private final DayPlanService dayPlanService;
 
@@ -46,7 +47,7 @@ public class ScheduleQueryFacade {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ScheduleSummaryResponse> getTodoSchedulesByDayPlan(
+    public DayPlanTodoListResponse getTodoSchedulesByDayPlan(
             Long userId, Long dayPlanId, int page, int size) {
 
         DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
@@ -63,7 +64,14 @@ public class ScheduleQueryFacade {
                                 ScheduleSummaryResponse.from(
                                         schedule, schedule.getParentSchedule()));
 
-        return PageResponse.from(mapped, page, size);
+        return DayPlanTodoListResponse.of(
+                dayPlan.getId(),
+                dayPlan.getAiUsageRemainingCount(),
+                mapped.getContent(),
+                page,
+                size,
+                mapped.getTotalElements(),
+                mapped.getTotalPages());
     }
 
     @Transactional(readOnly = true)
@@ -85,5 +93,16 @@ public class ScheduleQueryFacade {
                                         schedule, schedule.getParentSchedule()));
 
         return PageResponse.from(mapped, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public ScheduleSummaryResponse getCurrentSchedule(Long dayPlanId) {
+
+        LocalTime currentTime = LocalTime.now();
+
+        return scheduleService
+                .getCurrentSchedule(dayPlanId, currentTime)
+                .map(value -> ScheduleSummaryResponse.from(value, value.getParentSchedule()))
+                .orElse(null);
     }
 }

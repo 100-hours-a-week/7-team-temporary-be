@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS user_image (
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
-  UNIQUE KEY uk_user_image_user_id (user_id),
   INDEX idx_user_image_user_deleted (user_id, deleted_at),
   CONSTRAINT fk_user_image_user_id FOREIGN KEY (user_id) REFERENCES users(id),
   CONSTRAINT fk_user_image_image_id FOREIGN KEY (image_id) REFERENCES image(id)
@@ -67,6 +66,7 @@ CREATE TABLE IF NOT EXISTS friend (
 CREATE TABLE IF NOT EXISTS notification (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
+  schedule_id BIGINT NULL,
   type VARCHAR(20) NOT NULL,
   title VARCHAR(30) NOT NULL,
   content VARCHAR(100) NOT NULL,
@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS notification (
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_notification_user_deleted_sent (user_id, deleted_at, sent_at),
+  INDEX idx_notification_schedule_deleted (schedule_id, deleted_at),
   CONSTRAINT fk_notification_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -98,11 +99,23 @@ CREATE TABLE IF NOT EXISTS day_plan (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   plan_date DATE NOT NULL,
+  ai_usage_remaining_count INT NOT NULL DEFAULT 2,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_day_plan_user_date_deleted (user_id, plan_date, deleted_at),
   CONSTRAINT fk_day_plan_user_id FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS issue (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  content VARCHAR(500) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_issue_user_deleted (user_id, deleted_at),
+  CONSTRAINT fk_issue_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS schedule (

@@ -32,9 +32,11 @@ public class DayPlanQueryFacade {
     }
 
     private LocalDate parseDate(String date) {
+
         if (date == null || date.isBlank()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_DATE_REQUIRED);
         }
+
         try {
             return LocalDate.parse(date, DATE_FORMATTER);
         } catch (DateTimeParseException e) {
@@ -43,6 +45,7 @@ public class DayPlanQueryFacade {
     }
 
     private DayPlan createDayPlan(Long userId, LocalDate planDate) {
+
         Users user =
                 userRepository
                         .findByIdAndDeletedAtIsNull(userId)

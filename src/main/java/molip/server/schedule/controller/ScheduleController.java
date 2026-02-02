@@ -1,5 +1,6 @@
 package molip.server.schedule.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.SuccessCode;
@@ -12,15 +13,17 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
+import molip.server.schedule.dto.response.DayPlanTodoListResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
-import molip.server.schedule.dto.response.ScheduleChildrenCreateResponse;
+import molip.server.schedule.dto.response.ScheduleChildrenCreateGroupResponse;
 import molip.server.schedule.dto.response.ScheduleCreateResponse;
 import molip.server.schedule.dto.response.ScheduleSummaryResponse;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.facade.AiPlannerFacade;
 import molip.server.schedule.facade.DayPlanQueryFacade;
+import molip.server.schedule.facade.ScheduleCommandFacade;
 import molip.server.schedule.facade.ScheduleQueryFacade;
 import molip.server.schedule.service.DayPlanService;
 import molip.server.schedule.service.ScheduleService;
@@ -46,6 +49,7 @@ public class ScheduleController implements ScheduleApi {
     private final DayPlanService dayPlanService;
     private final DayPlanQueryFacade dayPlanQueryFacade;
     private final ScheduleQueryFacade scheduleQueryFacade;
+    private final ScheduleCommandFacade scheduleCommandFacade;
     private final AiPlannerFacade aiPlannerFacade;
 
     @PostMapping("/day-plan/{dayPlanId}/schedule")
@@ -77,16 +81,15 @@ public class ScheduleController implements ScheduleApi {
 
     @GetMapping("/day-plan/{dayPlanId}/schedule")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>>
-            getAllSchedulesByDayPlan(
-                    @AuthenticationPrincipal UserDetails userDetails,
-                    @PathVariable Long dayPlanId,
-                    @RequestParam(required = false, defaultValue = "1") int page,
-                    @RequestParam(required = false, defaultValue = "10") int size) {
+    public ResponseEntity<ServerResponse<DayPlanTodoListResponse>> getAllSchedulesByDayPlan(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long dayPlanId,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "10") int size) {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        PageResponse<ScheduleSummaryResponse> response =
+        DayPlanTodoListResponse response =
                 scheduleQueryFacade.getTodoSchedulesByDayPlan(userId, dayPlanId, page, size);
 
         return ResponseEntity.ok(
@@ -165,22 +168,19 @@ public class ScheduleController implements ScheduleApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
-    @PostMapping("/schedule/{scheduleId}/children")
+    @PostMapping("/schedule/children")
     @Override
-    public ResponseEntity<ServerResponse<ScheduleChildrenCreateResponse>> createChildren(
+    public ResponseEntity<ServerResponse<List<ScheduleChildrenCreateGroupResponse>>> createChildren(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long scheduleId,
             @RequestBody ScheduleChildrenCreateRequest request) {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        List<Schedule> children =
-                scheduleService.createChildren(userId, scheduleId, request.titles());
+        List<ScheduleChildrenCreateGroupResponse> schedules =
+                scheduleCommandFacade.createChildrenBatch(userId, request.schedules());
 
         return ResponseEntity.ok(
-                ServerResponse.success(
-                        SuccessCode.SCHEDULE_CHILDREN_CREATED,
-                        ScheduleChildrenCreateResponse.from(children)));
+                ServerResponse.success(SuccessCode.SCHEDULE_CHILDREN_CREATED, schedules));
     }
 
     @PatchMapping("/schedule/{scheduleId}/status")
@@ -214,6 +214,22 @@ public class ScheduleController implements ScheduleApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.EXCLUDED_SCHEDULE_LIST_SUCCESS, response));
+    }
+
+    @GetMapping("/schedule")
+    @Override
+    public ResponseEntity<ServerResponse<ScheduleSummaryResponse>> getCurrentSchedule(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        String today = LocalDate.now().toString();
+        DayPlan dayPlan = dayPlanQueryFacade.getOrCreateDayPlan(userId, today);
+
+        ScheduleSummaryResponse response = scheduleQueryFacade.getCurrentSchedule(dayPlan.getId());
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CURRENT_SCHEDULE_FETCH_SUCCESS, response));
     }
 
     @PostMapping("/day-plan/{dayPlanId}/schedules/ai-arrangement")
