@@ -22,6 +22,7 @@ import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.notification.event.NotificationCreatedEvent;
+import molip.server.notification.event.ScheduleReminderResetEvent;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.entity.ScheduleHistory;
@@ -118,6 +119,14 @@ public class ScheduleService {
         } else {
             schedule.updateAsFlex(title, startAt, endAt, estimatedTimeRange, focusLevel, isUrgent);
         }
+
+        eventPublisher.publishEvent(
+                new ScheduleReminderResetEvent(
+                        schedule.getId(),
+                        schedule.getDayPlan().getUser().getId(),
+                        schedule.getTitle(),
+                        schedule.getDayPlan().getPlanDate(),
+                        schedule.getStartAt()));
     }
 
     @Transactional

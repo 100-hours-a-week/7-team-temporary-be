@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS friend (
 CREATE TABLE IF NOT EXISTS notification (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
+  schedule_id BIGINT NULL,
   type VARCHAR(20) NOT NULL,
   title VARCHAR(30) NOT NULL,
   content VARCHAR(100) NOT NULL,
@@ -76,6 +77,7 @@ CREATE TABLE IF NOT EXISTS notification (
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_notification_user_deleted_sent (user_id, deleted_at, sent_at),
+  INDEX idx_notification_schedule_deleted (schedule_id, deleted_at),
   CONSTRAINT fk_notification_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

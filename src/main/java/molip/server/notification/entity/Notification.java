@@ -31,6 +31,8 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
+    private Long scheduleId;
+
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
@@ -47,6 +49,7 @@ public class Notification extends BaseEntity {
 
     public Notification(
             Users user,
+            Long scheduleId,
             NotificationType type,
             String title,
             String content,
@@ -54,6 +57,7 @@ public class Notification extends BaseEntity {
             LocalDateTime scheduledAt) {
 
         this.user = user;
+        this.scheduleId = scheduleId;
         this.type = type;
         this.title = title;
         this.content = content;
