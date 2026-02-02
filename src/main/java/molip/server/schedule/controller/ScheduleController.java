@@ -13,6 +13,7 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
+import molip.server.schedule.dto.response.DayPlanTodoListResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateGroupResponse;
@@ -80,16 +81,15 @@ public class ScheduleController implements ScheduleApi {
 
     @GetMapping("/day-plan/{dayPlanId}/schedule")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>>
-            getAllSchedulesByDayPlan(
-                    @AuthenticationPrincipal UserDetails userDetails,
-                    @PathVariable Long dayPlanId,
-                    @RequestParam(required = false, defaultValue = "1") int page,
-                    @RequestParam(required = false, defaultValue = "10") int size) {
+    public ResponseEntity<ServerResponse<DayPlanTodoListResponse>> getAllSchedulesByDayPlan(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long dayPlanId,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "10") int size) {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        PageResponse<ScheduleSummaryResponse> response =
+        DayPlanTodoListResponse response =
                 scheduleQueryFacade.getTodoSchedulesByDayPlan(userId, dayPlanId, page, size);
 
         return ResponseEntity.ok(

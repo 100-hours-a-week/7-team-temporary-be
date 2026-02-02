@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS user_image (
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
-  UNIQUE KEY uk_user_image_user_id (user_id),
   INDEX idx_user_image_user_deleted (user_id, deleted_at),
   CONSTRAINT fk_user_image_user_id FOREIGN KEY (user_id) REFERENCES users(id),
   CONSTRAINT fk_user_image_image_id FOREIGN KEY (image_id) REFERENCES image(id)
@@ -98,6 +97,7 @@ CREATE TABLE IF NOT EXISTS day_plan (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   plan_date DATE NOT NULL,
+  ai_usage_remaining_count INT NOT NULL DEFAULT 2,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,

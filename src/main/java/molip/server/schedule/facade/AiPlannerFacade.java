@@ -43,6 +43,8 @@ public class AiPlannerFacade {
         DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
         Users user = userService.getUser(userId);
 
+        validateAiUsageRemaining(dayPlan);
+
         LocalDateTime startArrangeDateTime = resolveStartArrangeDateTime(dayPlan);
 
         List<Schedule> schedules =
@@ -51,6 +53,8 @@ public class AiPlannerFacade {
         if (schedules.isEmpty()) {
             throw new BaseException(ErrorCode.PLANNER_BAD_REQUEST);
         }
+
+        dayPlan.decreaseAiUsageRemainingCount();
 
         AiPlannerRequest request =
                 new AiPlannerRequest(
@@ -77,6 +81,14 @@ public class AiPlannerFacade {
                         .filter(schedule -> schedule.getStatus() != ScheduleStatus.SPLIT_PARENT)
                         .map(this::toResultResponse)
                         .toList());
+    }
+
+    private void validateAiUsageRemaining(DayPlan dayPlan) {
+
+        Integer remainingCount = dayPlan.getAiUsageRemainingCount();
+        if (remainingCount == null || remainingCount <= 0) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_AI_USAGE_EXCEEDED);
+        }
     }
 
     private LocalDateTime resolveStartArrangeDateTime(DayPlan dayPlan) {

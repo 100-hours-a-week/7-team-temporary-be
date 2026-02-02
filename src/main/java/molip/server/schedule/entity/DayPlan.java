@@ -29,8 +29,20 @@ public class DayPlan extends BaseEntity {
 
     private LocalDate planDate;
 
+    private Integer aiUsageRemainingCount;
+
     public DayPlan(Users user, LocalDate planDate) {
         this.user = user;
         this.planDate = planDate;
+        this.aiUsageRemainingCount = 2;
+    }
+
+    public void decreaseAiUsageRemainingCount() {
+
+        if (aiUsageRemainingCount == null) {
+            aiUsageRemainingCount = 0;
+            return;
+        }
+        aiUsageRemainingCount = Math.max(0, aiUsageRemainingCount - 1);
     }
 }
