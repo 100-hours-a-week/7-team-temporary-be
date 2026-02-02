@@ -343,7 +343,10 @@ public interface ScheduleApi {
     @Operation(summary = "제외된 일정 배정(제외된 일정 목록에서 유저가 직접 이동)")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "배정 성공"),
+        @ApiResponse(
+                responseCode = "204",
+                description = "배정 성공",
+                content = @Content(examples = @ExampleObject(value = ""))),
         @ApiResponse(
                 responseCode = "400",
                 description = "요청 값 오류",

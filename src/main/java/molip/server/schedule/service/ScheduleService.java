@@ -387,8 +387,13 @@ public class ScheduleService {
         validateAssignmentSwap(targetSchedule, excludedSchedule);
 
         excludedSchedule.moveDayPlan(targetSchedule.getDayPlan());
-        excludedSchedule.updateTime(targetSchedule.getStartAt(), targetSchedule.getEndAt());
-        excludedSchedule.updateAssignmentStatus(AssignmentStatus.ASSIGNED);
+        excludedSchedule.updateAsFlex(
+                excludedSchedule.getTitle(),
+                targetSchedule.getStartAt(),
+                targetSchedule.getEndAt(),
+                excludedSchedule.getEstimatedTimeRange(),
+                excludedSchedule.getFocusLevel(),
+                excludedSchedule.getIsUrgent());
 
         targetSchedule.updateAssignmentStatus(AssignmentStatus.EXCLUDED);
         targetSchedule.updateType(ScheduleType.FLEX);
