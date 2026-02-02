@@ -105,6 +105,17 @@ CREATE TABLE IF NOT EXISTS day_plan (
   CONSTRAINT fk_day_plan_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS issue (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  content VARCHAR(500) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_issue_user_deleted (user_id, deleted_at),
+  CONSTRAINT fk_issue_user_id FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS schedule (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   day_plan_id BIGINT NOT NULL,
