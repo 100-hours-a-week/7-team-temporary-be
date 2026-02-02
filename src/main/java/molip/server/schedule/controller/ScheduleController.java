@@ -10,6 +10,7 @@ import molip.server.schedule.dto.request.ScheduleArrangementJobCreateRequest;
 import molip.server.schedule.dto.request.ScheduleAssignmentStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleChildrenCreateRequest;
 import molip.server.schedule.dto.request.ScheduleCreateRequest;
+import molip.server.schedule.dto.request.ScheduleDayPlanAssignRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
@@ -193,6 +194,21 @@ public class ScheduleController implements ScheduleApi {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         scheduleService.updateStatus(userId, scheduleId, request.status());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/schedule/{scheduleId}")
+    @Override
+    public ResponseEntity<Void> assignToDayPlan(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long scheduleId,
+            @RequestBody ScheduleDayPlanAssignRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        scheduleService.assignScheduleToDayPlan(
+                userId, scheduleId, request.targetDayPlanId(), request.startAt(), request.endAt());
 
         return ResponseEntity.noContent().build();
     }
