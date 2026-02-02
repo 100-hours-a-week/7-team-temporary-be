@@ -74,6 +74,8 @@ public enum ErrorCode {
             HttpStatus.SERVICE_UNAVAILABLE,
             "PLANNER_SERVICE_UNAVAILABLE",
             "현재 배치 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    INVALID_REQUEST_AI_USAGE_EXCEEDED(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "AI 사용 가능 횟수가 모두 소진되었습니다."),
 
     // Terms
     TERMS_NOT_FOUND(HttpStatus.NOT_FOUND, "TERMS_NOT_FOUND", "존재하지않는 약관에 대한 요청입니다."),

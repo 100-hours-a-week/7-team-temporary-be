@@ -19,6 +19,7 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
+import molip.server.schedule.dto.response.DayPlanTodoListResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangementJobResponse;
 import molip.server.schedule.dto.response.ScheduleChildrenCreateGroupResponse;
@@ -67,7 +68,8 @@ public interface ScheduleApi {
         @ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content = @Content(schema = @Schema(implementation = PageResponse.class))),
+                content =
+                        @Content(schema = @Schema(implementation = DayPlanTodoListResponse.class))),
         @ApiResponse(
                 responseCode = "400",
                 description = "페이지 정보 오류",
@@ -85,7 +87,7 @@ public interface ScheduleApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<ScheduleSummaryResponse>>> getAllSchedulesByDayPlan(
+    ResponseEntity<ServerResponse<DayPlanTodoListResponse>> getAllSchedulesByDayPlan(
             @AuthenticationPrincipal UserDetails userDetails, Long dayPlanId, int page, int size);
 
     @Operation(summary = "특정 일자 일정 전체 조회")
