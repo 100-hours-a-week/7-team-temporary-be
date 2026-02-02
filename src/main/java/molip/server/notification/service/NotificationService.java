@@ -1,5 +1,6 @@
 package molip.server.notification.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -47,18 +48,7 @@ public class NotificationService {
     @Transactional
     public void createScheduleNotifications(Users user, NotificationCreatedEvent event) {
 
-        LocalDateTime now = LocalDateTime.now();
-
         List<Notification> notifications = new ArrayList<>();
-
-        notifications.add(
-                new Notification(
-                        user,
-                        NotificationType.SCHEDULE_CREATED,
-                        NotificationTitle.SCHEDULE_CREATED.getValue(),
-                        event.title(),
-                        NotificationStatus.PENDING,
-                        now));
 
         if (event.startAt() != null && event.planDate() != null) {
 
@@ -68,6 +58,7 @@ public class NotificationService {
             notifications.add(
                     new Notification(
                             user,
+                            event.scheduleId(),
                             NotificationType.SCHEDULE_REMINDER,
                             NotificationTitle.SCHEDULE_REMINDER.getValue(),
                             buildReminderContent(event.title(), event.startAt()),
@@ -76,6 +67,29 @@ public class NotificationService {
         }
 
         notificationRepository.saveAll(notifications);
+    }
+
+    @Transactional
+    public void resetScheduleReminder(
+            Users user, Long scheduleId, String title, LocalDate planDate, LocalTime startAt) {
+
+        deleteScheduleReminders(scheduleId);
+
+        if (startAt == null || planDate == null) {
+            return;
+        }
+
+        LocalDateTime scheduledAt = LocalDateTime.of(planDate, startAt).minusMinutes(5);
+
+        notificationRepository.save(
+                new Notification(
+                        user,
+                        scheduleId,
+                        NotificationType.SCHEDULE_REMINDER,
+                        NotificationTitle.SCHEDULE_REMINDER.getValue(),
+                        buildReminderContent(title, startAt),
+                        NotificationStatus.PENDING,
+                        scheduledAt));
     }
 
     @Transactional
@@ -88,6 +102,15 @@ public class NotificationService {
     public void markFailed(Notification notification) {
 
         notification.markFailed();
+    }
+
+    @Transactional
+    public void deleteScheduleReminders(Long scheduleId) {
+
+        notificationRepository
+                .findByScheduleIdAndTypeAndDeletedAtIsNull(
+                        scheduleId, NotificationType.SCHEDULE_REMINDER)
+                .forEach(Notification::deleteNotification);
     }
 
     private void validatePage(int page, int size) {
