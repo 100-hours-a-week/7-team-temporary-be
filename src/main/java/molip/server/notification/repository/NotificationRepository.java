@@ -3,6 +3,7 @@ package molip.server.notification.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import molip.server.common.enums.NotificationStatus;
+import molip.server.common.enums.NotificationType;
 import molip.server.notification.entity.Notification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,4 +34,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             @Param("userId") Long userId,
             @Param("status") NotificationStatus status,
             Pageable pageable);
+
+    @Query(
+            "select n from Notification n "
+                    + "where n.scheduleId = :scheduleId "
+                    + "and n.type = :type "
+                    + "and n.deletedAt is null")
+    List<Notification> findByScheduleIdAndTypeAndDeletedAtIsNull(
+            @Param("scheduleId") Long scheduleId, @Param("type") NotificationType type);
 }
