@@ -106,6 +106,23 @@ public class Schedule extends BaseEntity {
 
     public void updateAsFlex(
             String title,
+            EstimatedTimeRange estimatedTimeRange,
+            Integer focusLevel,
+            Boolean isUrgent) {
+
+        this.title = title;
+        this.type = ScheduleType.FLEX;
+        this.assignedBy = AssignedBy.USER;
+        this.assignmentStatus = AssignmentStatus.NOT_ASSIGNED;
+        this.startAt = null;
+        this.endAt = null;
+        this.estimatedTimeRange = estimatedTimeRange;
+        this.focusLevel = focusLevel;
+        this.isUrgent = isUrgent;
+    }
+
+    public void updateAsFlexWithAssignment(
+            String title,
             LocalTime startAt,
             LocalTime endAt,
             EstimatedTimeRange estimatedTimeRange,
@@ -115,10 +132,7 @@ public class Schedule extends BaseEntity {
         this.title = title;
         this.type = ScheduleType.FLEX;
         this.assignedBy = AssignedBy.USER;
-        this.assignmentStatus =
-                (startAt == null || endAt == null)
-                        ? AssignmentStatus.NOT_ASSIGNED
-                        : AssignmentStatus.ASSIGNED;
+        this.assignmentStatus = AssignmentStatus.ASSIGNED;
         this.startAt = startAt;
         this.endAt = endAt;
         this.estimatedTimeRange = estimatedTimeRange;

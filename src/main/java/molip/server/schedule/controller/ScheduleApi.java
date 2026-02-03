@@ -16,6 +16,7 @@ import molip.server.schedule.dto.request.ScheduleArrangementJobCreateRequest;
 import molip.server.schedule.dto.request.ScheduleAssignmentStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleChildrenCreateRequest;
 import molip.server.schedule.dto.request.ScheduleCreateRequest;
+import molip.server.schedule.dto.request.ScheduleDayPlanAssignRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
@@ -338,6 +339,58 @@ public interface ScheduleApi {
             @AuthenticationPrincipal UserDetails userDetails,
             Long scheduleId,
             ScheduleStatusUpdateRequest request);
+
+    @Operation(summary = "제외된 일정 배정(제외된 일정 목록에서 유저가 직접 이동)")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "배정 성공"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "요청 값 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "수정 권한 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "일정/일자 플랜 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "409",
+                description = "시간 충돌",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> assignToDayPlan(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long scheduleId,
+            @RequestBody(
+                            description = "일정 배정(일자 이동) 요청",
+                            required = true,
+                            content =
+                                    @Content(
+                                            schema =
+                                                    @Schema(
+                                                            implementation =
+                                                                    ScheduleDayPlanAssignRequest
+                                                                            .class),
+                                            examples =
+                                                    @ExampleObject(
+                                                            value =
+                                                                    "{\n"
+                                                                            + "  \"targetDayPlanId\": 10,\n"
+                                                                            + "  \"startAt\": \"15:00\",\n"
+                                                                            + "  \"endAt\": \"16:30\"\n"
+                                                                            + "}")))
+                    ScheduleDayPlanAssignRequest request);
 
     @Operation(summary = "제외된 일정 조회")
     @SecurityRequirement(name = "JWT")

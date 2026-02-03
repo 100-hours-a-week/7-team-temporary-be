@@ -55,18 +55,22 @@ public class NotificationService {
             LocalDateTime scheduledAt =
                     LocalDateTime.of(event.planDate(), event.startAt()).minusMinutes(5);
 
-            notifications.add(
-                    new Notification(
-                            user,
-                            event.scheduleId(),
-                            NotificationType.SCHEDULE_REMINDER,
-                            NotificationTitle.SCHEDULE_REMINDER.getValue(),
-                            buildReminderContent(event.title(), event.startAt()),
-                            NotificationStatus.PENDING,
-                            scheduledAt));
+            if (shouldCreateReminder(scheduledAt)) {
+                notifications.add(
+                        new Notification(
+                                user,
+                                event.scheduleId(),
+                                NotificationType.SCHEDULE_REMINDER,
+                                NotificationTitle.SCHEDULE_REMINDER.getValue(),
+                                buildReminderContent(event.title(), event.startAt()),
+                                NotificationStatus.PENDING,
+                                scheduledAt));
+            }
         }
 
-        notificationRepository.saveAll(notifications);
+        if (!notifications.isEmpty()) {
+            notificationRepository.saveAll(notifications);
+        }
     }
 
     @Transactional
@@ -80,6 +84,10 @@ public class NotificationService {
         }
 
         LocalDateTime scheduledAt = LocalDateTime.of(planDate, startAt).minusMinutes(5);
+
+        if (!shouldCreateReminder(scheduledAt)) {
+            return;
+        }
 
         notificationRepository.save(
                 new Notification(
@@ -127,5 +135,10 @@ public class NotificationService {
             return title;
         }
         return time + " " + title;
+    }
+
+    private boolean shouldCreateReminder(LocalDateTime scheduledAt) {
+
+        return !scheduledAt.isBefore(LocalDateTime.now());
     }
 }
