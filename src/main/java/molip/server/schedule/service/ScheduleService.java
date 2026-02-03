@@ -120,7 +120,7 @@ public class ScheduleService {
             validateTimeOverlap(schedule, scheduleId, startAt, endAt);
             schedule.updateAsFixed(title, startAt, endAt);
         } else {
-            schedule.updateAsFlex(title, startAt, endAt, estimatedTimeRange, focusLevel, isUrgent);
+            schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
         }
 
         eventPublisher.publishEvent(
@@ -387,13 +387,8 @@ public class ScheduleService {
         validateAssignmentSwap(targetSchedule, excludedSchedule);
 
         excludedSchedule.moveDayPlan(targetSchedule.getDayPlan());
-        excludedSchedule.updateAsFlex(
-                excludedSchedule.getTitle(),
-                targetSchedule.getStartAt(),
-                targetSchedule.getEndAt(),
-                excludedSchedule.getEstimatedTimeRange(),
-                excludedSchedule.getFocusLevel(),
-                excludedSchedule.getIsUrgent());
+        excludedSchedule.updateTime(targetSchedule.getStartAt(), targetSchedule.getEndAt());
+        excludedSchedule.updateAssignmentStatus(AssignmentStatus.ASSIGNED);
 
         targetSchedule.updateAssignmentStatus(AssignmentStatus.EXCLUDED);
         targetSchedule.updateType(ScheduleType.FLEX);
@@ -496,7 +491,7 @@ public class ScheduleService {
             schedule.moveDayPlan(targetDayPlan);
         }
 
-        schedule.updateAsFlex(
+        schedule.updateAsFlexWithAssignment(
                 schedule.getTitle(),
                 startAt,
                 endAt,
