@@ -40,15 +40,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
+    private final DayPlanService dayPlanService;
     private final Map<ScheduleType, ScheduleCreator> creatorMap;
     private final ApplicationEventPublisher eventPublisher;
 
     public ScheduleService(
             ScheduleRepository scheduleRepository,
+            DayPlanService dayPlanService,
             List<ScheduleCreator> creators,
             ApplicationEventPublisher eventPublisher) {
 
         this.scheduleRepository = scheduleRepository;
+        this.dayPlanService = dayPlanService;
         this.creatorMap = new EnumMap<>(ScheduleType.class);
         this.eventPublisher = eventPublisher;
 
@@ -117,7 +120,7 @@ public class ScheduleService {
             validateTimeOverlap(schedule, scheduleId, startAt, endAt);
             schedule.updateAsFixed(title, startAt, endAt);
         } else {
-            schedule.updateAsFlex(title, startAt, endAt, estimatedTimeRange, focusLevel, isUrgent);
+            schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
         }
 
         eventPublisher.publishEvent(
@@ -455,6 +458,56 @@ public class ScheduleService {
         }
     }
 
+    @Transactional
+    public void assignScheduleToDayPlan(
+            Long userId,
+            Long scheduleId,
+            Long targetDayPlanId,
+            LocalTime startAt,
+            LocalTime endAt) {
+
+        if (targetDayPlanId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+
+        validateFixedRange(startAt, endAt);
+
+        Schedule schedule =
+                scheduleRepository
+                        .findByIdWithDayPlanUser(scheduleId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        validateOwnership(userId, schedule);
+
+        if (schedule.getType() != ScheduleType.FLEX) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_EXCLUDED_ONLY_FLEX);
+        }
+
+        DayPlan targetDayPlan = dayPlanService.getDayPlan(userId, targetDayPlanId);
+
+        validateTimeOverlapForTarget(targetDayPlan.getId(), scheduleId, startAt, endAt);
+
+        if (!schedule.getDayPlan().getId().equals(targetDayPlan.getId())) {
+            schedule.moveDayPlan(targetDayPlan);
+        }
+
+        schedule.updateAsFlexWithAssignment(
+                schedule.getTitle(),
+                startAt,
+                endAt,
+                schedule.getEstimatedTimeRange(),
+                schedule.getFocusLevel(),
+                schedule.getIsUrgent());
+
+        eventPublisher.publishEvent(
+                new ScheduleReminderResetEvent(
+                        schedule.getId(),
+                        schedule.getDayPlan().getUser().getId(),
+                        schedule.getTitle(),
+                        schedule.getDayPlan().getPlanDate(),
+                        schedule.getStartAt()));
+    }
+
     private void validateAssignmentSwap(Schedule targetSchedule, Schedule excludedSchedule) {
         if (excludedSchedule.getAssignmentStatus() != AssignmentStatus.EXCLUDED) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_STATUS_CHECK);
@@ -518,6 +571,15 @@ public class ScheduleService {
             Schedule schedule, Long scheduleId, LocalTime startAt, LocalTime endAt) {
         if (scheduleRepository.existsTimeOverlapExcludingId(
                 schedule.getDayPlan().getId(), scheduleId, startAt, endAt)) {
+            throw new BaseException(ErrorCode.CONFLICT_TIME_OVERLAP);
+        }
+    }
+
+    private void validateTimeOverlapForTarget(
+            Long dayPlanId, Long scheduleId, LocalTime startAt, LocalTime endAt) {
+
+        if (scheduleRepository.existsTimeOverlapExcludingId(
+                dayPlanId, scheduleId, startAt, endAt)) {
             throw new BaseException(ErrorCode.CONFLICT_TIME_OVERLAP);
         }
     }
