@@ -145,6 +145,8 @@ dependencies {
     // FCM
     implementation 'com.google.firebase:firebase-admin:9.3.0'
 
+    // Rate limiting
+    implementation 'com.bucket4j:bucket4j-core:8.7.0'
 
 }
 

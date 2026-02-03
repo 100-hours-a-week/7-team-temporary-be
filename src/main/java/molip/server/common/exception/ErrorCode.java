@@ -17,6 +17,8 @@ public enum ErrorCode {
             HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "아이디나 비밀번호를 다시 확인해주세요."),
     UNAUTHORIZED_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "유효하지 않은 토큰입니다."),
     INVALID_REQUEST_REFRESH_MISSING(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "리프레시 토큰이 누락되었습니다."),
+    RATE_LIMIT_EXCEEDED(
+            HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", "AI 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."),
 
     // User
     EMAIL_CONFLICT(HttpStatus.CONFLICT, "EMAIL_CONFLICT", "이미 사용 중인 이메일입니다."),
