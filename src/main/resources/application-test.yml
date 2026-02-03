@@ -41,3 +41,19 @@ notification:
   dispatch:
     fixed-delay-ms: 60000
     batch-size: 100
+
+
+springdoc:
+  api-docs:
+    enabled: false
+    path: /v3/api-docs
+    groups.enabled: true
+
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui.html
+    display-request-duration: true
+    persistAuthorization: true
+
+swagger:
+  enabled: false
