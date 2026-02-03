@@ -40,15 +40,19 @@ jwt:
 
 springdoc:
   api-docs:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED}
     path: /v3/api-docs
     groups.enabled: true
 
   swagger-ui:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED}
     path: /swagger-ui.html
     display-request-duration: true
     persistAuthorization: true
+
+swagger:
+  enabled: ${SWAGGER_ENABLED}
+
 
 management:
   endpoints:

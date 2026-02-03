@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpHeaders;
                         version = "v1.0.0",
                         description = "이 문서는 MOLIP의 API 사용법을 설명합니다."))
 @Configuration
+@ConditionalOnProperty(name = "swagger.enabled", havingValue = "true")
 public class SwaggerConfig {
 
     @Bean

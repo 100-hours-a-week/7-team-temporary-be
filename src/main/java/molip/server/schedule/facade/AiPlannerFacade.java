@@ -12,6 +12,7 @@ import molip.server.ai.dto.request.AiPlannerRequest;
 import molip.server.ai.dto.request.AiPlannerTaskRequest;
 import molip.server.ai.dto.request.AiPlannerUserRequest;
 import molip.server.ai.dto.response.AiPlannerResponse;
+import molip.server.common.aop.ratelimit.AiRateLimit;
 import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -38,6 +39,7 @@ public class AiPlannerFacade {
     private final AiPlannerClient aiPlannerClient;
 
     @Transactional
+    @AiRateLimit
     public ScheduleArrangeResponse arrangeSchedules(Long userId, Long dayPlanId) {
 
         DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
