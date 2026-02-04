@@ -219,7 +219,7 @@ jobs:
           const DATE = __ENV.TEST_DATE;
 
           export function setup() {
-            # 회원 가입
+            // 회원 가입
             const email = `user_${__VU}_${Date.now()}@test.com`;
             const signupRes = http.post(
             `${BASE_URL}/users`,
