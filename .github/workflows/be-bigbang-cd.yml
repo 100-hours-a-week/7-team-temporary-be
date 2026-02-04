@@ -219,11 +219,56 @@ jobs:
           const DATE = __ENV.TEST_DATE;
 
           export function setup() {
+            // 회원 가입
+            const email = `user_${__VU}_${Date.now()}@test.com`;
+            const signupRes = http.post(
+            `${BASE_URL}/users`,
+            JSON.stringify({
+            email: email,
+            password: 'password@12A',
+            nickname: 'nickname',
+            gender: 'MALE',
+            birth: '1990.01.01',
+            focusTimeZone: 'MORNING',
+            dayEndTime: '22:40',
+            terms: [
+              {
+                termsId: 1,
+                isAgreed: true
+              },
+              {
+                termsId: 2,
+                isAgreed: true
+              },
+              {
+                termsId: 3,
+                isAgreed: false
+              }
+            ],
+          }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+              tags: { name: 'signup' }, // 태그 추가
+            }
+            );
             
-
+            // SLI 측정: 회원가입 성공률
+            const signupOk = check(signupRes, {
+            '회원가입 성공': r => r.status === 200 || r.status === 201
+          });
+            signupSuccess.add(signupOk);
+            errorRate.add(!signupOk);
+            
+            if (!signupOk) {
+            console.error(`Signup failed: ${signupRes.status}`);
+            return; // 실패 시 나머지 스킵
+          }
+            
+            sleep(0.3);
+            
             const loginRes = http.post(
               `${BASE_URL}/token`,
-              JSON.stringify({ email: 'email@email5.com', password: 'password@12A' }),
+              JSON.stringify({ email, password: 'password@12A' }),
               { headers: { 'Content-Type': 'application/json' }, tags: { name: 'login' } }
             );
 
