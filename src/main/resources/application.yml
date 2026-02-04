@@ -65,6 +65,8 @@ management:
       probes:
         enabled: true
   metrics:
+    enable:
+      hibernate: true
     tags:
       application: molip
     distribution:
