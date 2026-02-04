@@ -12,6 +12,7 @@ spring:
       hibernate:
         format_sql: true
         use_sql_comments: true
+        generate_statistics: true
   datasource:
     url: ${MYSQL_URL}
     driverClassName: com.mysql.cj.jdbc.Driver
@@ -64,6 +65,8 @@ management:
       probes:
         enabled: true
   metrics:
+    enable:
+      hibernate: true
     tags:
       application: molip
     distribution:

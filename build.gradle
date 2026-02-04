@@ -135,6 +135,8 @@ dependencies {
     // Monitoring (로이 추가)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation "io.micrometer:micrometer-registry-prometheus"
+    implementation "org.hibernate.orm:hibernate-micrometer"
+
 
     //web client
     implementation 'org.springframework.boot:spring-boot-starter-web'
