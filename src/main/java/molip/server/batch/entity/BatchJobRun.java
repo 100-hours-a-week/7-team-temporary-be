@@ -24,14 +24,11 @@ public class BatchJobRun extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
     private String jobName;
 
-    @Column(nullable = false)
     private LocalDate runDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private BatchRunStatus status;
 
     private LocalDateTime startedAt;
@@ -41,7 +38,6 @@ public class BatchJobRun extends BaseEntity {
     @Column(nullable = false)
     private int retryCount;
 
-    @Column(length = 500)
     private String lastError;
 
     public BatchJobRun(

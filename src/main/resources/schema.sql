@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS report_chat_message (
 
 CREATE TABLE IF NOT EXISTS batch_job_run (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  job_name VARCHAR(100) NOT NULL,
+  job_name VARCHAR(255) NOT NULL,
   run_date DATE NOT NULL,
   status VARCHAR(20) NOT NULL,
   started_at DATETIME(6) NULL,
