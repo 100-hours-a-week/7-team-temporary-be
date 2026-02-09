@@ -150,6 +150,9 @@ dependencies {
     // Rate limiting
     implementation 'com.bucket4j:bucket4j-core:8.7.0'
 
+    // Batch
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+
 }
 
 tasks.named('test') {
