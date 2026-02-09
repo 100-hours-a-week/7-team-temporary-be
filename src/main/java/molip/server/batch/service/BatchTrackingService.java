@@ -94,7 +94,7 @@ public class BatchTrackingService {
         return stepRun;
     }
 
-    private BatchJobRun getJobRun(Long jobRunId) {
+    public BatchJobRun getJobRun(Long jobRunId) {
         return jobRunRepository
                 .findById(jobRunId)
                 .orElseThrow(() -> new IllegalArgumentException("Batch job run not found."));
