@@ -31,7 +31,7 @@ public class AuthController implements AuthApi {
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
 
-    @PostMapping("/token")
+    @PostMapping("/")
     @Override
     public ResponseEntity<ServerResponse<AccessTokenResponse>> login(
             @RequestBody LoginRequest request,
@@ -60,7 +60,7 @@ public class AuthController implements AuthApi {
                 .body(ServerResponse.success(SuccessCode.LOGIN_SUCCESS, response));
     }
 
-    @DeleteMapping("/token")
+    @DeleteMapping("/")
     @Override
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         String accessToken = resolveToken(request.getHeader(HttpHeaders.AUTHORIZATION));
@@ -69,7 +69,7 @@ public class AuthController implements AuthApi {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/token")
+    @PutMapping("/")
     @Override
     public ResponseEntity<ServerResponse<AccessTokenResponse>> refresh(
             @CookieValue(name = "refreshToken", required = false) String refreshToken) {
