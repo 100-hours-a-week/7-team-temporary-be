@@ -48,6 +48,8 @@ public class SecurityConfig {
                                         .requestMatchers(
                                                 HttpMethod.POST, "/users", "/images", "/token")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.PUT, "/token")
+                                        .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.GET,
                                                 "/",
