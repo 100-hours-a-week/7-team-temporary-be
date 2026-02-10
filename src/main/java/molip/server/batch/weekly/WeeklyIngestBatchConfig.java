@@ -6,8 +6,14 @@ import lombok.RequiredArgsConstructor;
 import molip.server.batch.entity.BatchJobRun;
 import molip.server.batch.enums.BatchRunStatus;
 import molip.server.batch.enums.BatchTargetType;
-import molip.server.batch.service.BatchStepTrackingListener;
 import molip.server.batch.service.BatchTrackingService;
+import molip.server.batch.weekly.service.WeeklyScoreItemWriter;
+import molip.server.batch.weekly.service.WeeklyScoreUserReader;
+import molip.server.report.repository.ReportDailyStatRepository;
+import molip.server.report.repository.ReportRepository;
+import molip.server.schedule.repository.ScheduleRepository;
+import molip.server.user.entity.Users;
+import molip.server.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -18,6 +24,7 @@ import org.springframework.batch.core.listener.JobExecutionListener;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.infrastructure.item.ItemWriter;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -68,7 +75,7 @@ public class WeeklyIngestBatchConfig {
                 String lastError =
                         jobExecution.getAllFailureExceptions().isEmpty()
                                 ? null
-                                : jobExecution.getAllFailureExceptions().get(0).getMessage();
+                                : jobExecution.getAllFailureExceptions().getFirst().getMessage();
                 batchTrackingService.markJobFinished(jobRunId, status, lastError);
             }
         };
@@ -78,17 +85,13 @@ public class WeeklyIngestBatchConfig {
     public Step weeklyScoreStep(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            BatchTrackingService batchTrackingService) {
+            WeeklyScoreUserReader weeklyScoreUserReader,
+            ItemWriter<Users> weeklyScoreItemWriter) {
         return new StepBuilder("weeklyScoreStep", jobRepository)
-                .listener(
-                        new BatchStepTrackingListener(
-                                batchTrackingService, BatchTargetType.GLOBAL, null))
-                .tasklet(
-                        (contribution, chunkContext) -> {
-                            log.info("Weekly score step placeholder executed.");
-                            return RepeatStatus.FINISHED;
-                        },
-                        transactionManager)
+                .<Users, Users>chunk(1000)
+                .transactionManager(transactionManager)
+                .reader(weeklyScoreUserReader)
+                .writer(weeklyScoreItemWriter)
                 .build();
     }
 
@@ -99,8 +102,8 @@ public class WeeklyIngestBatchConfig {
             BatchTrackingService batchTrackingService) {
         return new StepBuilder("weeklyAiIngestStep", jobRepository)
                 .listener(
-                        new BatchStepTrackingListener(
-                                batchTrackingService, BatchTargetType.GLOBAL, null))
+                        new molip.server.batch.service.BatchStepTrackingListener(
+                                batchTrackingService, BatchTargetType.USER, null))
                 .tasklet(
                         (contribution, chunkContext) -> {
                             log.info("Weekly AI ingest step placeholder executed.");
@@ -117,8 +120,8 @@ public class WeeklyIngestBatchConfig {
             BatchTrackingService batchTrackingService) {
         return new StepBuilder("weeklyAiNotifyStep", jobRepository)
                 .listener(
-                        new BatchStepTrackingListener(
-                                batchTrackingService, BatchTargetType.GLOBAL, null))
+                        new molip.server.batch.service.BatchStepTrackingListener(
+                                batchTrackingService, BatchTargetType.CHUNK, null))
                 .tasklet(
                         (contribution, chunkContext) -> {
                             log.info("Weekly AI notify step placeholder executed.");
@@ -126,5 +129,23 @@ public class WeeklyIngestBatchConfig {
                         },
                         transactionManager)
                 .build();
+    }
+
+    @Bean
+    public WeeklyScoreUserReader weeklyScoreUserReader(UserRepository userRepository) {
+        return new WeeklyScoreUserReader(userRepository);
+    }
+
+    @Bean
+    public WeeklyScoreItemWriter weeklyScoreItemWriter(
+            BatchTrackingService batchTrackingService,
+            ScheduleRepository scheduleRepository,
+            ReportRepository reportRepository,
+            ReportDailyStatRepository reportDailyStatRepository) {
+        return new WeeklyScoreItemWriter(
+                batchTrackingService,
+                scheduleRepository,
+                reportRepository,
+                reportDailyStatRepository);
     }
 }
