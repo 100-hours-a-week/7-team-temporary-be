@@ -161,6 +161,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("excludeStatuses") List<ScheduleStatus> excludeStatuses,
             @Param("excludeAssignmentStatuses") List<AssignmentStatus> excludeAssignmentStatuses);
 
+    List<Schedule> findByDayPlanIdInAndDeletedAtIsNull(List<Long> dayPlanIds);
+
     @Query(
             "select s.status as status, count(s) as count "
                     + "from Schedule s "

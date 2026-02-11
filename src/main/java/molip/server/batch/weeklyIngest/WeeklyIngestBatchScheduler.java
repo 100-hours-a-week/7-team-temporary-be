@@ -1,4 +1,4 @@
-package molip.server.batch.weekly;
+package molip.server.batch.weeklyIngest;
 
 import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;

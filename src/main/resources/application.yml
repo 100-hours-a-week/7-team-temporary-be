@@ -80,6 +80,11 @@ ai:
     base-url: ${AI_PLANNER_BASE_URL}
     path: ${AI_PLANNER_PATH}
     timeout-ms: ${AI_PLANNER_TIMEOUT_MS}
+  datasource:
+    url: ${AI_DB_URL}
+    username: ${AI_DB_USERNAME}
+    password: ${AI_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
 
 fcm:

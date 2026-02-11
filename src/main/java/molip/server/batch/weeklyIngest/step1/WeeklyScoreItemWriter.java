@@ -1,4 +1,4 @@
-package molip.server.batch.weekly.service;
+package molip.server.batch.weeklyIngest.step1;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -67,6 +67,8 @@ public class WeeklyScoreItemWriter implements ItemWriter<Users>, StepExecutionLi
             } catch (Exception e) {
                 trackingService.markStepFinished(
                         stepRun.getId(), BatchStepStatus.FAILED, e.getMessage());
+                throw new IllegalStateException(
+                        "Weekly score calculation failed for user " + user.getId(), e);
             }
         }
     }
