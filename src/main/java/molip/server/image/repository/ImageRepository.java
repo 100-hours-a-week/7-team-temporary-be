@@ -10,4 +10,6 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
 
     Optional<Image> findByUploadKeyAndUploadStatusAndDeletedAtIsNull(
             String uploadKey, UploadStatus uploadStatus);
+
+    java.util.List<Image> findByIdInAndDeletedAtIsNull(java.util.List<Long> ids);
 }
