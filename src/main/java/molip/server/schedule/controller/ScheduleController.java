@@ -13,6 +13,7 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleDayPlanAssignRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
+import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
 import molip.server.schedule.dto.response.DayPlanTodoListResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
@@ -115,6 +116,22 @@ public class ScheduleController implements ScheduleApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.DAY_SCHEDULE_LIST_SUCCESS, response));
+    }
+
+    @GetMapping("/day-plan/schedules")
+    @Override
+    public ResponseEntity<ServerResponse<DayPlanScheduleExistResponse>> getDayPlanExistence(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        DayPlanScheduleExistResponse response =
+                dayPlanQueryFacade.getDayPlanExistence(userId, startDate, endDate);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.DAY_PLAN_EXISTENCE_SUCCESS, response));
     }
 
     @PutMapping("/schedule/{scheduleId}")

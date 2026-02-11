@@ -19,6 +19,7 @@ import molip.server.schedule.dto.request.ScheduleCreateRequest;
 import molip.server.schedule.dto.request.ScheduleDayPlanAssignRequest;
 import molip.server.schedule.dto.request.ScheduleStatusUpdateRequest;
 import molip.server.schedule.dto.request.ScheduleUpdateRequest;
+import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
 import molip.server.schedule.dto.response.DayPlanSchedulePageResponse;
 import molip.server.schedule.dto.response.DayPlanTodoListResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
@@ -117,6 +118,34 @@ public interface ScheduleApi {
     })
     ResponseEntity<ServerResponse<DayPlanSchedulePageResponse>> getOnlyTimeAssignedSchedulesByDate(
             @AuthenticationPrincipal UserDetails userDetails, String date, int page, int size);
+
+    @Operation(summary = "일주일 간 일정 여부 조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content =
+                        @Content(
+                                schema =
+                                        @Schema(
+                                                implementation =
+                                                        DayPlanScheduleExistResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "날짜 값 누락",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<DayPlanScheduleExistResponse>> getDayPlanExistence(
+            @AuthenticationPrincipal UserDetails userDetails, String startDate, String endDate);
 
     @Operation(summary = "일정 정보 수정")
     @SecurityRequirement(name = "JWT")
