@@ -4,6 +4,7 @@ import java.util.Optional;
 import molip.server.reflection.entity.DayReflection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +17,11 @@ public interface DayReflectionRepository extends JpaRepository<DayReflection, Lo
 
     Optional<DayReflection> findByIdAndDeletedAtIsNull(Long reflectionId);
 
+    @EntityGraph(attributePaths = "user")
     Page<DayReflection> findByUserIdAndDeletedAtIsNull(Long userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = "user")
+    Page<DayReflection> findByIsOpenTrueAndDeletedAtIsNull(Pageable pageable);
 
     @Query(
             value =
