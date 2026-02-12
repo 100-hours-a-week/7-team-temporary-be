@@ -161,6 +161,7 @@ public enum ErrorCode {
     FORBIDDEN_REFLECTION_OPEN_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "공개된 회고만 조회할 수 있습니다."),
     DAYPLAN_NOT_FOUND_REFLECTION(HttpStatus.NOT_FOUND, "DAYPLAN_NOT_FOUND", "일자 정보를 찾을 수 없습니다."),
     CONFLICT_REFLECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONFLICT", "이미 회고가 작성된 일정입니다."),
+    REFLECTION_ALREADY_DELETED(HttpStatus.NOT_FOUND, "REFLECTION_ALREADY_DELETED", "이미 삭제된 회고입니다."),
     REFLECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "REFLECTION_NOT_FOUND", "회고를 찾을 수 없습니다."),
     INVALID_REQUEST_REFLECTION_IMAGES_MIN(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "이미지가 1개 이상 포함되어야 합니다."),

@@ -11,6 +11,7 @@ import molip.server.image.entity.Image;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;
 import molip.server.reflection.repository.DayReflectionRepository;
+import molip.server.schedule.entity.DayPlan;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,10 +31,7 @@ public class ReflectionService {
 
     @Transactional
     public DayReflection createReflection(
-            molip.server.schedule.entity.DayPlan dayPlan,
-            String content,
-            boolean isOpen,
-            List<Image> images) {
+            DayPlan dayPlan, String content, boolean isOpen, List<Image> images) {
         String title = formatTitle(dayPlan.getPlanDate());
 
         DayReflection reflection =
