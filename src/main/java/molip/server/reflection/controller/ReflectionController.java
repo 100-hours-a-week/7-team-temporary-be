@@ -50,10 +50,20 @@ public class ReflectionController implements ReflectionApi {
 
     @GetMapping("/day-plan/{dayPlanId}/reflection")
     @Override
-    @Deprecated
     public ResponseEntity<ServerResponse<ReflectionExistResponse>> existsReflection(
-            @PathVariable Long dayPlanId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long dayPlanId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ReflectionExistResponse response =
+                reflectionQueryFacade.existsReflection(userId, dayPlanId);
+
+        SuccessCode successCode =
+                response.alreadyWrote()
+                        ? SuccessCode.REFLECTION_EXISTS
+                        : SuccessCode.REFLECTION_NOT_EXISTS;
+
+        return ResponseEntity.ok(ServerResponse.success(successCode, response));
     }
 
     @GetMapping("/reflections")
