@@ -5,6 +5,7 @@ import molip.server.common.SuccessCode;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
+import molip.server.reflection.dto.request.ReflectionOpenUpdateRequest;
 import molip.server.reflection.dto.request.ReflectionUpdateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
 import molip.server.reflection.dto.response.ReflectionDetailResponse;
@@ -13,12 +14,14 @@ import molip.server.reflection.dto.response.ReflectionLikeResponse;
 import molip.server.reflection.dto.response.ReflectionListItemResponse;
 import molip.server.reflection.facade.ReflectionCommandFacade;
 import molip.server.reflection.facade.ReflectionQueryFacade;
+import molip.server.reflection.service.ReflectionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -32,6 +35,7 @@ public class ReflectionController implements ReflectionApi {
 
     private final ReflectionCommandFacade reflectionCommandFacade;
     private final ReflectionQueryFacade reflectionQueryFacade;
+    private final ReflectionService reflectionService;
 
     @PostMapping("/day-plan/{dayPlanId}/reflection")
     @Override
@@ -82,15 +86,24 @@ public class ReflectionController implements ReflectionApi {
                 ServerResponse.success(SuccessCode.MY_REFLECTION_LIST_SUCCESS, response));
     }
 
-    @GetMapping(value = "/reflections", params = "isOpen")
+    @GetMapping("/reflections")
     @Override
-    @Deprecated
     public ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>>
             getOpenReflections(
+                    @AuthenticationPrincipal UserDetails userDetails,
                     @RequestParam boolean isOpen,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        Long viewerId = null;
+        if (userDetails != null) {
+            viewerId = Long.valueOf(userDetails.getUsername());
+        }
+
+        PageResponse<ReflectionListItemResponse> response =
+                reflectionQueryFacade.getOpenReflections(viewerId, isOpen, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.OPEN_REFLECTION_LIST_SUCCESS, response));
     }
 
     @GetMapping("/reflections/{reflectionId}")
@@ -103,6 +116,20 @@ public class ReflectionController implements ReflectionApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.REFLECTION_DETAIL_SUCCESS, response));
+    }
+
+    @PatchMapping("/reflections/{reflectionId}")
+    @Override
+    public ResponseEntity<Void> updateOpen(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long reflectionId,
+            @RequestBody ReflectionOpenUpdateRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reflectionService.updateOpen(userId, reflectionId, request.isOpen());
+
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/reflections/{reflectionId}")

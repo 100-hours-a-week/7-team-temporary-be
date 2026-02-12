@@ -7,7 +7,8 @@ import molip.server.common.response.ImageInfoResponse;
 
 @Schema(description = "회고 목록 항목")
 public record ReflectionListItemResponse(
-        @Schema(description = "사용자 ID", example = "65") Long userId,
+        Boolean isMine,
+        String ownerNickname,
         @Schema(description = "회고 ID", example = "55") Long reflectionId,
         @Schema(description = "공개 여부", example = "true") boolean isOpen,
         @Schema(description = "제목", example = "2026.01.13(수)") String title,
@@ -18,7 +19,8 @@ public record ReflectionListItemResponse(
                 OffsetDateTime createdAt) {
 
     public static ReflectionListItemResponse of(
-            Long userId,
+            Boolean isMine,
+            String ownerNickname,
             Long reflectionId,
             boolean isOpen,
             String title,
@@ -28,6 +30,6 @@ public record ReflectionListItemResponse(
             OffsetDateTime createdAt) {
 
         return new ReflectionListItemResponse(
-                userId, reflectionId, isOpen, title, content, likes, images, createdAt);
+                isMine,ownerNickname, reflectionId, isOpen, title, content, likes, images, createdAt);
     }
 }

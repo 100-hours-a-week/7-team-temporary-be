@@ -71,6 +71,24 @@ public class ReflectionQueryFacade {
 
         Page<DayReflection> reflections = reflectionService.getMyReflections(userId, page, size);
 
+        return buildReflectionListResponse(reflections, page, size, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ReflectionListItemResponse> getOpenReflections(
+            Long viewerId, boolean isOpen, int page, int size) {
+
+        validatePage(page, size);
+        validateOpenOnly(isOpen);
+
+        Page<DayReflection> reflections = reflectionService.getOpenReflections(page, size);
+
+        return buildReflectionListResponse(reflections, page, size, viewerId);
+    }
+
+    private PageResponse<ReflectionListItemResponse> buildReflectionListResponse(
+            Page<DayReflection> reflections, int page, int size, Long viewerId) {
+
         List<Long> reflectionIds =
                 reflections.getContent().stream().map(DayReflection::getId).toList();
 
@@ -85,9 +103,15 @@ public class ReflectionQueryFacade {
                                             imagesByReflectionId.getOrDefault(
                                                     reflection.getId(), List.of());
                                     long likes = reflectionService.countLikes(reflection.getId());
+                                    boolean isMine =
+                                            viewerId != null
+                                                    && viewerId.equals(
+                                                            reflection.getUser().getId());
+                                    String ownerNickname = reflection.getUser().getNickname();
 
                                     return ReflectionListItemResponse.of(
-                                            reflection.getUser().getId(),
+                                            isMine,
+                                            ownerNickname,
                                             reflection.getId(),
                                             reflection.isOpen(),
                                             reflection.getTitle(),
@@ -151,6 +175,12 @@ public class ReflectionQueryFacade {
     private void validatePage(int page, int size) {
         if (page < 1 || size < 1) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+        }
+    }
+
+    private void validateOpenOnly(boolean isOpen) {
+        if (!isOpen) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_OPEN_ONLY);
         }
     }
 }
