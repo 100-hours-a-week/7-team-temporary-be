@@ -91,7 +91,7 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
-                description = "페이지 정보 오류",
+                description = "페이지 정보 오류 또는 공개 회고만 조회 가능",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
                 responseCode = "401",
@@ -121,9 +121,8 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    @Deprecated
     ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getOpenReflections(
-            boolean isOpen, int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, boolean isOpen, int page, int size);
 
     @Operation(summary = "비로그인 유저 회고 상세 조회")
     @ApiResponses({

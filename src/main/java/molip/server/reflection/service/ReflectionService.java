@@ -71,6 +71,13 @@ public class ReflectionService {
     }
 
     @Transactional(readOnly = true)
+    public Page<DayReflection> getOpenReflections(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("updatedAt").descending());
+
+        return dayReflectionRepository.findByIsOpenTrueAndDeletedAtIsNull(pageRequest);
+    }
+
+    @Transactional(readOnly = true)
     public boolean existsByDayPlanId(Long dayPlanId) {
         return dayReflectionRepository.existsByDayPlanIdAndDeletedAtIsNull(dayPlanId);
     }

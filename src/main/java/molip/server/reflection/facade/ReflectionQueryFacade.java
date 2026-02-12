@@ -3,6 +3,7 @@ package molip.server.reflection.facade;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.ImageType;
 import molip.server.common.exception.BaseException;
@@ -71,38 +72,19 @@ public class ReflectionQueryFacade {
 
         Page<DayReflection> reflections = reflectionService.getMyReflections(userId, page, size);
 
-        List<Long> reflectionIds =
-                reflections.getContent().stream().map(DayReflection::getId).toList();
+        return buildReflectionListResponse(reflections, page, size, userId);
+    }
 
-        Map<Long, List<ImageInfoResponse>> imagesByReflectionId =
-                resolveImagesByReflectionIds(reflectionIds);
+    @Transactional(readOnly = true)
+    public PageResponse<ReflectionListItemResponse> getOpenReflections(
+            Long viewerId, boolean isOpen, int page, int size) {
 
-        List<ReflectionListItemResponse> content =
-                reflections.getContent().stream()
-                        .map(
-                                reflection -> {
-                                    List<ImageInfoResponse> images =
-                                            imagesByReflectionId.getOrDefault(
-                                                    reflection.getId(), List.of());
-                                    long likes = reflectionService.countLikes(reflection.getId());
+        validateOpenOnly(isOpen);
+        validatePage(page, size);
 
-                                    return ReflectionListItemResponse.of(
-                                            reflection.getUser().getId(),
-                                            reflection.getId(),
-                                            reflection.isOpen(),
-                                            reflection.getTitle(),
-                                            reflection.getContent(),
-                                            Math.toIntExact(likes),
-                                            images,
-                                            reflection
-                                                    .getCreatedAt()
-                                                    .atZone(ZONE_ID)
-                                                    .toOffsetDateTime());
-                                })
-                        .toList();
+        Page<DayReflection> reflections = reflectionService.getOpenReflections(page, size);
 
-        return new PageResponse<>(
-                content, page, size, reflections.getTotalElements(), reflections.getTotalPages());
+        return buildReflectionListResponse(reflections, page, size, viewerId);
     }
 
     private List<ImageInfoResponse> resolveImages(Long reflectionId) {
@@ -128,7 +110,7 @@ public class ReflectionQueryFacade {
 
         return reflectionImages.entrySet().stream()
                 .collect(
-                        java.util.stream.Collectors.toMap(
+                        Collectors.toMap(
                                 Map.Entry::getKey,
                                 entry ->
                                         entry.getValue().stream()
@@ -148,9 +130,58 @@ public class ReflectionQueryFacade {
                                                 .toList()));
     }
 
+    private PageResponse<ReflectionListItemResponse> buildReflectionListResponse(
+            Page<DayReflection> reflections, int page, int size, Long viewerId) {
+
+        List<Long> reflectionIds =
+                reflections.getContent().stream().map(DayReflection::getId).toList();
+
+        Map<Long, List<ImageInfoResponse>> imagesByReflectionId =
+                resolveImagesByReflectionIds(reflectionIds);
+
+        List<ReflectionListItemResponse> content =
+                reflections.getContent().stream()
+                        .map(
+                                reflection -> {
+                                    List<ImageInfoResponse> images =
+                                            imagesByReflectionId.getOrDefault(
+                                                    reflection.getId(), List.of());
+                                    long likes = reflectionService.countLikes(reflection.getId());
+                                    boolean isMine =
+                                            viewerId != null
+                                                    && viewerId.equals(
+                                                            reflection.getUser().getId());
+                                    String ownerNickname = reflection.getUser().getNickname();
+
+                                    return ReflectionListItemResponse.of(
+                                            isMine,
+                                            ownerNickname,
+                                            reflection.getId(),
+                                            reflection.isOpen(),
+                                            reflection.getTitle(),
+                                            reflection.getContent(),
+                                            Math.toIntExact(likes),
+                                            images,
+                                            reflection
+                                                    .getCreatedAt()
+                                                    .atZone(ZONE_ID)
+                                                    .toOffsetDateTime());
+                                })
+                        .toList();
+
+        return new PageResponse<>(
+                content, page, size, reflections.getTotalElements(), reflections.getTotalPages());
+    }
+
     private void validatePage(int page, int size) {
         if (page < 1 || size < 1) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+        }
+    }
+
+    private void validateOpenOnly(boolean isOpen) {
+        if (!isOpen) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_OPEN_ONLY);
         }
     }
 }
