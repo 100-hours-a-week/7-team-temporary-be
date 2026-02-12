@@ -7,7 +7,7 @@ import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.service.ReflectionLikeService;
 import molip.server.reflection.service.ReflectionService;
 import molip.server.user.entity.Users;
-import molip.server.user.repository.UserRepository;
+import molip.server.user.service.UserService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +17,7 @@ public class ReflectionLikeCommandFacade {
 
     private final ReflectionLikeService reflectionLikeService;
     private final ReflectionService reflectionService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Transactional
     public void likeReflection(Long userId, Long reflectionId) {
@@ -25,10 +25,7 @@ public class ReflectionLikeCommandFacade {
 
         DayReflection reflection = reflectionService.getReflection(reflectionId);
 
-        Users user =
-                userRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+        Users user = userService.getUser(userId);
 
         boolean alreadyLiked = reflectionLikeService.isAlreadyLiked(userId, reflectionId);
 
