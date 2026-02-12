@@ -111,8 +111,7 @@ public class ReflectionController implements ReflectionApi {
     @GetMapping("/reflections/{reflectionId}")
     @Override
     public ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long reflectionId) {
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reflectionId) {
 
         Long viewerId = null;
         if (userDetails != null) {

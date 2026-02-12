@@ -29,6 +29,14 @@ public record ReflectionDetailResponse(
             List<ImageInfoResponse> images,
             OffsetDateTime createdAt) {
         return new ReflectionDetailResponse(
-                userId, reflectionId, isOpen, title, content, likes, isLikedByMe, images, createdAt);
+                userId,
+                reflectionId,
+                isOpen,
+                title,
+                content,
+                likes,
+                isLikedByMe,
+                images,
+                createdAt);
     }
 }
