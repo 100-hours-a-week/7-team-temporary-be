@@ -23,11 +23,14 @@ public class ReflectionImageService {
 
     @Transactional(readOnly = true)
     public Map<Long, List<DayReflectionImage>> getImagesByReflectionIds(List<Long> reflectionIds) {
+
         if (reflectionIds.isEmpty()) {
             return Collections.emptyMap();
         }
+
         List<DayReflectionImage> images =
                 dayReflectionImageRepository.findByReflectionIdsWithImage(reflectionIds);
+
         return images.stream()
                 .collect(Collectors.groupingBy(item -> item.getDayReflection().getId()));
     }
