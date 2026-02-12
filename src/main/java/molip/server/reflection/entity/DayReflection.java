@@ -53,4 +53,8 @@ public class DayReflection extends BaseEntity {
     public void updateOpen(boolean isOpen) {
         this.isOpen = isOpen;
     }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }

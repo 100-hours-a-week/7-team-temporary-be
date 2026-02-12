@@ -134,9 +134,16 @@ public class ReflectionController implements ReflectionApi {
 
     @PutMapping("/reflections/{reflectionId}")
     @Override
-    @Deprecated
     public ResponseEntity<Void> updateReflection(
-            @PathVariable Long reflectionId, @RequestBody ReflectionUpdateRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long reflectionId,
+            @RequestBody ReflectionUpdateRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reflectionCommandFacade.updateReflection(
+                userId, reflectionId, request.reflectionImageIds(), request.content());
+
         return ResponseEntity.noContent().build();
     }
 
