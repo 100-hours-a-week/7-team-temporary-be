@@ -56,7 +56,6 @@ public interface AuthApi {
     ResponseEntity<Void> logout(HttpServletRequest request);
 
     @Operation(summary = "토큰 재발급", description = "refreshToken은 쿠키로 전달됩니다.")
-    @SecurityRequirement(name = "JWT")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",

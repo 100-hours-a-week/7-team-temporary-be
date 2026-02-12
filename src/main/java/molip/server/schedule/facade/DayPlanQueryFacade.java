@@ -3,9 +3,15 @@ package molip.server.schedule.facade;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
+import molip.server.schedule.dto.response.DayPlanScheduleExistResponse.DayPlanScheduleExistItem;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.repository.DayPlanRepository;
 import molip.server.user.entity.Users;
@@ -52,5 +58,32 @@ public class DayPlanQueryFacade {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         return dayPlanRepository.save(new DayPlan(user, planDate));
+    }
+
+    @Transactional(readOnly = true)
+    public DayPlanScheduleExistResponse getDayPlanExistence(
+            Long userId, String startDate, String endDate) {
+
+        LocalDate start = parseDate(startDate);
+        LocalDate end = parseDate(endDate);
+        if (start.isAfter(end)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_DATE_REQUIRED);
+        }
+
+        Set<LocalDate> hasPlans =
+                dayPlanRepository
+                        .findByUserIdAndPlanDateBetweenAndDeletedAtIsNull(userId, start, end)
+                        .stream()
+                        .map(DayPlan::getPlanDate)
+                        .collect(Collectors.toSet());
+
+        List<DayPlanScheduleExistItem> days = new ArrayList<>();
+        LocalDate cursor = start;
+        while (!cursor.isAfter(end)) {
+            days.add(new DayPlanScheduleExistItem(cursor, hasPlans.contains(cursor)));
+            cursor = cursor.plusDays(1);
+        }
+
+        return DayPlanScheduleExistResponse.of(start, end, days);
     }
 }

@@ -17,6 +17,8 @@ import molip.server.reflection.dto.response.ReflectionExistResponse;
 import molip.server.reflection.dto.response.ReflectionLikeResponse;
 import molip.server.reflection.dto.response.ReflectionListItemResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Reflection", description = "회고 API")
 public interface ReflectionApi {
@@ -56,7 +58,9 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ReflectionCreateResponse>> createReflection(
-            Long dayPlanId, ReflectionCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long dayPlanId,
+            ReflectionCreateRequest request);
 
     @Operation(summary = "특정 일자 회고 작성 여부 조회")
     @SecurityRequirement(name = "JWT")
@@ -75,6 +79,7 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<ServerResponse<ReflectionExistResponse>> existsReflection(Long dayPlanId);
 
     @Operation(summary = "로그인한 유저의 개인 회고 조회")
@@ -97,6 +102,7 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getMyReflections(
             int page, int size);
 
@@ -115,10 +121,11 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getOpenReflections(
             boolean isOpen, int page, int size);
 
-    @Operation(summary = "회고 상세 조회")
+    @Operation(summary = "비로그인 유저 회고 상세 조회")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -162,6 +169,7 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<Void> updateReflection(Long reflectionId, ReflectionUpdateRequest request);
 
     @Operation(summary = "회고 좋아요 생성")
@@ -185,6 +193,7 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<Void> likeReflection(Long reflectionId);
 
     @Operation(summary = "회고 좋아요 삭제")
@@ -204,6 +213,7 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<Void> unlikeReflection(Long reflectionId);
 
     @Operation(summary = "회고 좋아요 여부 조회")
@@ -227,5 +237,6 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<ServerResponse<ReflectionLikeResponse>> getLikeStatus(Long reflectionId);
 }

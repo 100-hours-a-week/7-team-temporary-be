@@ -36,6 +36,7 @@ public enum SuccessCode {
     SCHEDULE_CREATED("SUCCESS", "일정이 성공적으로 생성되었습니다."),
     DAY_TODO_LIST_SUCCESS("SUCCESS", "금일 TodoList 조회를 완료했습니다."),
     DAY_SCHEDULE_LIST_SUCCESS("SUCCESS", "금일 시간이 지정된 일정 목록을 성공적으로 조회했습니다."),
+    DAY_PLAN_EXISTENCE_SUCCESS("SUCCESS", "일정 존재 여부를 성공적으로 조회했습니다."),
     ARRANGEMENT_JOB_CREATED("SUCCESS", "AI 배치 작업이 생성되었습니다."),
     ARRANGEMENT_JOB_FETCH_SUCCESS("SUCCESS", "AI 배치 작업 조회 성공"),
     ARRANGEMENT_JOB_RUNNING_SUCCESS("SUCCESS", "AI 배치 작업을 성공적으로 조회했습니다."),
