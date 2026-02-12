@@ -3,6 +3,7 @@ package molip.server.reflection.facade;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.ImageType;
 import molip.server.common.exception.BaseException;
@@ -109,7 +110,7 @@ public class ReflectionQueryFacade {
 
         return reflectionImages.entrySet().stream()
                 .collect(
-                        java.util.stream.Collectors.toMap(
+                        Collectors.toMap(
                                 Map.Entry::getKey,
                                 entry ->
                                         entry.getValue().stream()
