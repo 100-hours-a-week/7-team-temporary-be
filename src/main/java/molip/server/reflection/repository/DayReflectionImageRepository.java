@@ -15,4 +15,13 @@ public interface DayReflectionImageRepository extends JpaRepository<DayReflectio
                     + "and dri.deletedAt is null "
                     + "and img.deletedAt is null")
     List<DayReflectionImage> findByReflectionIdWithImage(@Param("reflectionId") Long reflectionId);
+
+    @Query(
+            "select dri from DayReflectionImage dri "
+                    + "join fetch dri.image img "
+                    + "where dri.dayReflection.id in :reflectionIds "
+                    + "and dri.deletedAt is null "
+                    + "and img.deletedAt is null")
+    List<DayReflectionImage> findByReflectionIdsWithImage(
+            @Param("reflectionIds") List<Long> reflectionIds);
 }

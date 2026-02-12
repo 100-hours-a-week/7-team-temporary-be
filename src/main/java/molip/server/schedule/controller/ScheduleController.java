@@ -118,7 +118,7 @@ public class ScheduleController implements ScheduleApi {
                 ServerResponse.success(SuccessCode.DAY_SCHEDULE_LIST_SUCCESS, response));
     }
 
-    @GetMapping("/day-plan/schedules")
+    @GetMapping("/day-plan/period/schedules")
     @Override
     public ResponseEntity<ServerResponse<DayPlanScheduleExistResponse>> getDayPlanExistence(
             @AuthenticationPrincipal UserDetails userDetails,

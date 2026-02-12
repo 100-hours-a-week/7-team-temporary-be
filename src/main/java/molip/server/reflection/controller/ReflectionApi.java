@@ -79,8 +79,8 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    @Deprecated
-    ResponseEntity<ServerResponse<ReflectionExistResponse>> existsReflection(Long dayPlanId);
+    ResponseEntity<ServerResponse<ReflectionExistResponse>> existsReflection(
+            @AuthenticationPrincipal UserDetails userDetails, Long dayPlanId);
 
     @Operation(summary = "로그인한 유저의 개인 회고 조회")
     @SecurityRequirement(name = "JWT")
@@ -104,7 +104,7 @@ public interface ReflectionApi {
     })
     @Deprecated
     ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getMyReflections(
-            int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 
     @Operation(summary = "공개된 전체 회고 조회")
     @ApiResponses({

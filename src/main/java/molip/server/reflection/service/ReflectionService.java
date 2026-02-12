@@ -5,11 +5,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.exception.BaseException;
+import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;
 import molip.server.reflection.repository.DayReflectionRepository;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +45,39 @@ public class ReflectionService {
         }
 
         return reflection;
+    }
+
+    @Transactional(readOnly = true)
+    public DayReflection getOpenReflection(Long reflectionId) {
+        DayReflection reflection = getReflection(reflectionId);
+        if (!reflection.isOpen()) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REFLECTION_OPEN_ONLY);
+        }
+        return reflection;
+    }
+
+    @Transactional(readOnly = true)
+    public DayReflection getReflection(Long reflectionId) {
+        return dayReflectionRepository
+                .findByIdAndDeletedAtIsNull(reflectionId)
+                .orElseThrow(() -> new BaseException(ErrorCode.REFLECTION_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DayReflection> getMyReflections(Long userId, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("updatedAt").descending());
+
+        return dayReflectionRepository.findByUserIdAndDeletedAtIsNull(userId, pageRequest);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByDayPlanId(Long dayPlanId) {
+        return dayReflectionRepository.existsByDayPlanIdAndDeletedAtIsNull(dayPlanId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countLikes(Long reflectionId) {
+        return dayReflectionRepository.countLikes(reflectionId);
     }
 
     private String formatTitle(LocalDate planDate) {
