@@ -30,6 +30,14 @@ public record ReflectionListItemResponse(
             OffsetDateTime createdAt) {
 
         return new ReflectionListItemResponse(
-                isMine,ownerNickname, reflectionId, isOpen, title, content, likes, images, createdAt);
+                isMine,
+                ownerNickname,
+                reflectionId,
+                isOpen,
+                title,
+                content,
+                likes,
+                images,
+                createdAt);
     }
 }
