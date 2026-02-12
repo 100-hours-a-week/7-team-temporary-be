@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
+import molip.server.reflection.dto.request.ReflectionOpenUpdateRequest;
 import molip.server.reflection.dto.request.ReflectionUpdateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
 import molip.server.reflection.dto.response.ReflectionDetailResponse;
@@ -114,7 +115,7 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
-                description = "페이지 정보 오류",
+                description = "페이지 정보 오류 또는 공개 회고만 조회 가능",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
                 responseCode = "500",
@@ -142,6 +143,28 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(Long reflectionId);
+
+    @Operation(summary = "회고 공개 여부 수정")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "수정 성공"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "본인 회고 아님",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "회고 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> updateOpen(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long reflectionId,
+            ReflectionOpenUpdateRequest request);
 
     @Operation(summary = "회고 수정")
     @SecurityRequirement(name = "JWT")
