@@ -82,15 +82,24 @@ public class ReflectionController implements ReflectionApi {
                 ServerResponse.success(SuccessCode.MY_REFLECTION_LIST_SUCCESS, response));
     }
 
-    @GetMapping(value = "/reflections", params = "isOpen")
+    @GetMapping("/reflections")
     @Override
-    @Deprecated
     public ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>>
             getOpenReflections(
+                    @AuthenticationPrincipal UserDetails userDetails,
                     @RequestParam boolean isOpen,
                     @RequestParam(required = false, defaultValue = "1") int page,
                     @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        Long viewerId = null;
+        if (userDetails != null) {
+            viewerId = Long.valueOf(userDetails.getUsername());
+        }
+
+        PageResponse<ReflectionListItemResponse> response =
+                reflectionQueryFacade.getOpenReflections(viewerId, isOpen, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.OPEN_REFLECTION_LIST_SUCCESS, response));
     }
 
     @GetMapping("/reflections/{reflectionId}")
