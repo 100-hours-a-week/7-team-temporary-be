@@ -111,10 +111,16 @@ public class ReflectionController implements ReflectionApi {
     @GetMapping("/reflections/{reflectionId}")
     @Override
     public ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long reflectionId) {
 
+        Long viewerId = null;
+        if (userDetails != null) {
+            viewerId = Long.valueOf(userDetails.getUsername());
+        }
+
         ReflectionDetailResponse response =
-                reflectionQueryFacade.getOpenReflectionDetail(reflectionId);
+                reflectionQueryFacade.getOpenReflectionDetail(viewerId, reflectionId);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.REFLECTION_DETAIL_SUCCESS, response));

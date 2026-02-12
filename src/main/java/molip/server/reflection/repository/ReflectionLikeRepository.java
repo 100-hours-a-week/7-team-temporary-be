@@ -10,4 +10,7 @@ public interface ReflectionLikeRepository extends JpaRepository<ReflectionLike, 
 
     Optional<ReflectionLike> findByUserIdAndReflectionIdAndDeletedAtIsNull(
             Long userId, Long reflectionId);
+
+    java.util.List<ReflectionLike> findByUserIdAndReflectionIdInAndDeletedAtIsNull(
+            Long userId, java.util.List<Long> reflectionIds);
 }

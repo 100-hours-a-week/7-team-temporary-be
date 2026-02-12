@@ -13,6 +13,7 @@ public record ReflectionDetailResponse(
         @Schema(description = "제목", example = "2026.01.13(수)") String title,
         @Schema(description = "내용", example = "오늘 집중 잘 됐다") String content,
         @Schema(description = "좋아요 수", example = "37") int likes,
+        @Schema(description = "요청 유저 좋아요 여부", example = "false") boolean isLikedByMe,
         @Schema(description = "이미지 목록") List<ImageInfoResponse> images,
         @Schema(description = "작성 시각", example = "2026-01-13T23:10:00+09:00")
                 OffsetDateTime createdAt) {
@@ -24,9 +25,10 @@ public record ReflectionDetailResponse(
             String title,
             String content,
             int likes,
+            boolean isLikedByMe,
             List<ImageInfoResponse> images,
             OffsetDateTime createdAt) {
         return new ReflectionDetailResponse(
-                userId, reflectionId, isOpen, title, content, likes, images, createdAt);
+                userId, reflectionId, isOpen, title, content, likes, isLikedByMe, images, createdAt);
     }
 }

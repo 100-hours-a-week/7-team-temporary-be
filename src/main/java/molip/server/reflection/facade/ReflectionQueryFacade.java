@@ -1,8 +1,10 @@
 package molip.server.reflection.facade;
 
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.ImageType;
@@ -18,6 +20,7 @@ import molip.server.reflection.dto.response.ReflectionListItemResponse;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.entity.DayReflectionImage;
 import molip.server.reflection.service.ReflectionImageService;
+import molip.server.reflection.service.ReflectionLikeService;
 import molip.server.reflection.service.ReflectionService;
 import molip.server.schedule.service.DayPlanService;
 import org.springframework.data.domain.Page;
@@ -34,14 +37,17 @@ public class ReflectionQueryFacade {
     private final DayPlanService dayPlanService;
     private final ReflectionService reflectionService;
     private final ReflectionImageService reflectionImageService;
+    private final ReflectionLikeService reflectionLikeService;
 
     @Transactional(readOnly = true)
-    public ReflectionDetailResponse getOpenReflectionDetail(Long reflectionId) {
+    public ReflectionDetailResponse getOpenReflectionDetail(Long viewerId, Long reflectionId) {
 
         DayReflection reflection = reflectionService.getOpenReflection(reflectionId);
 
         List<ImageInfoResponse> images = resolveImages(reflectionId);
         long likes = reflectionService.countLikes(reflectionId);
+        boolean isLikedByMe =
+                viewerId != null && reflectionLikeService.isLiked(viewerId, reflectionId);
 
         return ReflectionDetailResponse.of(
                 reflection.getUser().getId(),
@@ -50,6 +56,7 @@ public class ReflectionQueryFacade {
                 reflection.getTitle(),
                 reflection.getContent(),
                 Math.toIntExact(likes),
+                isLikedByMe,
                 images,
                 reflection.getCreatedAt().atZone(ZONE_ID).toOffsetDateTime());
     }
@@ -138,6 +145,10 @@ public class ReflectionQueryFacade {
 
         Map<Long, List<ImageInfoResponse>> imagesByReflectionId =
                 resolveImagesByReflectionIds(reflectionIds);
+        Set<Long> likedReflectionIds =
+                viewerId == null
+                        ? Collections.emptySet()
+                        : reflectionLikeService.findLikedReflectionIds(viewerId, reflectionIds);
 
         List<ReflectionListItemResponse> content =
                 reflections.getContent().stream()
@@ -151,10 +162,13 @@ public class ReflectionQueryFacade {
                                             viewerId != null
                                                     && viewerId.equals(
                                                             reflection.getUser().getId());
+                                    boolean isLikedByMe =
+                                            likedReflectionIds.contains(reflection.getId());
                                     String ownerNickname = reflection.getUser().getNickname();
 
                                     return ReflectionListItemResponse.of(
                                             isMine,
+                                            isLikedByMe,
                                             ownerNickname,
                                             reflection.getId(),
                                             reflection.isOpen(),

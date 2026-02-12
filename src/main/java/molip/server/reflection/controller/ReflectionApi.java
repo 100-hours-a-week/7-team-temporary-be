@@ -142,7 +142,8 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(Long reflectionId);
+    ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(
+            @AuthenticationPrincipal UserDetails userDetails, Long reflectionId);
 
     @Operation(summary = "회고 공개 여부 수정")
     @SecurityRequirement(name = "JWT")
