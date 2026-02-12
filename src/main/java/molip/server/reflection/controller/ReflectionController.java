@@ -12,6 +12,7 @@ import molip.server.reflection.dto.response.ReflectionExistResponse;
 import molip.server.reflection.dto.response.ReflectionLikeResponse;
 import molip.server.reflection.dto.response.ReflectionListItemResponse;
 import molip.server.reflection.facade.ReflectionCommandFacade;
+import molip.server.reflection.facade.ReflectionQueryFacade;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReflectionController implements ReflectionApi {
 
     private final ReflectionCommandFacade reflectionCommandFacade;
+    private final ReflectionQueryFacade reflectionQueryFacade;
 
     @PostMapping("/day-plan/{dayPlanId}/reflection")
     @Override
@@ -77,10 +79,14 @@ public class ReflectionController implements ReflectionApi {
 
     @GetMapping("/reflections/{reflectionId}")
     @Override
-    @Deprecated
     public ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(
             @PathVariable Long reflectionId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        ReflectionDetailResponse response =
+                reflectionQueryFacade.getOpenReflectionDetail(reflectionId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.REFLECTION_DETAIL_SUCCESS, response));
     }
 
     @PutMapping("/reflections/{reflectionId}")
