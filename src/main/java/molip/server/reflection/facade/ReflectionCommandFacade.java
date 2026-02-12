@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -12,10 +13,15 @@ import molip.server.image.repository.ImageRepository;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
 import molip.server.reflection.entity.DayReflection;
+import molip.server.reflection.entity.DayReflectionImage;
+import molip.server.reflection.event.ReflectionImagesAddedEvent;
+import molip.server.reflection.event.ReflectionImagesRemovedEvent;
+import molip.server.reflection.repository.DayReflectionImageRepository;
 import molip.server.reflection.repository.DayReflectionRepository;
 import molip.server.reflection.service.ReflectionService;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.repository.DayPlanRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,8 +31,10 @@ public class ReflectionCommandFacade {
 
     private final DayPlanRepository dayPlanRepository;
     private final DayReflectionRepository dayReflectionRepository;
+    private final DayReflectionImageRepository dayReflectionImageRepository;
     private final ImageRepository imageRepository;
     private final ReflectionService reflectionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ReflectionCreateResponse createReflection(
@@ -85,5 +93,101 @@ public class ReflectionCommandFacade {
         Set<Long> unique = new LinkedHashSet<>(imageIds);
 
         return new ArrayList<>(unique);
+    }
+
+    @Transactional
+    public void updateReflection(
+            Long userId, Long reflectionId, List<Long> reflectionImageIds, String content) {
+
+        List<Long> imageIds = reflectionImageIds == null ? List.of() : reflectionImageIds;
+        validateUpdateReflection(userId, reflectionId);
+
+        DayReflection reflection = reflectionService.getReflection(reflectionId);
+        validateReflectionOwnership(reflection, userId);
+
+        if (content != null) {
+            reflection.updateContent(content);
+        }
+
+        List<Long> uniqueImageIds = uniqueIds(imageIds);
+        List<Image> images = imageRepository.findByIdInAndDeletedAtIsNull(uniqueImageIds);
+
+        if (images.size() != uniqueImageIds.size()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_IMAGES);
+        }
+
+        List<DayReflectionImage> existing =
+                dayReflectionImageRepository.findByReflectionIdWithImage(reflectionId);
+
+        Set<Long> existingImageIds =
+                existing.stream().map(item -> item.getImage().getId()).collect(Collectors.toSet());
+
+        List<Long> removeImageIds =
+                existingImageIds.stream().filter(id -> !uniqueImageIds.contains(id)).toList();
+
+        List<Image> addImages =
+                images.stream().filter(image -> !existingImageIds.contains(image.getId())).toList();
+
+        publishImageUpdateEvents(reflection.getId(), removeImageIds, addImages, reflection);
+    }
+
+    @Transactional
+    public void deleteReflection(Long userId, Long reflectionId) {
+        validateDeleteReflection(userId, reflectionId);
+
+        DayReflection reflection =
+                dayReflectionRepository
+                        .findById(reflectionId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.REFLECTION_NOT_FOUND));
+
+        if (reflection.getDeletedAt() != null) {
+            throw new BaseException(ErrorCode.REFLECTION_ALREADY_DELETED);
+        }
+
+        validateReflectionOwnership(reflection, userId);
+
+        List<DayReflectionImage> existing =
+                dayReflectionImageRepository.findByReflectionIdWithImage(reflectionId);
+
+        List<Long> removeImageIds = existing.stream().map(item -> item.getImage().getId()).toList();
+
+        if (!removeImageIds.isEmpty()) {
+            eventPublisher.publishEvent(
+                    new ReflectionImagesRemovedEvent(reflectionId, removeImageIds));
+        }
+
+        reflection.delete();
+    }
+
+    private void validateReflectionOwnership(DayReflection reflection, Long userId) {
+        if (!reflection.getUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REFLECTION_UPDATE);
+        }
+    }
+
+    private void validateUpdateReflection(Long userId, Long reflectionId) {
+        if (userId == null || reflectionId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateDeleteReflection(Long userId, Long reflectionId) {
+        if (userId == null || reflectionId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void publishImageUpdateEvents(
+            Long reflectionId,
+            List<Long> removeImageIds,
+            List<Image> addImages,
+            DayReflection reflection) {
+        if (!removeImageIds.isEmpty()) {
+            eventPublisher.publishEvent(
+                    new ReflectionImagesRemovedEvent(reflectionId, removeImageIds));
+        }
+        if (!addImages.isEmpty()) {
+            eventPublisher.publishEvent(new ReflectionImagesAddedEvent(reflection, addImages));
+        }
     }
 }

@@ -11,6 +11,7 @@ import molip.server.image.entity.Image;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;
 import molip.server.reflection.repository.DayReflectionRepository;
+import molip.server.schedule.entity.DayPlan;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,10 +31,7 @@ public class ReflectionService {
 
     @Transactional
     public DayReflection createReflection(
-            molip.server.schedule.entity.DayPlan dayPlan,
-            String content,
-            boolean isOpen,
-            List<Image> images) {
+            DayPlan dayPlan, String content, boolean isOpen, List<Image> images) {
         String title = formatTitle(dayPlan.getPlanDate());
 
         DayReflection reflection =
@@ -49,10 +47,15 @@ public class ReflectionService {
 
     @Transactional(readOnly = true)
     public DayReflection getOpenReflection(Long reflectionId) {
-        DayReflection reflection = getReflection(reflectionId);
+        DayReflection reflection =
+                dayReflectionRepository
+                        .findByIdAndDeletedAtIsNull(reflectionId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.REFLECTION_NOT_FOUND));
+
         if (!reflection.isOpen()) {
             throw new BaseException(ErrorCode.FORBIDDEN_REFLECTION_OPEN_ONLY);
         }
+
         return reflection;
     }
 
@@ -87,7 +90,29 @@ public class ReflectionService {
         return dayReflectionRepository.countLikes(reflectionId);
     }
 
+    @Transactional
+    public void updateOpen(Long userId, Long reflectionId, Boolean isOpen) {
+        validateUpdateOpen(userId, reflectionId, isOpen);
+
+        DayReflection reflection =
+                dayReflectionRepository
+                        .findByIdAndDeletedAtIsNull(reflectionId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.REFLECTION_NOT_FOUND));
+
+        if (!reflection.getUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REFLECTION_UPDATE);
+        }
+
+        reflection.updateOpen(isOpen);
+    }
+
     private String formatTitle(LocalDate planDate) {
         return planDate.format(TITLE_FORMATTER);
+    }
+
+    private void validateUpdateOpen(Long userId, Long reflectionId, Boolean isOpen) {
+        if (userId == null || reflectionId == null || isOpen == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
     }
 }
