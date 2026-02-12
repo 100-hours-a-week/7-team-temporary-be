@@ -104,7 +104,7 @@ public interface ReflectionApi {
     })
     @Deprecated
     ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getMyReflections(
-            int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 
     @Operation(summary = "공개된 전체 회고 조회")
     @ApiResponses({
