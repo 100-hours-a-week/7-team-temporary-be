@@ -218,7 +218,8 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     @Deprecated
-    ResponseEntity<Void> likeReflection(Long reflectionId);
+    ResponseEntity<Void> likeReflection(
+            @AuthenticationPrincipal UserDetails userDetails, Long reflectionId);
 
     @Operation(summary = "회고 좋아요 삭제")
     @SecurityRequirement(name = "JWT")

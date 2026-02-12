@@ -13,6 +13,7 @@ import molip.server.reflection.dto.response.ReflectionExistResponse;
 import molip.server.reflection.dto.response.ReflectionLikeResponse;
 import molip.server.reflection.dto.response.ReflectionListItemResponse;
 import molip.server.reflection.facade.ReflectionCommandFacade;
+import molip.server.reflection.facade.ReflectionLikeCommandFacade;
 import molip.server.reflection.facade.ReflectionQueryFacade;
 import molip.server.reflection.service.ReflectionService;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReflectionController implements ReflectionApi {
 
     private final ReflectionCommandFacade reflectionCommandFacade;
+    private final ReflectionLikeCommandFacade reflectionLikeCommandFacade;
     private final ReflectionQueryFacade reflectionQueryFacade;
     private final ReflectionService reflectionService;
 
@@ -149,8 +151,12 @@ public class ReflectionController implements ReflectionApi {
 
     @PostMapping("/reflections/{reflectionId}/like")
     @Override
-    @Deprecated
-    public ResponseEntity<Void> likeReflection(@PathVariable Long reflectionId) {
+    public ResponseEntity<Void> likeReflection(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reflectionId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reflectionLikeCommandFacade.likeReflection(userId, reflectionId);
+
         return ResponseEntity.noContent().build();
     }
 
