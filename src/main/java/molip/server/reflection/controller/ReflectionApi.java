@@ -191,8 +191,10 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    @Deprecated
-    ResponseEntity<Void> updateReflection(Long reflectionId, ReflectionUpdateRequest request);
+    ResponseEntity<Void> updateReflection(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long reflectionId,
+            ReflectionUpdateRequest request);
 
     @Operation(summary = "회고 좋아요 생성")
     @SecurityRequirement(name = "JWT")

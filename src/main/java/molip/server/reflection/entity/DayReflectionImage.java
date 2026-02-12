@@ -34,4 +34,8 @@ public class DayReflectionImage extends BaseEntity {
         this.dayReflection = dayReflection;
         this.image = image;
     }
+
+    public void delete() {
+        this.deletedAt = java.time.LocalDateTime.now();
+    }
 }
