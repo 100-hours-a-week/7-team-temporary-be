@@ -197,6 +197,26 @@ public interface ReflectionApi {
             Long reflectionId,
             ReflectionUpdateRequest request);
 
+    @Operation(summary = "회고 삭제")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "본인 회고 아님",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "이미 삭제됨",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> deleteReflection(
+            @AuthenticationPrincipal UserDetails userDetails, Long reflectionId);
+
     @Operation(summary = "회고 좋아요 생성")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({

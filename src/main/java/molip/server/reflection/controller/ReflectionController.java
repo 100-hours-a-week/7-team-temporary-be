@@ -154,6 +154,17 @@ public class ReflectionController implements ReflectionApi {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/reflections/{reflectionId}")
+    @Override
+    public ResponseEntity<Void> deleteReflection(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reflectionId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reflectionCommandFacade.deleteReflection(userId, reflectionId);
+
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/reflections/{reflectionId}/like")
     @Override
     public ResponseEntity<Void> likeReflection(

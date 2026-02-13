@@ -131,6 +131,34 @@ public class ReflectionCommandFacade {
         publishImageUpdateEvents(reflection.getId(), removeImageIds, addImages, reflection);
     }
 
+    @Transactional
+    public void deleteReflection(Long userId, Long reflectionId) {
+        validateDeleteReflection(userId, reflectionId);
+
+        DayReflection reflection =
+                dayReflectionRepository
+                        .findById(reflectionId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.REFLECTION_NOT_FOUND));
+
+        if (reflection.getDeletedAt() != null) {
+            throw new BaseException(ErrorCode.REFLECTION_ALREADY_DELETED);
+        }
+
+        validateReflectionOwnership(reflection, userId);
+
+        List<DayReflectionImage> existing =
+                dayReflectionImageRepository.findByReflectionIdWithImage(reflectionId);
+
+        List<Long> removeImageIds = existing.stream().map(item -> item.getImage().getId()).toList();
+
+        if (!removeImageIds.isEmpty()) {
+            eventPublisher.publishEvent(
+                    new ReflectionImagesRemovedEvent(reflectionId, removeImageIds));
+        }
+
+        reflection.delete();
+    }
+
     private void validateReflectionOwnership(DayReflection reflection, Long userId) {
         if (!reflection.getUser().getId().equals(userId)) {
             throw new BaseException(ErrorCode.FORBIDDEN_REFLECTION_UPDATE);
@@ -138,6 +166,12 @@ public class ReflectionCommandFacade {
     }
 
     private void validateUpdateReflection(Long userId, Long reflectionId) {
+        if (userId == null || reflectionId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateDeleteReflection(Long userId, Long reflectionId) {
         if (userId == null || reflectionId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
         }

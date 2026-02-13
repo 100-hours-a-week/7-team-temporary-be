@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,5 +57,9 @@ public class DayReflection extends BaseEntity {
 
     public void updateContent(String content) {
         this.content = content;
+    }
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
     }
 }
