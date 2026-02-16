@@ -44,7 +44,7 @@ jobs:
 
           BRANCH="${GITHUB_REF_NAME}"
 
-        # e.g. release/v1.4.3 or hotfix/v1.4.3 → v1.4.3
+          # e.g. release/v1.4.3 or hotfix/v1.4.3 → v1.4.3
           VERSION=$(echo "$BRANCH" | sed -E 's|^(release|hotfix)/||')
 
           if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
