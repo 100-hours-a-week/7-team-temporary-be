@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - docker-ci-cd
+  push: # temp
+    branches:
+      - docker-ci-cd
 #      - develop
 #      - main
 #      - "release/**"
