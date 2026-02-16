@@ -44,12 +44,17 @@ jobs:
 
           BRANCH="${GITHUB_REF_NAME}"
 
-          # e.g. release/v1.4.3 or hotfix/v1.4.3 → v1.4.3
-          VERSION=$(echo "$BRANCH" | sed -E 's#^(release|hotfix)/##')
+          # TODO: 테스트 완료 후 삭제
+          if [[ "$BRANCH" == "docker-ci-cd" ]]; then
+            VERSION="v0.0.0-test"
+          else
+            # e.g. release/v1.4.3 or hotfix/v1.4.3 → v1.4.3
+            VERSION=$(echo "$BRANCH" | sed -E 's#^(release|hotfix)/##')
 
-          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid version branch: $BRANCH"
-            exit 1
+            if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid version branch: $BRANCH"
+              exit 1
+            fi
           fi
 
           SHA=$(git rev-parse --short=7 HEAD)
