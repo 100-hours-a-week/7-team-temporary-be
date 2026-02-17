@@ -1,9 +1,13 @@
 name: BigBang-BE-CD
-on:
-  push:
-    branches:
-      - 'release/**'
-      - 'main'
+
+on: {}
+
+# This workflow is deprecated
+#  push:
+#    branches:
+#      - 'release/**'
+#      - 'main'
+
 permissions:
   contents: read
   id-token: write
