@@ -97,12 +97,12 @@ jobs:
 
           for svc in task chat; do
             echo "Trigger deploy → $svc ($IMAGE_TAG)"
-            curl -sSf -X POST "${{ secrets.JENKINS_URL }}/job/backend/buildWithParameters" \
+            curl -sSf -X POST "${{ secrets.JENKINS_URL }}/job/backend-stg/buildWithParameters" \
               --user "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }}" \
-              --data "service=${svc}" \
-              --data "stage=stg" \
               --data "image_tag=${IMAGE_TAG}"
           done
+
+
 
 #  notify:
 #    name: Discord Notification
