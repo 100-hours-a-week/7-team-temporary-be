@@ -3,9 +3,8 @@ name: CD Staging
 on:
   push:
     branches:
-      - docker-ci-cd
-#      - "release/**"
-#      - "hotfix/**"
+      - "release/**"
+      - "hotfix/**"
 
 env:
   AWS_REGION: ap-northeast-2
