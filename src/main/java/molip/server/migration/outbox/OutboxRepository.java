@@ -74,6 +74,16 @@ public class OutboxRepository {
                 limit);
     }
 
+    public List<OutboxRecord> findDlqCandidates(int limit, int maxRetryCount) {
+        String sql =
+                "select id, event_id, aggregate_type, aggregate_id, event_type, occurred_at, payload, status, retry_count, last_error, created_at, updated_at "
+                        + "from "
+                        + TABLE
+                        + " where status = ? and retry_count >= ? order by id asc limit ?";
+        return jdbcTemplate.query(
+                sql, outboxRowMapper(), OutboxStatus.FAILED.name(), maxRetryCount, limit);
+    }
+
     public void markSent(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return;
@@ -107,6 +117,26 @@ public class OutboxRepository {
                         + ")";
         Object[] params = new Object[ids.size() + 2];
         params[0] = OutboxStatus.PENDING.name();
+        params[1] = Timestamp.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant());
+        for (int i = 0; i < ids.size(); i++) {
+            params[i + 2] = ids.get(i);
+        }
+        jdbcTemplate.update(sql, params);
+    }
+
+    public void markDlq(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        String inClause = ids.stream().map(id -> "?").reduce((a, b) -> a + "," + b).orElse("?");
+        String sql =
+                "update "
+                        + TABLE
+                        + " set status = ?, updated_at = ? where id in ("
+                        + inClause
+                        + ")";
+        Object[] params = new Object[ids.size() + 2];
+        params[0] = OutboxStatus.DLQ.name();
         params[1] = Timestamp.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant());
         for (int i = 0; i < ids.size(); i++) {
             params[i + 2] = ids.get(i);

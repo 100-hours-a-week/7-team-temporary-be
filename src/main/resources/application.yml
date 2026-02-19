@@ -113,6 +113,9 @@ kafka:
   outbox:
     fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
     batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}
+    dlq:
+      fixed-delay-ms: ${KAFKA_OUTBOX_DLQ_FIXED_DELAY_MS:15000}
+      batch-size: ${KAFKA_OUTBOX_DLQ_BATCH_SIZE:200}
     retry:
       fixed-delay-ms: ${KAFKA_OUTBOX_RETRY_FIXED_DELAY_MS:10000}
       delay-ms: ${KAFKA_OUTBOX_RETRY_DELAY_MS:60000}

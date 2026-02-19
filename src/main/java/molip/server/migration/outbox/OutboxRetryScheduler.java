@@ -32,8 +32,7 @@ public class OutboxRetryScheduler {
         OffsetDateTime retryBefore =
                 OffsetDateTime.now(ZoneOffset.UTC).minusNanos(retryDelayMs * 1_000_000L);
         List<OutboxRecord> retryable =
-                outboxRepository.findRetryableFailed(
-                        batchSize, maxRetryAttempts, retryBefore);
+                outboxRepository.findRetryableFailed(batchSize, maxRetryAttempts, retryBefore);
         if (retryable.isEmpty()) {
             return;
         }
