@@ -40,6 +40,8 @@ spring:
       enable-auto-commit: false
     producer:
       acks: ${KAFKA_PRODUCER_ACKS:all}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
     listener:
       ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual}
 
@@ -108,6 +110,9 @@ kafka:
     enabled: ${KAFKA_PRODUCER_ENABLED:false}
   consumer:
     enabled: ${KAFKA_CONSUMER_ENABLED:false}
+  outbox:
+    fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
+    batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}
   topics:
     domain-events: ${KAFKA_DOMAIN_EVENTS_TOPIC:domain.events.v1}
     dlq: ${KAFKA_DOMAIN_EVENTS_DLQ_TOPIC:domain.events.v1.DLQ}
