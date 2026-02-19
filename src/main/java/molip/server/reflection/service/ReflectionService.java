@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;
 import molip.server.reflection.repository.DayReflectionRepository;
@@ -28,6 +30,7 @@ public class ReflectionService {
 
     private final DayReflectionRepository dayReflectionRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public DayReflection createReflection(
@@ -42,6 +45,7 @@ public class ReflectionService {
             eventPublisher.publishEvent(new DayReflectionImagesCreateEvent(reflection, images));
         }
 
+        outboxEventService.recordCreated(AggregateType.REFLECTION, reflection.getId());
         return reflection;
     }
 
@@ -104,6 +108,7 @@ public class ReflectionService {
         }
 
         reflection.updateOpen(isOpen);
+        outboxEventService.recordUpdated(AggregateType.REFLECTION, reflection.getId());
     }
 
     private String formatTitle(LocalDate planDate) {

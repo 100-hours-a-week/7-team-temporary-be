@@ -10,6 +10,8 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse.DayPlanScheduleExistItem;
 import molip.server.schedule.entity.DayPlan;
@@ -28,6 +30,7 @@ public class DayPlanQueryFacade {
     private final DayPlanRepository dayPlanRepository;
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public DayPlan getOrCreateDayPlan(Long userId, String date) {
@@ -59,7 +62,9 @@ public class DayPlanQueryFacade {
                         .findByIdAndDeletedAtIsNull(userId)
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-        return dayPlanRepository.save(new DayPlan(user, planDate));
+        DayPlan dayPlan = dayPlanRepository.save(new DayPlan(user, planDate));
+        outboxEventService.recordCreated(AggregateType.DAY_PLAN, dayPlan.getId());
+        return dayPlan;
     }
 
     @Transactional(readOnly = true)

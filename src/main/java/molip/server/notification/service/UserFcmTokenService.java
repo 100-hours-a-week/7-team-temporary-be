@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.Platform;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.notification.entity.UserFcmToken;
 import molip.server.notification.repository.UserFcmTokenRepository;
 import molip.server.user.entity.Users;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserFcmTokenService {
 
     private final UserFcmTokenRepository userFcmTokenRepository;
+    private final OutboxEventService outboxEventService;
 
     @Transactional(readOnly = true)
     public List<String> getActiveTokens(Long userId) {
@@ -35,11 +38,19 @@ public class UserFcmTokenService {
         userFcmTokenRepository
                 .findByUserIdAndFcmTokenAndDeletedAtIsNull(user.getId(), fcmToken)
                 .ifPresentOrElse(
-                        token -> token.activate(lastSeenAt, platform),
-                        () ->
-                                userFcmTokenRepository.save(
-                                        new UserFcmToken(
-                                                user, fcmToken, platform, true, lastSeenAt)));
+                        token -> {
+                            token.activate(lastSeenAt, platform);
+                            outboxEventService.recordUpdated(
+                                    AggregateType.USER_FCM_TOKEN, token.getId());
+                        },
+                        () -> {
+                            UserFcmToken savedToken =
+                                    userFcmTokenRepository.save(
+                                            new UserFcmToken(
+                                                    user, fcmToken, platform, true, lastSeenAt));
+                            outboxEventService.recordCreated(
+                                    AggregateType.USER_FCM_TOKEN, savedToken.getId());
+                        });
     }
 
     @Transactional
@@ -56,5 +67,6 @@ public class UserFcmTokenService {
 
         token.deactivate();
         token.updateLastSeen(lastSeenAt);
+        outboxEventService.recordUpdated(AggregateType.USER_FCM_TOKEN, token.getId());
     }
 }

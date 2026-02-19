@@ -6,6 +6,8 @@ import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;
 import molip.server.user.event.UserProfileImageDeletedEvent;
@@ -22,6 +24,7 @@ public class UserCommandFacade {
     private final ImageRepository imageRepository;
     private final UserImageRepository userImageRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public void linkProfileImage(Long userId, String imageKey) {
@@ -37,7 +40,10 @@ public class UserCommandFacade {
                         .orElseThrow(() -> new BaseException(ErrorCode.CONFLICT_INVALID_IMAGE_KEY));
 
         image.markSuccess();
-        userImageRepository.save(new UserImage(user, image));
+        outboxEventService.recordUpdated(AggregateType.IMAGE, image.getId());
+
+        UserImage userImage = userImageRepository.save(new UserImage(user, image));
+        outboxEventService.recordCreated(AggregateType.USER_IMAGE, userImage.getId());
     }
 
     @Transactional
@@ -63,9 +69,15 @@ public class UserCommandFacade {
                             eventPublisher.publishEvent(
                                     new UserProfileImageDeletedEvent(
                                             oldImage.getImageType(), oldImage.getUploadKey()));
+                            outboxEventService.recordDeleted(
+                                    AggregateType.USER_IMAGE, userImage.getId());
+                            outboxEventService.recordDeleted(AggregateType.IMAGE, oldImage.getId());
                         });
 
         newImage.markSuccess();
-        userImageRepository.save(new UserImage(user, newImage));
+        outboxEventService.recordUpdated(AggregateType.IMAGE, newImage.getId());
+
+        UserImage savedUserImage = userImageRepository.save(new UserImage(user, newImage));
+        outboxEventService.recordCreated(AggregateType.USER_IMAGE, savedUserImage.getId());
     }
 }

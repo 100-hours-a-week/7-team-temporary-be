@@ -9,6 +9,8 @@ import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.terms.event.UserTermsAgreedEvent;
 import molip.server.user.dto.request.TermsAgreementRequest;
 import molip.server.user.entity.Users;
@@ -30,6 +32,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public Users registerUser(
@@ -64,6 +67,8 @@ public class UserService {
 
         publishTermsAgreementEvent(savedUser.getId(), terms);
 
+        outboxEventService.recordCreated(AggregateType.USER, savedUser.getId());
+
         return savedUser;
     }
 
@@ -88,6 +93,7 @@ public class UserService {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         user.modifyUserDetails(gender, birth, focusTimeZone, dayEndTime, nickname);
+        outboxEventService.recordUpdated(AggregateType.USER, user.getId());
     }
 
     @Transactional(readOnly = true)
@@ -109,6 +115,7 @@ public class UserService {
 
         String encodedPassword = passwordEncoder.encode(passwowrd);
         user.modifyPassword(encodedPassword);
+        outboxEventService.recordUpdated(AggregateType.USER, user.getId());
     }
 
     @Transactional
@@ -119,6 +126,7 @@ public class UserService {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         user.deleteUser();
+        outboxEventService.recordDeleted(AggregateType.USER, user.getId());
     }
 
     private void validateEmail(String email) {
