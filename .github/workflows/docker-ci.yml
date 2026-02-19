@@ -3,11 +3,11 @@ name: CI
 on:
   pull_request:
     branches:
-      - docker-ci-cd
-#      - develop
-#      - main
-#      - "release/**"
-#      - "hotㄷfix/**"
+      # - docker-ci-cd
+      - develop
+      - main
+      - "release/**"
+      - "hotㄷfix/**"
 
 permissions:
   contents: read
