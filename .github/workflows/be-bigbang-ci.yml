@@ -1,12 +1,10 @@
 name: BigBang-BE-CI
 
-on: {}
-
-# This workflow is deprecated
-#  pull_request:
-#    branches: [develop, main, 'release/**']
-#  push:
-#    branches: [develop, main, 'release/**', 'feature/cicd-merge']
+on:
+  pull_request:
+    branches: [deprecated] #[develop, main, 'release/**']
+  push:
+    branches: [deprecated] # [develop, main, 'release/**', 'feature/cicd-merge']
 
 permissions:
   contents: read

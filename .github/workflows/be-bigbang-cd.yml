@@ -1,12 +1,9 @@
 name: BigBang-BE-CD
 
-on: {}
-
-# This workflow is deprecated
-#  push:
-#    branches:
-#      - 'release/**'
-#      - 'main'
+on:
+  push:
+    branches:
+      - 'deprecated'
 
 permissions:
   contents: read
