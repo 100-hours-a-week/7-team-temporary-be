@@ -38,7 +38,7 @@ jobs:
 
           MSG="$(git log -1 --pretty=%B)"
 
-        # merge commit 메시지에서 release/hotfix 브랜치 추출
+          # merge commit 메시지에서 release/hotfix 브랜치 추출
           BRANCH=$(echo "$MSG" | sed -n 's/.*\(release\/v[0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')
 
           if [ -z "$BRANCH" ]; then
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
 
-        # 브랜치가 삭제됐을 수 있으므로 fetch 실패 시 merge commit의 parent에서 추출
+          # 브랜치가 삭제됐을 수 있으므로 fetch 실패 시 merge commit의 parent에서 추출
           if git fetch origin "${{ steps.meta.outputs.branch }}" 2>/dev/null; then
             SHA=$(git rev-parse --short=7 "origin/${{ steps.meta.outputs.branch }}")
           else
