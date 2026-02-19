@@ -104,13 +104,13 @@ jobs:
             --query 'images[0].imageManifest' \
             --output text)
 
-        # immutable prod tag
+          # immutable prod tag
           aws ecr put-image \
             --repository-name "${{ env.ECR_REPO }}" \
             --image-tag "$PROD_TAG" \
             --image-manifest "$MANIFEST"
 
-        # prod-current 이동
+          # prod-current 이동
           aws ecr put-image \
             --repository-name "${{ env.ECR_REPO }}" \
             --image-tag prod-current \
