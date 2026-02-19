@@ -3,7 +3,7 @@ name: CD Production
 on:
   push:
     branches:
-#      - docker-ci-cd
+      - docker-ci-cd  # TODO: 테스트 완료 후 삭제
       - main
 
 env:
@@ -35,6 +35,15 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
+
+          # TODO: 테스트 완료 후 삭제
+          if [ "$GITHUB_REF_NAME" = "docker-ci-cd" ]; then
+            echo "branch=test/v0.0.0" >> $GITHUB_OUTPUT
+            echo "version=v0.0.0-test" >> $GITHUB_OUTPUT
+            echo "Test mode: docker-ci-cd branch"
+            exit 0
+          fi
+
           MSG="$(git log -1 --pretty=%B)"
           BRANCH=$(echo "$MSG" | sed -En 's#.*(release/v[0-9]+\.[0-9]+\.[0-9]+).*#\1#p')
           if [ -z "$BRANCH" ]; then
