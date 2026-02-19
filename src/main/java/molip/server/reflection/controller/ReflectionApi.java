@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
+import molip.server.reflection.dto.request.ReflectionOpenUpdateRequest;
 import molip.server.reflection.dto.request.ReflectionUpdateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
 import molip.server.reflection.dto.response.ReflectionDetailResponse;
@@ -17,6 +18,8 @@ import molip.server.reflection.dto.response.ReflectionExistResponse;
 import molip.server.reflection.dto.response.ReflectionLikeResponse;
 import molip.server.reflection.dto.response.ReflectionListItemResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Reflection", description = "회고 API")
 public interface ReflectionApi {
@@ -56,7 +59,9 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ReflectionCreateResponse>> createReflection(
-            Long dayPlanId, ReflectionCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long dayPlanId,
+            ReflectionCreateRequest request);
 
     @Operation(summary = "특정 일자 회고 작성 여부 조회")
     @SecurityRequirement(name = "JWT")
@@ -75,7 +80,8 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ReflectionExistResponse>> existsReflection(Long dayPlanId);
+    ResponseEntity<ServerResponse<ReflectionExistResponse>> existsReflection(
+            @AuthenticationPrincipal UserDetails userDetails, Long dayPlanId);
 
     @Operation(summary = "로그인한 유저의 개인 회고 조회")
     @SecurityRequirement(name = "JWT")
@@ -86,7 +92,7 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
-                description = "페이지 정보 오류",
+                description = "페이지 정보 오류 또는 공개 회고만 조회 가능",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
                 responseCode = "401",
@@ -97,8 +103,9 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getMyReflections(
-            int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 
     @Operation(summary = "공개된 전체 회고 조회")
     @ApiResponses({
@@ -108,7 +115,7 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
-                description = "페이지 정보 오류",
+                description = "페이지 정보 오류 또는 공개 회고만 조회 가능",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
                 responseCode = "500",
@@ -116,9 +123,9 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<ReflectionListItemResponse>>> getOpenReflections(
-            boolean isOpen, int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, boolean isOpen, int page, int size);
 
-    @Operation(summary = "회고 상세 조회")
+    @Operation(summary = "비로그인 유저 회고 상세 조회")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -136,6 +143,28 @@ public interface ReflectionApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(Long reflectionId);
+
+    @Operation(summary = "회고 공개 여부 수정")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "수정 성공"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "본인 회고 아님",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "회고 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> updateOpen(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long reflectionId,
+            ReflectionOpenUpdateRequest request);
 
     @Operation(summary = "회고 수정")
     @SecurityRequirement(name = "JWT")
@@ -162,7 +191,30 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateReflection(Long reflectionId, ReflectionUpdateRequest request);
+    ResponseEntity<Void> updateReflection(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long reflectionId,
+            ReflectionUpdateRequest request);
+
+    @Operation(summary = "회고 삭제")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "본인 회고 아님",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "이미 삭제됨",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> deleteReflection(
+            @AuthenticationPrincipal UserDetails userDetails, Long reflectionId);
 
     @Operation(summary = "회고 좋아요 생성")
     @SecurityRequirement(name = "JWT")
@@ -185,6 +237,7 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<Void> likeReflection(Long reflectionId);
 
     @Operation(summary = "회고 좋아요 삭제")
@@ -204,6 +257,7 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<Void> unlikeReflection(Long reflectionId);
 
     @Operation(summary = "회고 좋아요 여부 조회")
@@ -227,5 +281,6 @@ public interface ReflectionApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
+    @Deprecated
     ResponseEntity<ServerResponse<ReflectionLikeResponse>> getLikeStatus(Long reflectionId);
 }

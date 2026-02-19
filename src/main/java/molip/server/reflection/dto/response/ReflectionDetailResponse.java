@@ -15,4 +15,18 @@ public record ReflectionDetailResponse(
         @Schema(description = "좋아요 수", example = "37") int likes,
         @Schema(description = "이미지 목록") List<ImageInfoResponse> images,
         @Schema(description = "작성 시각", example = "2026-01-13T23:10:00+09:00")
-                OffsetDateTime createdAt) {}
+                OffsetDateTime createdAt) {
+
+    public static ReflectionDetailResponse of(
+            Long userId,
+            Long reflectionId,
+            boolean isOpen,
+            String title,
+            String content,
+            int likes,
+            List<ImageInfoResponse> images,
+            OffsetDateTime createdAt) {
+        return new ReflectionDetailResponse(
+                userId, reflectionId, isOpen, title, content, likes, images, createdAt);
+    }
+}

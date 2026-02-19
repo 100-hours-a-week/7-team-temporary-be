@@ -43,7 +43,7 @@ public class AuthController implements AuthApi {
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("Lax")
-                        .path("/token")
+                        .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
         ResponseCookie deviceCookie =
@@ -51,7 +51,7 @@ public class AuthController implements AuthApi {
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("Lax")
-                        .path("/token")
+                        .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
         return ResponseEntity.ok()
@@ -80,7 +80,7 @@ public class AuthController implements AuthApi {
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("Lax")
-                        .path("/token")
+                        .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
         ResponseCookie deviceCookie =
@@ -88,7 +88,7 @@ public class AuthController implements AuthApi {
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("Lax")
-                        .path("/token")
+                        .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
 
