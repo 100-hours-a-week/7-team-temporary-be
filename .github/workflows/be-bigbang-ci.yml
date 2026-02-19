@@ -2,9 +2,9 @@ name: BigBang-BE-CI
 
 on:
   pull_request:
-    branches: [develop, main, 'release/**']
+    branches: [deprecated] #[develop, main, 'release/**']
   push:
-    branches: [develop, main, 'release/**', 'feature/cicd-merge']
+    branches: [deprecated] # [develop, main, 'release/**', 'feature/cicd-merge']
 
 permissions:
   contents: read
