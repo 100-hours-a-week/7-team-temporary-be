@@ -113,6 +113,11 @@ kafka:
   outbox:
     fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
     batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}
+    retry:
+      fixed-delay-ms: ${KAFKA_OUTBOX_RETRY_FIXED_DELAY_MS:10000}
+      delay-ms: ${KAFKA_OUTBOX_RETRY_DELAY_MS:60000}
+      max-attempts: ${KAFKA_OUTBOX_RETRY_MAX_ATTEMPTS:5}
+      batch-size: ${KAFKA_OUTBOX_RETRY_BATCH_SIZE:200}
   topics:
     domain-events: ${KAFKA_DOMAIN_EVENTS_TOPIC:domain.events.v1}
     dlq: ${KAFKA_DOMAIN_EVENTS_DLQ_TOPIC:domain.events.v1.DLQ}
