@@ -71,6 +71,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          provenance: false
           tags: |
             ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ steps.meta.outputs.tag }}
             ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.STAGE }}-current
@@ -100,7 +101,6 @@ jobs:
               --user "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }}" \
               --data "image_tag=${IMAGE_TAG}"
           done
-
 
 
 #  notify:
