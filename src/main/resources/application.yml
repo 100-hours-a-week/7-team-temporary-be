@@ -32,6 +32,16 @@ spring:
         access-key: ${AWS_S3_ACCESS_KEY}
         secret-key: ${AWS_S3_SECRET_KEY}
         bucket: ${AWS_S3_BUCKET}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:molip-migration}
+      auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: false
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+    listener:
+      ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual}
 
 
 jwt:
@@ -91,3 +101,13 @@ notification:
   dispatch:
     fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
     batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}
+
+kafka:
+  enabled: ${KAFKA_ENABLED:false}
+  producer:
+    enabled: ${KAFKA_PRODUCER_ENABLED:false}
+  consumer:
+    enabled: ${KAFKA_CONSUMER_ENABLED:false}
+  topics:
+    domain-events: ${KAFKA_DOMAIN_EVENTS_TOPIC:domain.events.v1}
+    dlq: ${KAFKA_DOMAIN_EVENTS_DLQ_TOPIC:domain.events.v1.DLQ}
