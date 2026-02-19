@@ -7,7 +7,7 @@ on:
       - develop
       - main
       - "release/**"
-      - "hotㄷfix/**"
+      - "hotfix/**"
 
 permissions:
   contents: read
@@ -62,6 +62,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: java
+          build-mode: none
 
       - name: Perform CodeQL Analysis
         if: github.base_ref == 'main' || startsWith(github.base_ref, 'release/')
