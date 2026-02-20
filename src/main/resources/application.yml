@@ -104,6 +104,14 @@ notification:
     fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
     batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}
 
+
+migration:
+  enabled: ${MIGRATION_ENABLED:false}
+  datasource:
+    url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/migration}
+    username: ${MIGRATION_DB_USERNAME:migration}
+    password: ${MIGRATION_DB_PASSWORD:migration}
+
 kafka:
   enabled: ${KAFKA_ENABLED:false}
   producer:

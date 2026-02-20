@@ -315,3 +315,44 @@ CREATE TABLE IF NOT EXISTS report_chat_message (
   INDEX idx_report_chat_message_report_deleted_sent (report_id, deleted_at, sent_at),
   CONSTRAINT fk_report_chat_message_report_id FOREIGN KEY (report_id) REFERENCES report(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS outbox_event (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  aggregate_type VARCHAR(50) NOT NULL,
+  aggregate_id VARCHAR(50) NOT NULL,
+  event_type VARCHAR(20) NOT NULL,
+  occurred_at DATETIME(6) NOT NULL,
+  payload LONGTEXT NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  retry_count INT NOT NULL,
+  last_error VARCHAR(1000) NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  INDEX idx_outbox_status_updated (status, updated_at),
+  INDEX idx_outbox_event_id (event_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS event_apply_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  aggregate_type VARCHAR(50) NOT NULL,
+  aggregate_id VARCHAR(50) NOT NULL,
+  event_type VARCHAR(20) NOT NULL,
+  applied_at DATETIME(6) NOT NULL,
+  UNIQUE KEY uk_event_apply_log_event_id (event_id),
+  INDEX idx_event_apply_log_aggregate (aggregate_type, aggregate_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS migration_event_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  aggregate_type VARCHAR(50) NOT NULL,
+  aggregate_id VARCHAR(50) NOT NULL,
+  event_type VARCHAR(20) NOT NULL,
+  occurred_at DATETIME(6) NOT NULL,
+  payload LONGTEXT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  INDEX idx_migration_event_log_event_id (event_id),
+  INDEX idx_migration_event_log_aggregate (aggregate_type, aggregate_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
