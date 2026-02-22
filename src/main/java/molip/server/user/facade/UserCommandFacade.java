@@ -7,6 +7,7 @@ import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;
@@ -40,10 +41,14 @@ public class UserCommandFacade {
                         .orElseThrow(() -> new BaseException(ErrorCode.CONFLICT_INVALID_IMAGE_KEY));
 
         image.markSuccess();
-        outboxEventService.recordUpdated(AggregateType.IMAGE, image.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.IMAGE, image.getId(), OutboxPayloadMapper.image(image));
 
         UserImage userImage = userImageRepository.save(new UserImage(user, image));
-        outboxEventService.recordCreated(AggregateType.USER_IMAGE, userImage.getId());
+        outboxEventService.recordCreated(
+                AggregateType.USER_IMAGE,
+                userImage.getId(),
+                OutboxPayloadMapper.userImage(userImage));
     }
 
     @Transactional
@@ -70,14 +75,23 @@ public class UserCommandFacade {
                                     new UserProfileImageDeletedEvent(
                                             oldImage.getImageType(), oldImage.getUploadKey()));
                             outboxEventService.recordDeleted(
-                                    AggregateType.USER_IMAGE, userImage.getId());
-                            outboxEventService.recordDeleted(AggregateType.IMAGE, oldImage.getId());
+                                    AggregateType.USER_IMAGE,
+                                    userImage.getId(),
+                                    OutboxPayloadMapper.userImage(userImage));
+                            outboxEventService.recordDeleted(
+                                    AggregateType.IMAGE,
+                                    oldImage.getId(),
+                                    OutboxPayloadMapper.image(oldImage));
                         });
 
         newImage.markSuccess();
-        outboxEventService.recordUpdated(AggregateType.IMAGE, newImage.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.IMAGE, newImage.getId(), OutboxPayloadMapper.image(newImage));
 
         UserImage savedUserImage = userImageRepository.save(new UserImage(user, newImage));
-        outboxEventService.recordCreated(AggregateType.USER_IMAGE, savedUserImage.getId());
+        outboxEventService.recordCreated(
+                AggregateType.USER_IMAGE,
+                savedUserImage.getId(),
+                OutboxPayloadMapper.userImage(savedUserImage));
     }
 }

@@ -11,6 +11,7 @@ import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
@@ -132,7 +133,10 @@ public class ReflectionCommandFacade {
                 images.stream().filter(image -> !existingImageIds.contains(image.getId())).toList();
 
         publishImageUpdateEvents(reflection.getId(), removeImageIds, addImages, reflection);
-        outboxEventService.recordUpdated(AggregateType.REFLECTION, reflection.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
     }
 
     @Transactional
@@ -161,7 +165,10 @@ public class ReflectionCommandFacade {
         }
 
         reflection.delete();
-        outboxEventService.recordDeleted(AggregateType.REFLECTION, reflection.getId());
+        outboxEventService.recordDeleted(
+                AggregateType.REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
     }
 
     private void validateReflectionOwnership(DayReflection reflection, Long userId) {

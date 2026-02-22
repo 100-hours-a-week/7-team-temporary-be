@@ -9,6 +9,7 @@ import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;
@@ -45,7 +46,10 @@ public class ReflectionService {
             eventPublisher.publishEvent(new DayReflectionImagesCreateEvent(reflection, images));
         }
 
-        outboxEventService.recordCreated(AggregateType.REFLECTION, reflection.getId());
+        outboxEventService.recordCreated(
+                AggregateType.REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
         return reflection;
     }
 
@@ -108,7 +112,10 @@ public class ReflectionService {
         }
 
         reflection.updateOpen(isOpen);
-        outboxEventService.recordUpdated(AggregateType.REFLECTION, reflection.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
     }
 
     private String formatTitle(LocalDate planDate) {

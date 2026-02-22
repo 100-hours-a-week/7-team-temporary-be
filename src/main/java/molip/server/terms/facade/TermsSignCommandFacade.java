@@ -9,6 +9,7 @@ import molip.server.common.enums.TermsType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.terms.entity.Terms;
 import molip.server.terms.entity.TermsSign;
@@ -69,7 +70,8 @@ public class TermsSignCommandFacade {
 
         List<TermsSign> savedSigns = termsSignRepository.saveAll(signs);
         for (TermsSign sign : savedSigns) {
-            outboxEventService.recordCreated(AggregateType.TERMS_SIGN, sign.getId());
+            outboxEventService.recordCreated(
+                    AggregateType.TERMS_SIGN, sign.getId(), OutboxPayloadMapper.termsSign(sign));
         }
     }
 

@@ -7,6 +7,7 @@ import molip.server.common.enums.Platform;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.notification.entity.UserFcmToken;
 import molip.server.notification.repository.UserFcmTokenRepository;
@@ -41,7 +42,9 @@ public class UserFcmTokenService {
                         token -> {
                             token.activate(lastSeenAt, platform);
                             outboxEventService.recordUpdated(
-                                    AggregateType.USER_FCM_TOKEN, token.getId());
+                                    AggregateType.USER_FCM_TOKEN,
+                                    token.getId(),
+                                    OutboxPayloadMapper.userFcmToken(token));
                         },
                         () -> {
                             UserFcmToken savedToken =
@@ -49,7 +52,9 @@ public class UserFcmTokenService {
                                             new UserFcmToken(
                                                     user, fcmToken, platform, true, lastSeenAt));
                             outboxEventService.recordCreated(
-                                    AggregateType.USER_FCM_TOKEN, savedToken.getId());
+                                    AggregateType.USER_FCM_TOKEN,
+                                    savedToken.getId(),
+                                    OutboxPayloadMapper.userFcmToken(savedToken));
                         });
     }
 
@@ -67,6 +72,9 @@ public class UserFcmTokenService {
 
         token.deactivate();
         token.updateLastSeen(lastSeenAt);
-        outboxEventService.recordUpdated(AggregateType.USER_FCM_TOKEN, token.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.USER_FCM_TOKEN,
+                token.getId(),
+                OutboxPayloadMapper.userFcmToken(token));
     }
 }

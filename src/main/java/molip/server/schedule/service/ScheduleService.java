@@ -22,6 +22,7 @@ import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.event.ScheduleReminderResetEvent;
@@ -543,15 +544,18 @@ public class ScheduleService {
     }
 
     private void recordScheduleCreated(Schedule schedule) {
-        outboxEventService.recordCreated(AggregateType.SCHEDULE, schedule.getId());
+        outboxEventService.recordCreated(
+                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
     }
 
     private void recordScheduleUpdated(Schedule schedule) {
-        outboxEventService.recordUpdated(AggregateType.SCHEDULE, schedule.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
     }
 
     private void recordScheduleDeleted(Schedule schedule) {
-        outboxEventService.recordDeleted(AggregateType.SCHEDULE, schedule.getId());
+        outboxEventService.recordDeleted(
+                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
     }
 
     private void recordSchedulesCreated(List<Schedule> schedules) {

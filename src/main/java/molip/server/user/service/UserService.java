@@ -10,6 +10,7 @@ import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.terms.event.UserTermsAgreedEvent;
 import molip.server.user.dto.request.TermsAgreementRequest;
@@ -67,7 +68,8 @@ public class UserService {
 
         publishTermsAgreementEvent(savedUser.getId(), terms);
 
-        outboxEventService.recordCreated(AggregateType.USER, savedUser.getId());
+        outboxEventService.recordCreated(
+                AggregateType.USER, savedUser.getId(), OutboxPayloadMapper.user(savedUser));
 
         return savedUser;
     }
@@ -93,7 +95,8 @@ public class UserService {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         user.modifyUserDetails(gender, birth, focusTimeZone, dayEndTime, nickname);
-        outboxEventService.recordUpdated(AggregateType.USER, user.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
     }
 
     @Transactional(readOnly = true)
@@ -115,7 +118,8 @@ public class UserService {
 
         String encodedPassword = passwordEncoder.encode(passwowrd);
         user.modifyPassword(encodedPassword);
-        outboxEventService.recordUpdated(AggregateType.USER, user.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
     }
 
     @Transactional
@@ -126,7 +130,8 @@ public class UserService {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         user.deleteUser();
-        outboxEventService.recordDeleted(AggregateType.USER, user.getId());
+        outboxEventService.recordDeleted(
+                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
     }
 
     private void validateEmail(String email) {

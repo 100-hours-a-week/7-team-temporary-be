@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse.DayPlanScheduleExistItem;
@@ -63,7 +64,8 @@ public class DayPlanQueryFacade {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         DayPlan dayPlan = dayPlanRepository.save(new DayPlan(user, planDate));
-        outboxEventService.recordCreated(AggregateType.DAY_PLAN, dayPlan.getId());
+        outboxEventService.recordCreated(
+                AggregateType.DAY_PLAN, dayPlan.getId(), OutboxPayloadMapper.dayPlan(dayPlan));
         return dayPlan;
     }
 

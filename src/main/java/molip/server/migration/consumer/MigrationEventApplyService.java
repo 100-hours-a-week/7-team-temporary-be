@@ -17,6 +17,7 @@ public class MigrationEventApplyService {
 
     private final EventApplyLogRepository eventApplyLogRepository;
     private final MigrationEventLogRepository migrationEventLogRepository;
+    private final MigrationUpsertService migrationUpsertService;
     private final ObjectMapper objectMapper;
 
     @Transactional(transactionManager = "migrationTransactionManager")
@@ -24,6 +25,7 @@ public class MigrationEventApplyService {
         if (eventApplyLogRepository.existsByEventId(message.eventId())) {
             return false;
         }
+        migrationUpsertService.upsert(message);
         migrationEventLogRepository.save(
                 message.eventId(),
                 message.aggregateType(),
