@@ -142,7 +142,7 @@ public class ReflectionController implements ReflectionApi {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         reflectionCommandFacade.updateReflection(
-                userId, reflectionId, request.reflectionImageIds(), request.content());
+                userId, reflectionId, request.reflectionImageKeys(), request.content());
 
         return ResponseEntity.noContent().build();
     }
