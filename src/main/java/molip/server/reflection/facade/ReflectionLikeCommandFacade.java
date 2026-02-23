@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.reflection.entity.DayReflection;
+import molip.server.reflection.entity.ReflectionLike;
 import molip.server.reflection.service.ReflectionLikeService;
 import molip.server.reflection.service.ReflectionService;
 import molip.server.user.entity.Users;
@@ -34,6 +35,18 @@ public class ReflectionLikeCommandFacade {
         }
 
         reflectionLikeService.save(user, reflection);
+    }
+
+    @Transactional
+    public void unlikeReflection(Long userId, Long reflectionId) {
+        validateLike(userId, reflectionId);
+
+        DayReflection existingReflection = reflectionService.getReflection(reflectionId);
+        Users existingUser = userService.getUser(userId);
+
+        ReflectionLike like = reflectionLikeService.getLike(userId, reflectionId);
+
+        like.delete();
     }
 
     private void validateLike(Long userId, Long reflectionId) {

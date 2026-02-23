@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.exception.BaseException;
+import molip.server.common.exception.ErrorCode;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.entity.ReflectionLike;
 import molip.server.reflection.repository.ReflectionLikeRepository;
@@ -45,5 +47,13 @@ public class ReflectionLikeService {
     @Transactional
     public void save(Users user, DayReflection reflection) {
         reflectionLikeRepository.save(new ReflectionLike(user, reflection));
+    }
+
+    @Transactional(readOnly = true)
+    public ReflectionLike getLike(Long userId, Long reflectionId) {
+
+        return reflectionLikeRepository
+                .findByUserIdAndReflectionIdAndDeletedAtIsNull(userId, reflectionId)
+                .orElseThrow(() -> new BaseException(ErrorCode.CONFLICT_NOT_LIKED));
     }
 }
