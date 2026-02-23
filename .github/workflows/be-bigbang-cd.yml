@@ -1,9 +1,10 @@
 name: BigBang-BE-CD
+
 on:
   push:
     branches:
-      - 'release/**'
-      - 'main'
+      - 'deprecated'
+
 permissions:
   contents: read
   id-token: write
