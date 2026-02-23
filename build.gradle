@@ -133,7 +133,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-security"
 
     // Kafka
-    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.springframework.boot:spring-boot-starter-kafka'
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
