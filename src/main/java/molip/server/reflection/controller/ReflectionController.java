@@ -178,8 +178,13 @@ public class ReflectionController implements ReflectionApi {
 
     @DeleteMapping("/reflections/{reflectionId}/like")
     @Override
-    @Deprecated
-    public ResponseEntity<Void> unlikeReflection(@PathVariable Long reflectionId) {
+    public ResponseEntity<Void> unlikeReflection(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reflectionId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reflectionLikeCommandFacade.unlikeReflection(userId, reflectionId);
+
         return ResponseEntity.noContent().build();
     }
 

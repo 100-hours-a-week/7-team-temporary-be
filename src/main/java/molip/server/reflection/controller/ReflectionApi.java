@@ -282,12 +282,16 @@ public interface ReflectionApi {
                 description = "회고 없음",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
+                responseCode = "409",
+                description = "좋아요 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
                 responseCode = "500",
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    @Deprecated
-    ResponseEntity<Void> unlikeReflection(Long reflectionId);
+    ResponseEntity<Void> unlikeReflection(
+            @AuthenticationPrincipal UserDetails userDetails, Long reflectionId);
 
     @Operation(summary = "회고 좋아요 여부 조회")
     @SecurityRequirement(name = "JWT")
