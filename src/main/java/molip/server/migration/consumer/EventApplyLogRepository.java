@@ -27,18 +27,24 @@ public class EventApplyLogRepository {
         return count != null && count > 0;
     }
 
-    public void save(String eventId, String aggregateType, String aggregateId, String eventType) {
+    public void save(
+            String eventId,
+            String aggregateType,
+            String aggregateId,
+            String eventType,
+            long eventVersion) {
         String sql =
                 "insert into "
                         + TABLE
-                        + " (event_id, aggregate_type, aggregate_id, event_type, applied_at) "
-                        + "values (?, ?, ?, ?, ?)";
+                        + " (event_id, aggregate_type, aggregate_id, event_type, event_version, applied_at) "
+                        + "values (?, ?, ?, ?, ?, ?)";
         migrationJdbcTemplate.update(
                 sql,
                 eventId,
                 aggregateType,
                 aggregateId,
                 eventType,
+                eventVersion,
                 Timestamp.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant()));
     }
 }

@@ -26,19 +26,21 @@ public class MigrationEventLogRepository {
             String aggregateType,
             String aggregateId,
             String eventType,
+            long eventVersion,
             OffsetDateTime occurredAt,
             String payloadJson) {
         String sql =
                 "insert into "
                         + TABLE
-                        + " (event_id, aggregate_type, aggregate_id, event_type, occurred_at, payload, created_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?)";
+                        + " (event_id, aggregate_type, aggregate_id, event_type, event_version, occurred_at, payload, created_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?)";
         migrationJdbcTemplate.update(
                 sql,
                 eventId,
                 aggregateType,
                 aggregateId,
                 eventType,
+                eventVersion,
                 Timestamp.from(occurredAt.toInstant()),
                 payloadJson,
                 Timestamp.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant()));

@@ -8,6 +8,7 @@ public record OutboxMessage(
         String aggregateType,
         String aggregateId,
         String eventType,
+        long eventVersion,
         OffsetDateTime occurredAt,
         int schemaVersion,
         JsonNode payload) {}

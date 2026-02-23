@@ -32,31 +32,46 @@ public class MigrationUpsertService {
         }
         AggregateType aggregateType = AggregateType.valueOf(message.aggregateType());
         JsonNode payload = message.payload();
+        String eventType = message.eventType();
+        OffsetDateTime occurredAt = message.occurredAt();
+
+        long eventVersion = message.eventVersion();
 
         switch (aggregateType) {
-            case USER -> upsertUser(payload);
-            case USER_IMAGE -> upsertUserImage(payload);
-            case IMAGE -> upsertImage(payload);
-            case DAY_PLAN -> upsertDayPlan(payload);
-            case SCHEDULE -> upsertSchedule(payload);
-            case SCHEDULE_HISTORY -> upsertScheduleHistory(payload);
-            case REFLECTION -> upsertReflection(payload);
-            case REFLECTION_IMAGE -> upsertReflectionImage(payload);
-            case NOTIFICATION -> upsertNotification(payload);
-            case USER_FCM_TOKEN -> upsertUserFcmToken(payload);
-            case TERMS_SIGN -> upsertTermsSign(payload);
-            case ISSUE -> upsertIssue(payload);
+            case USER -> upsertUser(payload, eventVersion, eventType, occurredAt);
+            case USER_IMAGE -> upsertUserImage(payload, eventVersion, eventType, occurredAt);
+            case IMAGE -> upsertImage(payload, eventVersion, eventType, occurredAt);
+            case DAY_PLAN -> upsertDayPlan(payload, eventVersion, eventType, occurredAt);
+            case SCHEDULE -> upsertSchedule(payload, eventVersion, eventType, occurredAt);
+            case SCHEDULE_HISTORY ->
+                    upsertScheduleHistory(payload, eventVersion, eventType, occurredAt);
+            case REFLECTION -> upsertReflection(payload, eventVersion, eventType, occurredAt);
+            case REFLECTION_IMAGE ->
+                    upsertReflectionImage(payload, eventVersion, eventType, occurredAt);
+            case NOTIFICATION -> upsertNotification(payload, eventVersion, eventType, occurredAt);
+            case USER_FCM_TOKEN -> upsertUserFcmToken(payload, eventVersion, eventType, occurredAt);
+            case TERMS_SIGN -> upsertTermsSign(payload, eventVersion, eventType, occurredAt);
+            case ISSUE -> upsertIssue(payload, eventVersion, eventType, occurredAt);
         }
     }
 
-    private void upsertUser(JsonNode payload) {
+    private void upsertUser(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into users (id, email, password, nickname, gender, birth, focus_time_zone, day_end_time, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "insert into users (id, email, password, nickname, gender, birth, focus_time_zone, day_end_time, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "email = values(email), password = values(password), nickname = values(nickname), gender = values(gender), "
-                        + "birth = values(birth), focus_time_zone = values(focus_time_zone), day_end_time = values(day_end_time), "
-                        + "updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "email = if(values(version) > version, values(email), email), "
+                        + "password = if(values(version) > version, values(password), password), "
+                        + "nickname = if(values(version) > version, values(nickname), nickname), "
+                        + "gender = if(values(version) > version, values(gender), gender), "
+                        + "birth = if(values(version) > version, values(birth), birth), "
+                        + "focus_time_zone = if(values(version) > version, values(focus_time_zone), focus_time_zone), "
+                        + "day_end_time = if(values(version) > version, values(day_end_time), day_end_time), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
@@ -67,18 +82,26 @@ public class MigrationUpsertService {
                 getDate(payload, "birth"),
                 getText(payload, "focus_time_zone"),
                 getTime(payload, "day_end_time"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertImage(JsonNode payload) {
+    private void upsertImage(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into image (id, image_type, upload_key, upload_status, expires_at, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?) "
+                "insert into image (id, image_type, upload_key, upload_status, expires_at, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "image_type = values(image_type), upload_key = values(upload_key), upload_status = values(upload_status), "
-                        + "expires_at = values(expires_at), updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "image_type = if(values(version) > version, values(image_type), image_type), "
+                        + "upload_key = if(values(version) > version, values(upload_key), upload_key), "
+                        + "upload_status = if(values(version) > version, values(upload_status), upload_status), "
+                        + "expires_at = if(values(version) > version, values(expires_at), expires_at), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
@@ -86,56 +109,83 @@ public class MigrationUpsertService {
                 getText(payload, "upload_key"),
                 getText(payload, "upload_status"),
                 getOffsetTimestamp(payload, "expires_at"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertUserImage(JsonNode payload) {
+    private void upsertUserImage(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into user_image (id, user_id, image_id, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?) "
+                "insert into user_image (id, user_id, image_id, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "user_id = values(user_id), image_id = values(image_id), "
-                        + "updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "image_id = if(values(version) > version, values(image_id), image_id), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
                 getLong(payload, "user_id"),
                 getLong(payload, "image_id"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertDayPlan(JsonNode payload) {
+    private void upsertDayPlan(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into day_plan (id, user_id, plan_date, ai_usage_remaining_count, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?) "
+                "insert into day_plan (id, user_id, plan_date, ai_usage_remaining_count, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "user_id = values(user_id), plan_date = values(plan_date), ai_usage_remaining_count = values(ai_usage_remaining_count), "
-                        + "updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "plan_date = if(values(version) > version, values(plan_date), plan_date), "
+                        + "ai_usage_remaining_count = if(values(version) > version, values(ai_usage_remaining_count), ai_usage_remaining_count), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
                 getLong(payload, "user_id"),
                 getDate(payload, "plan_date"),
                 getInteger(payload, "ai_usage_remaining_count"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertSchedule(JsonNode payload) {
+    private void upsertSchedule(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into schedule (id, day_plan_id, parent_schedule_id, title, status, type, assigned_by, assignment_status, start_at, end_at, "
-                        + "estimated_time_range, focus_level, is_urgent, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                        + "estimated_time_range, focus_level, is_urgent, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "day_plan_id = values(day_plan_id), parent_schedule_id = values(parent_schedule_id), title = values(title), "
-                        + "status = values(status), type = values(type), assigned_by = values(assigned_by), assignment_status = values(assignment_status), "
-                        + "start_at = values(start_at), end_at = values(end_at), estimated_time_range = values(estimated_time_range), "
-                        + "focus_level = values(focus_level), is_urgent = values(is_urgent), updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "day_plan_id = if(values(version) > version, values(day_plan_id), day_plan_id), "
+                        + "parent_schedule_id = if(values(version) > version, values(parent_schedule_id), parent_schedule_id), "
+                        + "title = if(values(version) > version, values(title), title), "
+                        + "status = if(values(version) > version, values(status), status), "
+                        + "type = if(values(version) > version, values(type), type), "
+                        + "assigned_by = if(values(version) > version, values(assigned_by), assigned_by), "
+                        + "assignment_status = if(values(version) > version, values(assignment_status), assignment_status), "
+                        + "start_at = if(values(version) > version, values(start_at), start_at), "
+                        + "end_at = if(values(version) > version, values(end_at), end_at), "
+                        + "estimated_time_range = if(values(version) > version, values(estimated_time_range), estimated_time_range), "
+                        + "focus_level = if(values(version) > version, values(focus_level), focus_level), "
+                        + "is_urgent = if(values(version) > version, values(is_urgent), is_urgent), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
@@ -151,19 +201,28 @@ public class MigrationUpsertService {
                 getText(payload, "estimated_time_range"),
                 getInteger(payload, "focus_level"),
                 getBoolean(payload, "is_urgent"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertScheduleHistory(JsonNode payload) {
+    private void upsertScheduleHistory(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into schedule_history (id, schedule_id, event_type, prev_start_at, prev_end_at, next_start_at, next_end_at, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "insert into schedule_history (id, schedule_id, event_type, prev_start_at, prev_end_at, next_start_at, next_end_at, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "schedule_id = values(schedule_id), event_type = values(event_type), prev_start_at = values(prev_start_at), "
-                        + "prev_end_at = values(prev_end_at), next_start_at = values(next_start_at), next_end_at = values(next_end_at), "
-                        + "updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "schedule_id = if(values(version) > version, values(schedule_id), schedule_id), "
+                        + "event_type = if(values(version) > version, values(event_type), event_type), "
+                        + "prev_start_at = if(values(version) > version, values(prev_start_at), prev_start_at), "
+                        + "prev_end_at = if(values(version) > version, values(prev_end_at), prev_end_at), "
+                        + "next_start_at = if(values(version) > version, values(next_start_at), next_start_at), "
+                        + "next_end_at = if(values(version) > version, values(next_end_at), next_end_at), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
@@ -173,18 +232,27 @@ public class MigrationUpsertService {
                 getTimestamp(payload, "prev_end_at"),
                 getTimestamp(payload, "next_start_at"),
                 getTimestamp(payload, "next_end_at"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertReflection(JsonNode payload) {
+    private void upsertReflection(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into day_reflection (id, user_id, day_plan_id, title, content, is_open, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "insert into day_reflection (id, user_id, day_plan_id, title, content, is_open, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "user_id = values(user_id), day_plan_id = values(day_plan_id), title = values(title), content = values(content), "
-                        + "is_open = values(is_open), updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "day_plan_id = if(values(version) > version, values(day_plan_id), day_plan_id), "
+                        + "title = if(values(version) > version, values(title), title), "
+                        + "content = if(values(version) > version, values(content), content), "
+                        + "is_open = if(values(version) > version, values(is_open), is_open), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
@@ -193,36 +261,53 @@ public class MigrationUpsertService {
                 getText(payload, "title"),
                 getText(payload, "content"),
                 getBoolean(payload, "is_open"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertReflectionImage(JsonNode payload) {
+    private void upsertReflectionImage(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into day_reflection_image (id, day_reflection_id, image_id, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?) "
+                "insert into day_reflection_image (id, day_reflection_id, image_id, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "day_reflection_id = values(day_reflection_id), image_id = values(image_id), "
-                        + "updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "day_reflection_id = if(values(version) > version, values(day_reflection_id), day_reflection_id), "
+                        + "image_id = if(values(version) > version, values(image_id), image_id), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
                 getLong(payload, "day_reflection_id"),
                 getLong(payload, "image_id"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertNotification(JsonNode payload) {
+    private void upsertNotification(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into notification (id, user_id, schedule_id, type, title, content, status, scheduled_at, sent_at, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "insert into notification (id, user_id, schedule_id, type, title, content, status, scheduled_at, sent_at, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "user_id = values(user_id), schedule_id = values(schedule_id), type = values(type), title = values(title), "
-                        + "content = values(content), status = values(status), scheduled_at = values(scheduled_at), sent_at = values(sent_at), "
-                        + "updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "schedule_id = if(values(version) > version, values(schedule_id), schedule_id), "
+                        + "type = if(values(version) > version, values(type), type), "
+                        + "title = if(values(version) > version, values(title), title), "
+                        + "content = if(values(version) > version, values(content), content), "
+                        + "status = if(values(version) > version, values(status), status), "
+                        + "scheduled_at = if(values(version) > version, values(scheduled_at), scheduled_at), "
+                        + "sent_at = if(values(version) > version, values(sent_at), sent_at), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
@@ -234,18 +319,27 @@ public class MigrationUpsertService {
                 getText(payload, "status"),
                 getTimestamp(payload, "scheduled_at"),
                 getTimestamp(payload, "sent_at"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertUserFcmToken(JsonNode payload) {
+    private void upsertUserFcmToken(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into user_fcm_token (id, user_id, fcm_token, platform, is_active, last_seen_at, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "insert into user_fcm_token (id, user_id, fcm_token, platform, is_active, last_seen_at, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "user_id = values(user_id), fcm_token = values(fcm_token), platform = values(platform), is_active = values(is_active), "
-                        + "last_seen_at = values(last_seen_at), updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "fcm_token = if(values(version) > version, values(fcm_token), fcm_token), "
+                        + "platform = if(values(version) > version, values(platform), platform), "
+                        + "is_active = if(values(version) > version, values(is_active), is_active), "
+                        + "last_seen_at = if(values(version) > version, values(last_seen_at), last_seen_at), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
@@ -254,43 +348,58 @@ public class MigrationUpsertService {
                 getText(payload, "platform"),
                 getBoolean(payload, "is_active"),
                 getTimestamp(payload, "last_seen_at"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertTermsSign(JsonNode payload) {
+    private void upsertTermsSign(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into terms_sign (id, user_id, terms_id, is_agreed, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?) "
+                "insert into terms_sign (id, user_id, terms_id, is_agreed, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "user_id = values(user_id), terms_id = values(terms_id), is_agreed = values(is_agreed), "
-                        + "updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "terms_id = if(values(version) > version, values(terms_id), terms_id), "
+                        + "is_agreed = if(values(version) > version, values(is_agreed), is_agreed), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
                 getLong(payload, "user_id"),
                 getLong(payload, "terms_id"),
                 getBoolean(payload, "is_agreed"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertIssue(JsonNode payload) {
+    private void upsertIssue(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
-                "insert into issue (id, user_id, content, created_at, updated_at, deleted_at) "
-                        + "values (?, ?, ?, ?, ?, ?) "
+                "insert into issue (id, user_id, content, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?) "
                         + "on duplicate key update "
-                        + "user_id = values(user_id), content = values(content), updated_at = values(updated_at), deleted_at = values(deleted_at)";
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "content = if(values(version) > version, values(content), content), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
         migrationJdbcTemplate.update(
                 sql,
                 getLong(payload, "id"),
                 getLong(payload, "user_id"),
                 getText(payload, "content"),
+                eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
     private String getText(JsonNode payload, String field) {
@@ -344,6 +453,18 @@ public class MigrationUpsertService {
         }
         LocalDateTime dateTime = LocalDateTime.parse(value);
         return Timestamp.valueOf(dateTime);
+    }
+
+    private Timestamp resolveDeletedAt(
+            JsonNode payload, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = getTimestamp(payload, "deleted_at");
+        if (deletedAt != null) {
+            return deletedAt;
+        }
+        if ("DELETED".equals(eventType) && occurredAt != null) {
+            return Timestamp.from(occurredAt.toInstant());
+        }
+        return null;
     }
 
     private Timestamp getOffsetTimestamp(JsonNode payload, String field) {

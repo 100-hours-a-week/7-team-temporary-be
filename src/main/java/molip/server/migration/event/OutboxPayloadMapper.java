@@ -31,7 +31,7 @@ public final class OutboxPayloadMapper {
     private OutboxPayloadMapper() {}
 
     public static Map<String, Object> user(Users user) {
-        Map<String, Object> payload = baseEntityPayload(user.getId());
+        Map<String, Object> payload = baseEntityPayload(user.getId(), user.getVersion());
         payload.put("email", user.getEmail());
         payload.put("password", user.getPassword());
         payload.put("nickname", user.getNickname());
@@ -44,7 +44,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> image(Image image) {
-        Map<String, Object> payload = baseEntityPayload(image.getId());
+        Map<String, Object> payload = baseEntityPayload(image.getId(), image.getVersion());
         payload.put("image_type", image.getImageType().name());
         payload.put("upload_key", image.getUploadKey());
         payload.put("upload_status", image.getUploadStatus().name());
@@ -55,7 +55,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> userImage(UserImage userImage) {
-        Map<String, Object> payload = baseEntityPayload(userImage.getId());
+        Map<String, Object> payload = baseEntityPayload(userImage.getId(), userImage.getVersion());
         payload.put("user_id", userImage.getUser().getId());
         payload.put("image_id", userImage.getImage().getId());
         payload.putAll(
@@ -67,7 +67,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> dayPlan(DayPlan dayPlan) {
-        Map<String, Object> payload = baseEntityPayload(dayPlan.getId());
+        Map<String, Object> payload = baseEntityPayload(dayPlan.getId(), dayPlan.getVersion());
         payload.put("user_id", dayPlan.getUser().getId());
         payload.put("plan_date", formatDate(dayPlan.getPlanDate()));
         payload.put("ai_usage_remaining_count", dayPlan.getAiUsageRemainingCount());
@@ -78,7 +78,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> schedule(Schedule schedule) {
-        Map<String, Object> payload = baseEntityPayload(schedule.getId());
+        Map<String, Object> payload = baseEntityPayload(schedule.getId(), schedule.getVersion());
         payload.put("day_plan_id", schedule.getDayPlan().getId());
         payload.put(
                 "parent_schedule_id",
@@ -104,7 +104,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> scheduleHistory(ScheduleHistory history) {
-        Map<String, Object> payload = baseEntityPayload(history.getId());
+        Map<String, Object> payload = baseEntityPayload(history.getId(), history.getVersion());
         payload.put("schedule_id", history.getSchedule().getId());
         payload.put("event_type", history.getEventType().name());
         payload.put("prev_start_at", formatDateTime(history.getPrevStartAt()));
@@ -118,7 +118,8 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> reflection(DayReflection reflection) {
-        Map<String, Object> payload = baseEntityPayload(reflection.getId());
+        Map<String, Object> payload =
+                baseEntityPayload(reflection.getId(), reflection.getVersion());
         payload.put("user_id", reflection.getUser().getId());
         payload.put("day_plan_id", reflection.getDayPlan().getId());
         payload.put("title", reflection.getTitle());
@@ -133,7 +134,8 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> reflectionImage(DayReflectionImage reflectionImage) {
-        Map<String, Object> payload = baseEntityPayload(reflectionImage.getId());
+        Map<String, Object> payload =
+                baseEntityPayload(reflectionImage.getId(), reflectionImage.getVersion());
         payload.put("day_reflection_id", reflectionImage.getDayReflection().getId());
         payload.put("image_id", reflectionImage.getImage().getId());
         payload.putAll(
@@ -145,7 +147,8 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> notification(Notification notification) {
-        Map<String, Object> payload = baseEntityPayload(notification.getId());
+        Map<String, Object> payload =
+                baseEntityPayload(notification.getId(), notification.getVersion());
         payload.put("user_id", notification.getUser().getId());
         payload.put("schedule_id", notification.getScheduleId());
         payload.put("type", notification.getType().name());
@@ -163,7 +166,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> userFcmToken(UserFcmToken token) {
-        Map<String, Object> payload = baseEntityPayload(token.getId());
+        Map<String, Object> payload = baseEntityPayload(token.getId(), token.getVersion());
         payload.put("user_id", token.getUser().getId());
         payload.put("fcm_token", token.getFcmToken());
         payload.put("platform", token.getPlatform().name());
@@ -175,7 +178,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> termsSign(TermsSign sign) {
-        Map<String, Object> payload = baseEntityPayload(sign.getId());
+        Map<String, Object> payload = baseEntityPayload(sign.getId(), sign.getVersion());
         payload.put("user_id", sign.getUser().getId());
         payload.put("terms_id", sign.getTerms().getId());
         payload.put("is_agreed", sign.isAgreed());
@@ -184,7 +187,7 @@ public final class OutboxPayloadMapper {
     }
 
     public static Map<String, Object> issue(Issue issue) {
-        Map<String, Object> payload = baseEntityPayload(issue.getId());
+        Map<String, Object> payload = baseEntityPayload(issue.getId(), issue.getVersion());
         payload.put("user_id", issue.getUser().getId());
         payload.put("content", issue.getContent());
         payload.putAll(
@@ -192,9 +195,10 @@ public final class OutboxPayloadMapper {
         return payload;
     }
 
-    private static Map<String, Object> baseEntityPayload(Long id) {
+    private static Map<String, Object> baseEntityPayload(Long id, Long version) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("id", id);
+        payload.put("version", version);
         return payload;
     }
 

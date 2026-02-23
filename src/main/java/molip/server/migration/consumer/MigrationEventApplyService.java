@@ -31,13 +31,15 @@ public class MigrationEventApplyService {
                 message.aggregateType(),
                 message.aggregateId(),
                 message.eventType(),
+                message.eventVersion(),
                 message.occurredAt(),
                 toJson(message.payload()));
         eventApplyLogRepository.save(
                 message.eventId(),
                 message.aggregateType(),
                 message.aggregateId(),
-                message.eventType());
+                message.eventType(),
+                message.eventVersion());
         return true;
     }
 

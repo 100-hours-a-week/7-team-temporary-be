@@ -30,8 +30,8 @@ public class OutboxRepository {
         String sql =
                 "insert into "
                         + TABLE
-                        + " (event_id, aggregate_type, aggregate_id, event_type, occurred_at, payload, status, retry_count, last_error, created_at, updated_at) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        + " (event_id, aggregate_type, aggregate_id, event_type, event_version, occurred_at, payload, status, retry_count, last_error, created_at, updated_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         jdbcTemplate.update(
                 sql,
@@ -39,6 +39,7 @@ public class OutboxRepository {
                 event.aggregateType(),
                 event.aggregateId(),
                 event.eventType().name(),
+                event.eventVersion(),
                 Timestamp.from(event.occurredAt().toInstant()),
                 payload,
                 OutboxStatus.PENDING.name(),
@@ -50,7 +51,7 @@ public class OutboxRepository {
 
     public List<OutboxRecord> findPending(int limit) {
         String sql =
-                "select id, event_id, aggregate_type, aggregate_id, event_type, occurred_at, payload, status, retry_count, last_error, created_at, updated_at "
+                "select id, event_id, aggregate_type, aggregate_id, event_type, event_version, occurred_at, payload, status, retry_count, last_error, created_at, updated_at "
                         + "from "
                         + TABLE
                         + " where status = ? order by id asc limit ?";
@@ -60,7 +61,7 @@ public class OutboxRepository {
     public List<OutboxRecord> findRetryableFailed(
             int limit, int maxRetryCount, OffsetDateTime retryBefore) {
         String sql =
-                "select id, event_id, aggregate_type, aggregate_id, event_type, occurred_at, payload, status, retry_count, last_error, created_at, updated_at "
+                "select id, event_id, aggregate_type, aggregate_id, event_type, event_version, occurred_at, payload, status, retry_count, last_error, created_at, updated_at "
                         + "from "
                         + TABLE
                         + " where status = ? and retry_count < ? and updated_at <= ? "
@@ -76,7 +77,7 @@ public class OutboxRepository {
 
     public List<OutboxRecord> findDlqCandidates(int limit, int maxRetryCount) {
         String sql =
-                "select id, event_id, aggregate_type, aggregate_id, event_type, occurred_at, payload, status, retry_count, last_error, created_at, updated_at "
+                "select id, event_id, aggregate_type, aggregate_id, event_type, event_version, occurred_at, payload, status, retry_count, last_error, created_at, updated_at "
                         + "from "
                         + TABLE
                         + " where status = ? and retry_count >= ? order by id asc limit ?";
@@ -176,6 +177,7 @@ public class OutboxRepository {
                         rs.getString("aggregate_type"),
                         rs.getString("aggregate_id"),
                         rs.getString("event_type"),
+                        rs.getLong("event_version"),
                         rs.getObject("occurred_at", OffsetDateTime.class),
                         rs.getString("payload"),
                         OutboxStatus.valueOf(rs.getString("status")),
