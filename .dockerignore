@@ -1,0 +1,9 @@
+.git
+build/
+.gradle/
+node_modules/
+*.log
+.env
+*.pem
+*.key
+.DS_Store
