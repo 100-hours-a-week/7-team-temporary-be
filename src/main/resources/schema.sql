@@ -354,6 +354,7 @@ CREATE TABLE IF NOT EXISTS event_apply_log (
   aggregate_type VARCHAR(50) NOT NULL,
   aggregate_id VARCHAR(50) NOT NULL,
   event_type VARCHAR(20) NOT NULL,
+  event_version BIGINT NOT NULL DEFAULT 0,
   applied_at DATETIME(6) NOT NULL,
   UNIQUE KEY uk_event_apply_log_event_id (event_id),
   INDEX idx_event_apply_log_aggregate (aggregate_type, aggregate_id)
@@ -365,6 +366,7 @@ CREATE TABLE IF NOT EXISTS migration_event_log (
   aggregate_type VARCHAR(50) NOT NULL,
   aggregate_id VARCHAR(50) NOT NULL,
   event_type VARCHAR(20) NOT NULL,
+  event_version BIGINT NOT NULL DEFAULT 0,
   occurred_at DATETIME(6) NOT NULL,
   payload LONGTEXT NOT NULL,
   created_at DATETIME(6) NOT NULL,
