@@ -7,4 +7,4 @@ import java.util.List;
 public record ReflectionCreateRequest(
         @Schema(description = "회고 이미지 ID 목록", example = "[2,3,6]") List<Long> reflectionImageIds,
         @Schema(description = "내용", example = "this is reflection") String content,
-        @Schema(description = "공개 여부", example = "true") Boolean isPublic) {}
+        @Schema(description = "공개 여부", example = "true") Boolean isOpen) {}

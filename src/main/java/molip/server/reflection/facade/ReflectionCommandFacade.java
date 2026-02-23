@@ -54,7 +54,7 @@ public class ReflectionCommandFacade {
         List<Image> images = resolveImages(imageIds);
 
         String content = request.content() == null ? "" : request.content();
-        boolean isOpen = request.isPublic() != null && request.isPublic();
+        boolean isOpen = request.isOpen() != null && request.isOpen();
 
         DayReflection reflection =
                 reflectionService.createReflection(dayPlan, content, isOpen, images);
