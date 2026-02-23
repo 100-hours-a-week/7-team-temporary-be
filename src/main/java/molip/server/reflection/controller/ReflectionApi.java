@@ -2,6 +2,7 @@ package molip.server.reflection.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -132,7 +133,33 @@ public interface ReflectionApi {
                 description = "조회 성공",
                 content =
                         @Content(
-                                schema = @Schema(implementation = ReflectionDetailResponse.class))),
+                                schema = @Schema(implementation = ReflectionDetailResponse.class),
+                                examples =
+                                        @ExampleObject(
+                                                value =
+                                                        "{\n"
+                                                                + "  \"status\": \"SUCCESS\",\n"
+                                                                + "  \"message\": \"공유된 회고 상세 조회를 성공적으로 진행했습니다.\",\n"
+                                                                + "  \"data\": {\n"
+                                                                + "    \"isMine\": true,\n"
+                                                                + "    \"isLikedByMe\": false,\n"
+                                                                + "    \"ownerNickname\": \"모립\",\n"
+                                                                + "    \"userId\": 65,\n"
+                                                                + "    \"reflectionId\": 55,\n"
+                                                                + "    \"isOpen\": true,\n"
+                                                                + "    \"title\": \"2026.01.13(수)\",\n"
+                                                                + "    \"content\": \"오늘 집중 잘 됐다\",\n"
+                                                                + "    \"likes\": 37,\n"
+                                                                + "    \"images\": [\n"
+                                                                + "      {\n"
+                                                                + "        \"url\": \"https://...presigned...\",\n"
+                                                                + "        \"expiresAt\": \"2026-01-13T11:10:00+09:00\",\n"
+                                                                + "        \"key\": \"asifdhs124uishadfiaufh\"\n"
+                                                                + "      }\n"
+                                                                + "    ],\n"
+                                                                + "    \"createdAt\": \"2026-01-13T23:10:00+09:00\"\n"
+                                                                + "  }\n"
+                                                                + "}"))),
         @ApiResponse(
                 responseCode = "404",
                 description = "회고 없음",

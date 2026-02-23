@@ -48,15 +48,19 @@ public class ReflectionQueryFacade {
         long likes = reflectionService.countLikes(reflectionId);
         boolean isLikedByMe =
                 viewerId != null && reflectionLikeService.isLiked(viewerId, reflectionId);
+        boolean isMine = viewerId != null && viewerId.equals(reflection.getUser().getId());
+        String ownerNickname = reflection.getUser().getNickname();
 
         return ReflectionDetailResponse.of(
+                isMine,
+                isLikedByMe,
+                ownerNickname,
                 reflection.getUser().getId(),
                 reflection.getId(),
                 reflection.isOpen(),
                 reflection.getTitle(),
                 reflection.getContent(),
                 Math.toIntExact(likes),
-                isLikedByMe,
                 images,
                 reflection.getCreatedAt().atZone(ZONE_ID).toOffsetDateTime());
     }
