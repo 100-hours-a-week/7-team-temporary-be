@@ -1,5 +1,9 @@
 package molip.server.reflection.service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.entity.ReflectionLike;
@@ -18,6 +22,24 @@ public class ReflectionLikeService {
     public boolean isAlreadyLiked(Long userId, Long reflectionId) {
         return reflectionLikeRepository.existsByUserIdAndReflectionIdAndDeletedAtIsNull(
                 userId, reflectionId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isLiked(Long userId, Long reflectionId) {
+        return reflectionLikeRepository.existsByUserIdAndReflectionIdAndDeletedAtIsNull(
+                userId, reflectionId);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<Long> findLikedReflectionIds(Long userId, List<Long> reflectionIds) {
+        if (reflectionIds == null || reflectionIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return reflectionLikeRepository
+                .findByUserIdAndReflectionIdInAndDeletedAtIsNull(userId, reflectionIds)
+                .stream()
+                .map(item -> item.getReflection().getId())
+                .collect(Collectors.toSet());
     }
 
     @Transactional
