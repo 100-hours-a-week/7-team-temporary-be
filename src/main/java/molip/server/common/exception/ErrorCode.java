@@ -168,7 +168,8 @@ public enum ErrorCode {
     INVALID_REQUEST_REFLECTION_OPEN_ONLY(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "공개된 회고만 조회 가능합니다."),
     FORBIDDEN_REFLECTION_UPDATE(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 회고만 수정할 수 있습니다."),
-    CONFLICT_ALREADY_LIKED(HttpStatus.CONFLICT, "CONFLICT", "이미 좋아요를 누른 회고입니다.");
+    CONFLICT_ALREADY_LIKED(HttpStatus.CONFLICT, "CONFLICT", "이미 좋아요를 누른 회고입니다."),
+    CONFLICT_NOT_LIKED(HttpStatus.CONFLICT, "CONFLICT", "좋아요를 누르지 않은 회고입니다.");
 
     private final HttpStatus status;
     private final String statusValue;
