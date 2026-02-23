@@ -49,12 +49,29 @@ public class OutboxEventService {
             return;
         }
         Map<String, Object> resolvedPayload = payload == null ? Map.of("id", aggregateId) : payload;
+        long eventVersion = resolveEventVersion(resolvedPayload);
         DomainEvent event =
                 DomainEvent.of(
                         aggregateType.name(),
                         String.valueOf(aggregateId),
                         changeType,
+                        eventVersion,
                         resolvedPayload);
         outboxRepository.save(event);
+    }
+
+    private long resolveEventVersion(Map<String, Object> payload) {
+        Object version = payload.get("version");
+        if (version instanceof Number number) {
+            return number.longValue();
+        }
+        if (version instanceof String value) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException ignored) {
+                return 0L;
+            }
+        }
+        return 0L;
     }
 }
