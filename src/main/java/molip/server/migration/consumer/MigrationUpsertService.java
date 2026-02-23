@@ -32,26 +32,32 @@ public class MigrationUpsertService {
         }
         AggregateType aggregateType = AggregateType.valueOf(message.aggregateType());
         JsonNode payload = message.payload();
+        String eventType = message.eventType();
+        OffsetDateTime occurredAt = message.occurredAt();
 
         long eventVersion = message.eventVersion();
 
         switch (aggregateType) {
-            case USER -> upsertUser(payload, eventVersion);
-            case USER_IMAGE -> upsertUserImage(payload, eventVersion);
-            case IMAGE -> upsertImage(payload, eventVersion);
-            case DAY_PLAN -> upsertDayPlan(payload, eventVersion);
-            case SCHEDULE -> upsertSchedule(payload, eventVersion);
-            case SCHEDULE_HISTORY -> upsertScheduleHistory(payload, eventVersion);
-            case REFLECTION -> upsertReflection(payload, eventVersion);
-            case REFLECTION_IMAGE -> upsertReflectionImage(payload, eventVersion);
-            case NOTIFICATION -> upsertNotification(payload, eventVersion);
-            case USER_FCM_TOKEN -> upsertUserFcmToken(payload, eventVersion);
-            case TERMS_SIGN -> upsertTermsSign(payload, eventVersion);
-            case ISSUE -> upsertIssue(payload, eventVersion);
+            case USER -> upsertUser(payload, eventVersion, eventType, occurredAt);
+            case USER_IMAGE -> upsertUserImage(payload, eventVersion, eventType, occurredAt);
+            case IMAGE -> upsertImage(payload, eventVersion, eventType, occurredAt);
+            case DAY_PLAN -> upsertDayPlan(payload, eventVersion, eventType, occurredAt);
+            case SCHEDULE -> upsertSchedule(payload, eventVersion, eventType, occurredAt);
+            case SCHEDULE_HISTORY ->
+                    upsertScheduleHistory(payload, eventVersion, eventType, occurredAt);
+            case REFLECTION -> upsertReflection(payload, eventVersion, eventType, occurredAt);
+            case REFLECTION_IMAGE ->
+                    upsertReflectionImage(payload, eventVersion, eventType, occurredAt);
+            case NOTIFICATION -> upsertNotification(payload, eventVersion, eventType, occurredAt);
+            case USER_FCM_TOKEN -> upsertUserFcmToken(payload, eventVersion, eventType, occurredAt);
+            case TERMS_SIGN -> upsertTermsSign(payload, eventVersion, eventType, occurredAt);
+            case ISSUE -> upsertIssue(payload, eventVersion, eventType, occurredAt);
         }
     }
 
-    private void upsertUser(JsonNode payload, long eventVersion) {
+    private void upsertUser(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into users (id, email, password, nickname, gender, birth, focus_time_zone, day_end_time, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
@@ -79,10 +85,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertImage(JsonNode payload, long eventVersion) {
+    private void upsertImage(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into image (id, image_type, upload_key, upload_status, expires_at, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?) "
@@ -104,10 +112,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertUserImage(JsonNode payload, long eventVersion) {
+    private void upsertUserImage(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into user_image (id, user_id, image_id, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?) "
@@ -125,10 +135,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertDayPlan(JsonNode payload, long eventVersion) {
+    private void upsertDayPlan(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into day_plan (id, user_id, plan_date, ai_usage_remaining_count, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?) "
@@ -148,10 +160,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertSchedule(JsonNode payload, long eventVersion) {
+    private void upsertSchedule(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into schedule (id, day_plan_id, parent_schedule_id, title, status, type, assigned_by, assignment_status, start_at, end_at, "
                         + "estimated_time_range, focus_level, is_urgent, version, created_at, updated_at, deleted_at) "
@@ -190,10 +204,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertScheduleHistory(JsonNode payload, long eventVersion) {
+    private void upsertScheduleHistory(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into schedule_history (id, schedule_id, event_type, prev_start_at, prev_end_at, next_start_at, next_end_at, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
@@ -219,10 +235,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertReflection(JsonNode payload, long eventVersion) {
+    private void upsertReflection(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into day_reflection (id, user_id, day_plan_id, title, content, is_open, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
@@ -246,10 +264,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertReflectionImage(JsonNode payload, long eventVersion) {
+    private void upsertReflectionImage(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into day_reflection_image (id, day_reflection_id, image_id, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?) "
@@ -267,10 +287,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertNotification(JsonNode payload, long eventVersion) {
+    private void upsertNotification(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into notification (id, user_id, schedule_id, type, title, content, status, scheduled_at, sent_at, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
@@ -300,10 +322,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertUserFcmToken(JsonNode payload, long eventVersion) {
+    private void upsertUserFcmToken(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into user_fcm_token (id, user_id, fcm_token, platform, is_active, last_seen_at, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
@@ -327,10 +351,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertTermsSign(JsonNode payload, long eventVersion) {
+    private void upsertTermsSign(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into terms_sign (id, user_id, terms_id, is_agreed, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?) "
@@ -350,10 +376,12 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
-    private void upsertIssue(JsonNode payload, long eventVersion) {
+    private void upsertIssue(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
         String sql =
                 "insert into issue (id, user_id, content, version, created_at, updated_at, deleted_at) "
                         + "values (?, ?, ?, ?, ?, ?, ?) "
@@ -371,7 +399,7 @@ public class MigrationUpsertService {
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
-                getTimestamp(payload, "deleted_at"));
+                deletedAt);
     }
 
     private String getText(JsonNode payload, String field) {
@@ -425,6 +453,18 @@ public class MigrationUpsertService {
         }
         LocalDateTime dateTime = LocalDateTime.parse(value);
         return Timestamp.valueOf(dateTime);
+    }
+
+    private Timestamp resolveDeletedAt(
+            JsonNode payload, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = getTimestamp(payload, "deleted_at");
+        if (deletedAt != null) {
+            return deletedAt;
+        }
+        if ("DELETED".equals(eventType) && occurredAt != null) {
+            return Timestamp.from(occurredAt.toInstant());
+        }
+        return null;
     }
 
     private Timestamp getOffsetTimestamp(JsonNode payload, String field) {
