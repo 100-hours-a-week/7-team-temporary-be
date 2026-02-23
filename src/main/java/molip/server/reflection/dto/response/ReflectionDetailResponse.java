@@ -7,6 +7,9 @@ import molip.server.common.response.ImageInfoResponse;
 
 @Schema(description = "회고 상세")
 public record ReflectionDetailResponse(
+        @Schema(description = "요청 유저 소유 여부", example = "true") boolean isMine,
+        @Schema(description = "요청 유저 좋아요 여부", example = "false") boolean isLikedByMe,
+        @Schema(description = "작성자 닉네임", example = "모립") String ownerNickname,
         @Schema(description = "사용자 ID", example = "65") Long userId,
         @Schema(description = "회고 ID", example = "55") Long reflectionId,
         @Schema(description = "공개 여부", example = "true") boolean isOpen,
@@ -18,6 +21,9 @@ public record ReflectionDetailResponse(
                 OffsetDateTime createdAt) {
 
     public static ReflectionDetailResponse of(
+            boolean isMine,
+            boolean isLikedByMe,
+            String ownerNickname,
             Long userId,
             Long reflectionId,
             boolean isOpen,
@@ -27,6 +33,16 @@ public record ReflectionDetailResponse(
             List<ImageInfoResponse> images,
             OffsetDateTime createdAt) {
         return new ReflectionDetailResponse(
-                userId, reflectionId, isOpen, title, content, likes, images, createdAt);
+                isMine,
+                isLikedByMe,
+                ownerNickname,
+                userId,
+                reflectionId,
+                isOpen,
+                title,
+                content,
+                likes,
+                images,
+                createdAt);
     }
 }
