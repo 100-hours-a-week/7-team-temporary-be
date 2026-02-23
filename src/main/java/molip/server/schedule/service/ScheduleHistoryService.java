@@ -2,6 +2,7 @@ package molip.server.schedule.service;
 
 import lombok.RequiredArgsConstructor;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.schedule.entity.ScheduleHistory;
 import molip.server.schedule.repository.ScheduleHistoryRepository;
@@ -19,6 +20,9 @@ public class ScheduleHistoryService {
     public void saveHistory(ScheduleHistory history) {
 
         ScheduleHistory savedHistory = scheduleHistoryRepository.save(history);
-        outboxEventService.recordCreated(AggregateType.SCHEDULE_HISTORY, savedHistory.getId());
+        outboxEventService.recordCreated(
+                AggregateType.SCHEDULE_HISTORY,
+                savedHistory.getId(),
+                OutboxPayloadMapper.scheduleHistory(savedHistory));
     }
 }

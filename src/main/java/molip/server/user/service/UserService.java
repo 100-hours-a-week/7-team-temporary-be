@@ -5,13 +5,16 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.terms.event.UserTermsAgreedEvent;
+import molip.server.user.dto.cache.UserCachePayload;
 import molip.server.user.dto.request.TermsAgreementRequest;
 import molip.server.user.entity.Users;
 import molip.server.user.event.UserProfileImageLinkedEvent;
@@ -33,6 +36,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
     private final OutboxEventService outboxEventService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional
     public Users registerUser(
@@ -67,7 +71,10 @@ public class UserService {
 
         publishTermsAgreementEvent(savedUser.getId(), terms);
 
-        outboxEventService.recordCreated(AggregateType.USER, savedUser.getId());
+        outboxEventService.recordCreated(
+                AggregateType.USER, savedUser.getId(), OutboxPayloadMapper.user(savedUser));
+        cacheService.cacheUser(
+                UserCachePayload.from(savedUser, profileImageKey, savedUser.getVersion()));
 
         return savedUser;
     }
@@ -93,7 +100,9 @@ public class UserService {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         user.modifyUserDetails(gender, birth, focusTimeZone, dayEndTime, nickname);
-        outboxEventService.recordUpdated(AggregateType.USER, user.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
+        cacheService.cacheUser(UserCachePayload.from(user, null, user.getVersion()));
     }
 
     @Transactional(readOnly = true)
@@ -115,7 +124,8 @@ public class UserService {
 
         String encodedPassword = passwordEncoder.encode(passwowrd);
         user.modifyPassword(encodedPassword);
-        outboxEventService.recordUpdated(AggregateType.USER, user.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
     }
 
     @Transactional
@@ -126,7 +136,9 @@ public class UserService {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         user.deleteUser();
-        outboxEventService.recordDeleted(AggregateType.USER, user.getId());
+        outboxEventService.recordDeleted(
+                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
+        cacheService.evictUser(user.getId());
     }
 
     private void validateEmail(String email) {

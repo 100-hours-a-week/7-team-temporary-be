@@ -1,5 +1,7 @@
 package molip.server.reflection.facade;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
@@ -7,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.enums.ImageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -14,6 +17,7 @@ import molip.server.common.response.ImageInfoResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.service.ImageService;
+import molip.server.reflection.dto.cache.ReflectionCachePayload;
 import molip.server.reflection.dto.response.ReflectionDetailResponse;
 import molip.server.reflection.dto.response.ReflectionExistResponse;
 import molip.server.reflection.dto.response.ReflectionListItemResponse;
@@ -38,11 +42,20 @@ public class ReflectionQueryFacade {
     private final ReflectionService reflectionService;
     private final ReflectionImageService reflectionImageService;
     private final ReflectionLikeService reflectionLikeService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional(readOnly = true)
     public ReflectionDetailResponse getOpenReflectionDetail(Long viewerId, Long reflectionId) {
 
-        DayReflection reflection = reflectionService.getOpenReflection(reflectionId);
+        DayReflection reflection;
+        try {
+            reflection = reflectionService.getOpenReflection(reflectionId);
+        } catch (BaseException ex) {
+            if (ex.getErrorCode() != ErrorCode.REFLECTION_NOT_FOUND) {
+                throw ex;
+            }
+            return getOpenReflectionFromCache(viewerId, reflectionId);
+        }
 
         List<ImageInfoResponse> images = resolveImages(reflectionId);
         long likes = reflectionService.countLikes(reflectionId);
@@ -63,6 +76,51 @@ public class ReflectionQueryFacade {
                 Math.toIntExact(likes),
                 images,
                 reflection.getCreatedAt().atZone(ZONE_ID).toOffsetDateTime());
+    }
+
+    private ReflectionDetailResponse getOpenReflectionFromCache(Long viewerId, Long reflectionId) {
+        ReflectionCachePayload cached =
+                cacheService
+                        .getReflection(reflectionId)
+                        .filter(payload -> payload.deletedAt() == null)
+                        .orElseThrow(() -> new BaseException(ErrorCode.REFLECTION_NOT_FOUND));
+        if (!cached.isOpen()) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REFLECTION_OPEN_ONLY);
+        }
+        List<ImageInfoResponse> images =
+                cached.imageKeys() == null
+                        ? List.of()
+                        : cached.imageKeys().stream()
+                                .map(
+                                        key -> {
+                                            ImageGetUrlResponse presigned =
+                                                    imageService.issueGetUrl(
+                                                            ImageType.REFLECTIONS, key);
+                                            return ImageInfoResponse.of(
+                                                    presigned.url(),
+                                                    presigned.expiresAt(),
+                                                    presigned.imageKey());
+                                        })
+                                .toList();
+        boolean isMine = viewerId != null && viewerId.equals(cached.userId());
+        OffsetDateTime createdAt =
+                cached.createdAt() == null
+                        ? null
+                        : LocalDateTime.parse(cached.createdAt())
+                                .atZone(ZONE_ID)
+                                .toOffsetDateTime();
+        return ReflectionDetailResponse.of(
+                isMine,
+                false,
+                cached.ownerNickname(),
+                cached.userId(),
+                cached.reflectionId(),
+                cached.isOpen(),
+                cached.title(),
+                cached.content(),
+                0,
+                images,
+                createdAt);
     }
 
     @Transactional(readOnly = true)

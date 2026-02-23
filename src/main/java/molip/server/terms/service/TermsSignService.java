@@ -6,6 +6,7 @@ import molip.server.common.enums.TermsType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.terms.dto.response.TermsSignHistoryResponse;
 import molip.server.terms.entity.TermsSign;
@@ -31,7 +32,10 @@ public class TermsSignService {
         }
 
         termsSign.updateAgreement(isAgreed);
-        outboxEventService.recordUpdated(AggregateType.TERMS_SIGN, termsSign.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.TERMS_SIGN,
+                termsSign.getId(),
+                OutboxPayloadMapper.termsSign(termsSign));
     }
 
     @Transactional(readOnly = true)

@@ -6,6 +6,7 @@ import molip.server.common.exception.ErrorCode;
 import molip.server.issue.entity.Issue;
 import molip.server.issue.repository.IssueRepository;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.user.entity.Users;
 import molip.server.user.repository.UserRepository;
@@ -31,7 +32,8 @@ public class IssueService {
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
         Issue issue = issueRepository.save(new Issue(user, content));
-        outboxEventService.recordCreated(AggregateType.ISSUE, issue.getId());
+        outboxEventService.recordCreated(
+                AggregateType.ISSUE, issue.getId(), OutboxPayloadMapper.issue(issue));
         return issue;
     }
 

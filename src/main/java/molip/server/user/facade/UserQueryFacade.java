@@ -2,6 +2,7 @@ package molip.server.user.facade;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.enums.ImageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -10,6 +11,7 @@ import molip.server.common.response.PageResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
+import molip.server.user.dto.cache.UserCachePayload;
 import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
 import molip.server.user.entity.UserImage;
@@ -30,21 +32,36 @@ public class UserQueryFacade {
     private final UserRepository userRepository;
     private final UserImageRepository userImageRepository;
     private final ImageService imageService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(Long userId) {
-        Users user =
-                userRepository
-                        .findByIdAndDeletedAtIsNull(userId)
+        Optional<Users> user = userRepository.findByIdAndDeletedAtIsNull(userId);
+        if (user.isPresent()) {
+            ImageInfoResponse profileImage = resolveProfileImage(userId);
+            return new UserProfileResponse(
+                    user.get().getEmail(),
+                    user.get().getNickname(),
+                    user.get().getGender(),
+                    user.get().getBirth().toString(),
+                    user.get().getFocusTimeZone(),
+                    user.get().getDayEndTime().toString(),
+                    profileImage);
+        }
+
+        UserCachePayload cached =
+                cacheService
+                        .getUser(userId)
+                        .filter(payload -> payload.deletedAt() == null)
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
-        ImageInfoResponse profileImage = resolveProfileImage(userId);
+        ImageInfoResponse profileImage = resolveProfileImageFromCache(cached.profileImageKey());
         return new UserProfileResponse(
-                user.getEmail(),
-                user.getNickname(),
-                user.getGender(),
-                user.getBirth().toString(),
-                user.getFocusTimeZone(),
-                user.getDayEndTime().toString(),
+                cached.email(),
+                cached.nickname(),
+                cached.gender(),
+                cached.birth(),
+                cached.focusTimeZone(),
+                cached.dayEndTime(),
                 profileImage);
     }
 
@@ -75,15 +92,23 @@ public class UserQueryFacade {
     private ImageInfoResponse resolveProfileImage(Long userId) {
         Optional<UserImage> userImage = userImageRepository.findLatestByUserIdWithImage(userId);
         if (userImage.isEmpty()) {
+            return resolveProfileImageFromCache(null);
+        }
+        Image image = userImage.get().getImage();
+        ImageGetUrlResponse presigned =
+                imageService.issueGetUrl(ImageType.USERS, image.getUploadKey());
+        return new ImageInfoResponse(presigned.url(), presigned.expiresAt(), presigned.imageKey());
+    }
+
+    private ImageInfoResponse resolveProfileImageFromCache(String profileImageKey) {
+        if (profileImageKey == null || profileImageKey.isBlank()) {
             ImageGetUrlResponse presigned =
                     imageService.issueGetUrlWithoutValidation(
                             ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
             return new ImageInfoResponse(
                     presigned.url(), presigned.expiresAt(), presigned.imageKey());
         }
-        Image image = userImage.get().getImage();
-        ImageGetUrlResponse presigned =
-                imageService.issueGetUrl(ImageType.USERS, image.getUploadKey());
+        ImageGetUrlResponse presigned = imageService.issueGetUrl(ImageType.USERS, profileImageKey);
         return new ImageInfoResponse(presigned.url(), presigned.expiresAt(), presigned.imageKey());
     }
 

@@ -14,25 +14,64 @@ public class OutboxEventService {
     private final OutboxRepository outboxRepository;
 
     public void recordCreated(AggregateType aggregateType, Long aggregateId) {
-        record(aggregateType, aggregateId, ChangeType.CREATED);
+        record(aggregateType, aggregateId, ChangeType.CREATED, null);
     }
 
     public void recordUpdated(AggregateType aggregateType, Long aggregateId) {
-        record(aggregateType, aggregateId, ChangeType.UPDATED);
+        record(aggregateType, aggregateId, ChangeType.UPDATED, null);
     }
 
     public void recordDeleted(AggregateType aggregateType, Long aggregateId) {
-        record(aggregateType, aggregateId, ChangeType.DELETED);
+        record(aggregateType, aggregateId, ChangeType.DELETED, null);
     }
 
-    private void record(AggregateType aggregateType, Long aggregateId, ChangeType changeType) {
+    public void recordCreated(
+            AggregateType aggregateType, Long aggregateId, Map<String, Object> payload) {
+        record(aggregateType, aggregateId, ChangeType.CREATED, payload);
+    }
+
+    public void recordUpdated(
+            AggregateType aggregateType, Long aggregateId, Map<String, Object> payload) {
+        record(aggregateType, aggregateId, ChangeType.UPDATED, payload);
+    }
+
+    public void recordDeleted(
+            AggregateType aggregateType, Long aggregateId, Map<String, Object> payload) {
+        record(aggregateType, aggregateId, ChangeType.DELETED, payload);
+    }
+
+    private void record(
+            AggregateType aggregateType,
+            Long aggregateId,
+            ChangeType changeType,
+            Map<String, Object> payload) {
         if (aggregateType == null || aggregateId == null) {
             return;
         }
-        Map<String, Object> payload = Map.of("id", aggregateId);
+        Map<String, Object> resolvedPayload = payload == null ? Map.of("id", aggregateId) : payload;
+        long eventVersion = resolveEventVersion(resolvedPayload);
         DomainEvent event =
                 DomainEvent.of(
-                        aggregateType.name(), String.valueOf(aggregateId), changeType, payload);
+                        aggregateType.name(),
+                        String.valueOf(aggregateId),
+                        changeType,
+                        eventVersion,
+                        resolvedPayload);
         outboxRepository.save(event);
+    }
+
+    private long resolveEventVersion(Map<String, Object> payload) {
+        Object version = payload.get("version");
+        if (version instanceof Number number) {
+            return number.longValue();
+        }
+        if (version instanceof String value) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException ignored) {
+                return 0L;
+            }
+        }
+        return 0L;
     }
 }

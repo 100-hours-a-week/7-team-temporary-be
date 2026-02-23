@@ -6,13 +6,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.enums.UploadStatus;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
+import molip.server.reflection.dto.cache.ReflectionCachePayload;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
 import molip.server.reflection.entity.DayReflection;
@@ -39,6 +42,7 @@ public class ReflectionCommandFacade {
     private final ReflectionService reflectionService;
     private final ApplicationEventPublisher eventPublisher;
     private final OutboxEventService outboxEventService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional
     public ReflectionCreateResponse createReflection(
@@ -62,6 +66,9 @@ public class ReflectionCommandFacade {
 
         DayReflection reflection =
                 reflectionService.createReflection(dayPlan, content, isOpen, images);
+        cacheService.cacheReflection(
+                ReflectionCachePayload.from(
+                        reflection, extractImageKeys(images), dayPlan.getUser().getNickname()));
 
         return ReflectionCreateResponse.from(reflection.getId());
     }
@@ -166,7 +173,13 @@ public class ReflectionCommandFacade {
                 images.stream().filter(image -> !existingImageIds.contains(image.getId())).toList();
 
         publishImageUpdateEvents(reflection.getId(), removeImageIds, addImages, reflection);
-        outboxEventService.recordUpdated(AggregateType.REFLECTION, reflection.getId());
+        outboxEventService.recordUpdated(
+                AggregateType.REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
+        cacheService.cacheReflection(
+                ReflectionCachePayload.from(
+                        reflection, extractImageKeys(images), reflection.getUser().getNickname()));
     }
 
     @Transactional
@@ -195,7 +208,11 @@ public class ReflectionCommandFacade {
         }
 
         reflection.delete();
-        outboxEventService.recordDeleted(AggregateType.REFLECTION, reflection.getId());
+        outboxEventService.recordDeleted(
+                AggregateType.REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
+        cacheService.evictReflection(reflection.getId());
     }
 
     private void validateReflectionOwnership(DayReflection reflection, Long userId) {
@@ -228,5 +245,12 @@ public class ReflectionCommandFacade {
         if (!addImages.isEmpty()) {
             eventPublisher.publishEvent(new ReflectionImagesAddedEvent(reflection, addImages));
         }
+    }
+
+    private List<String> extractImageKeys(List<Image> images) {
+        if (images == null || images.isEmpty()) {
+            return List.of();
+        }
+        return images.stream().map(Image::getUploadKey).toList();
     }
 }

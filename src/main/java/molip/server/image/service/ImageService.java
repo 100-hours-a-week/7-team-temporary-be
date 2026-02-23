@@ -12,6 +12,7 @@ import molip.server.image.dto.response.ImageUploadUrlResponse;
 import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.s3.PresignedUrlResult;
 import molip.server.s3.S3Service;
@@ -33,7 +34,8 @@ public class ImageService {
         Image savedImage =
                 imageRepository.save(
                         new Image(imageKey, UploadStatus.PENDING, type, result.expiresAt()));
-        outboxEventService.recordCreated(AggregateType.IMAGE, savedImage.getId());
+        outboxEventService.recordCreated(
+                AggregateType.IMAGE, savedImage.getId(), OutboxPayloadMapper.image(savedImage));
         return new ImageUploadUrlResponse(result.url(), result.expiresAt(), imageKey);
     }
 

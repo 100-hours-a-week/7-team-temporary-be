@@ -10,6 +10,7 @@ public record DomainEvent(
         String aggregateType,
         String aggregateId,
         ChangeType eventType,
+        long eventVersion,
         OffsetDateTime occurredAt,
         int schemaVersion,
         Map<String, Object> payload) {
@@ -20,12 +21,14 @@ public record DomainEvent(
             String aggregateType,
             String aggregateId,
             ChangeType eventType,
+            long eventVersion,
             Map<String, Object> payload) {
         return new DomainEvent(
                 UUID.randomUUID().toString(),
                 aggregateType,
                 aggregateId,
                 eventType,
+                eventVersion,
                 OffsetDateTime.now(ZoneOffset.UTC),
                 SCHEMA_VERSION_V1,
                 payload);

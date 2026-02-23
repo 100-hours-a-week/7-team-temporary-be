@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
 import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.reflection.entity.DayReflectionImage;
 import molip.server.reflection.event.ReflectionImagesRemovedEvent;
@@ -36,8 +37,12 @@ public class ReflectionImagesRemovedEventHandler {
                 item.delete();
                 image.deleteImage();
                 imageService.deleteStoredImage(image.getImageType(), image.getUploadKey());
-                outboxEventService.recordDeleted(AggregateType.REFLECTION_IMAGE, item.getId());
-                outboxEventService.recordDeleted(AggregateType.IMAGE, image.getId());
+                outboxEventService.recordDeleted(
+                        AggregateType.REFLECTION_IMAGE,
+                        item.getId(),
+                        OutboxPayloadMapper.reflectionImage(item));
+                outboxEventService.recordDeleted(
+                        AggregateType.IMAGE, image.getId(), OutboxPayloadMapper.image(image));
             }
         }
     }

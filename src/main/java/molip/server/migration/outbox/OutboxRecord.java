@@ -8,6 +8,7 @@ public record OutboxRecord(
         String aggregateType,
         String aggregateId,
         String eventType,
+        long eventVersion,
         OffsetDateTime occurredAt,
         String payload,
         OutboxStatus status,

@@ -52,6 +52,7 @@ public class OutboxPublisher {
                             record.aggregateType(),
                             record.aggregateId(),
                             record.eventType(),
+                            record.eventVersion(),
                             record.occurredAt(),
                             SCHEMA_VERSION,
                             payload);
