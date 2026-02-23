@@ -4,6 +4,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.reflection.entity.DayReflectionImage;
 import molip.server.reflection.event.ReflectionImagesRemovedEvent;
 import molip.server.reflection.repository.DayReflectionImageRepository;
@@ -16,6 +19,7 @@ public class ReflectionImagesRemovedEventHandler {
 
     private final DayReflectionImageRepository dayReflectionImageRepository;
     private final ImageService imageService;
+    private final OutboxEventService outboxEventService;
 
     @EventListener
     public void handle(ReflectionImagesRemovedEvent event) {
@@ -33,6 +37,12 @@ public class ReflectionImagesRemovedEventHandler {
                 item.delete();
                 image.deleteImage();
                 imageService.deleteStoredImage(image.getImageType(), image.getUploadKey());
+                outboxEventService.recordDeleted(
+                        AggregateType.REFLECTION_IMAGE,
+                        item.getId(),
+                        OutboxPayloadMapper.reflectionImage(item));
+                outboxEventService.recordDeleted(
+                        AggregateType.IMAGE, image.getId(), OutboxPayloadMapper.image(image));
             }
         }
     }

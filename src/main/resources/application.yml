@@ -32,6 +32,23 @@ spring:
         access-key: ${AWS_S3_ACCESS_KEY}
         secret-key: ${AWS_S3_SECRET_KEY}
         bucket: ${AWS_S3_BUCKET}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:molip-migration}
+      auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: false
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 
 
 jwt:
@@ -91,3 +108,32 @@ notification:
   dispatch:
     fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
     batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}
+
+
+migration:
+  enabled: ${MIGRATION_ENABLED:false}
+  datasource:
+    url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/migration}
+    username: ${MIGRATION_DB_USERNAME:migration}
+    password: ${MIGRATION_DB_PASSWORD:migration}
+
+kafka:
+  enabled: ${KAFKA_ENABLED:false}
+  producer:
+    enabled: ${KAFKA_PRODUCER_ENABLED:false}
+  consumer:
+    enabled: ${KAFKA_CONSUMER_ENABLED:false}
+  outbox:
+    fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
+    batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}
+    dlq:
+      fixed-delay-ms: ${KAFKA_OUTBOX_DLQ_FIXED_DELAY_MS:15000}
+      batch-size: ${KAFKA_OUTBOX_DLQ_BATCH_SIZE:200}
+    retry:
+      fixed-delay-ms: ${KAFKA_OUTBOX_RETRY_FIXED_DELAY_MS:10000}
+      delay-ms: ${KAFKA_OUTBOX_RETRY_DELAY_MS:60000}
+      max-attempts: ${KAFKA_OUTBOX_RETRY_MAX_ATTEMPTS:5}
+      batch-size: ${KAFKA_OUTBOX_RETRY_BATCH_SIZE:200}
+  topics:
+    domain-events: ${KAFKA_DOMAIN_EVENTS_TOPIC:domain.events.v1}
+    dlq: ${KAFKA_DOMAIN_EVENTS_DLQ_TOPIC:domain.events.v1.DLQ}

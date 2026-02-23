@@ -8,8 +8,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
+import molip.server.schedule.dto.cache.DayPlanCachePayload;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse.DayPlanScheduleExistItem;
 import molip.server.schedule.entity.DayPlan;
@@ -28,6 +33,8 @@ public class DayPlanQueryFacade {
     private final DayPlanRepository dayPlanRepository;
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
+    private final OutboxEventService outboxEventService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional
     public DayPlan getOrCreateDayPlan(Long userId, String date) {
@@ -59,7 +66,11 @@ public class DayPlanQueryFacade {
                         .findByIdAndDeletedAtIsNull(userId)
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-        return dayPlanRepository.save(new DayPlan(user, planDate));
+        DayPlan dayPlan = dayPlanRepository.save(new DayPlan(user, planDate));
+        outboxEventService.recordCreated(
+                AggregateType.DAY_PLAN, dayPlan.getId(), OutboxPayloadMapper.dayPlan(dayPlan));
+        cacheService.cacheDayPlan(DayPlanCachePayload.from(dayPlan));
+        return dayPlan;
     }
 
     @Transactional(readOnly = true)
