@@ -13,9 +13,11 @@ import molip.server.ai.dto.request.AiPlannerTaskRequest;
 import molip.server.ai.dto.request.AiPlannerUserRequest;
 import molip.server.ai.dto.response.AiPlannerResponse;
 import molip.server.common.aop.ratelimit.AiRateLimit;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.schedule.dto.cache.DayPlanCachePayload;
 import molip.server.schedule.dto.response.ScheduleArrangeResponse;
 import molip.server.schedule.dto.response.ScheduleArrangeResultResponse;
 import molip.server.schedule.entity.DayPlan;
@@ -37,6 +39,7 @@ public class AiPlannerFacade {
     private final ScheduleService scheduleService;
     private final UserService userService;
     private final AiPlannerClient aiPlannerClient;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional
     @AiRateLimit
@@ -57,6 +60,7 @@ public class AiPlannerFacade {
         }
 
         dayPlan.decreaseAiUsageRemainingCount();
+        cacheService.cacheDayPlan(DayPlanCachePayload.from(dayPlan));
 
         AiPlannerRequest request =
                 new AiPlannerRequest(

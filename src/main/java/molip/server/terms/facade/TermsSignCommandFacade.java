@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.TermsType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.terms.entity.Terms;
 import molip.server.terms.entity.TermsSign;
 import molip.server.terms.repository.TermsRepository;
@@ -25,6 +28,7 @@ public class TermsSignCommandFacade {
     private final TermsRepository termsRepository;
     private final TermsSignRepository termsSignRepository;
     private final UserRepository userRepository;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public void createTermsSigns(Long userId, List<TermsAgreementRequest> agreements) {
@@ -64,7 +68,11 @@ public class TermsSignCommandFacade {
             signs.add(new TermsSign(user, terms, request.isAgreed()));
         }
 
-        termsSignRepository.saveAll(signs);
+        List<TermsSign> savedSigns = termsSignRepository.saveAll(signs);
+        for (TermsSign sign : savedSigns) {
+            outboxEventService.recordCreated(
+                    AggregateType.TERMS_SIGN, sign.getId(), OutboxPayloadMapper.termsSign(sign));
+        }
     }
 
     private Map<Long, Boolean> buildAgreementMap(List<TermsAgreementRequest> agreements) {
