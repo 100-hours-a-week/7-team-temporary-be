@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
@@ -36,6 +37,7 @@ class UserServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private OutboxEventService outboxEventService;
+    @Mock private ReadConsistencyCacheService cacheService;
 
     @InjectMocks private UserService userService;
 
