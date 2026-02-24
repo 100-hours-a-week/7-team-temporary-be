@@ -33,7 +33,7 @@ spring:
         secret-key: ${AWS_S3_SECRET_KEY}
         bucket: ${AWS_S3_BUCKET}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP_ID:molip-migration}
       auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
@@ -111,18 +111,21 @@ notification:
 
 
 migration:
-  enabled: ${MIGRATION_ENABLED:false}
+  enabled: ${MIGRATION_ENABLED:true}
   datasource:
     url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/migration}
-    username: ${MIGRATION_DB_USERNAME:migration}
-    password: ${MIGRATION_DB_PASSWORD:migration}
+    username: ${MIGRATION_DB_USERNAME:root}
+    password: ${MIGRATION_DB_PASSWORD:00000000}
 
 kafka:
-  enabled: ${KAFKA_ENABLED:false}
+  enabled: ${KAFKA_ENABLED:true}
   producer:
-    enabled: ${KAFKA_PRODUCER_ENABLED:false}
+    enabled: ${KAFKA_PRODUCER_ENABLED:true}
   consumer:
-    enabled: ${KAFKA_CONSUMER_ENABLED:false}
+    enabled: ${KAFKA_CONSUMER_ENABLED:true}
+    dlq:
+      max-attempts: ${KAFKA_CONSUMER_DLQ_MAX_ATTEMPTS:10}
+      backoff-ms: ${KAFKA_CONSUMER_DLQ_BACKOFF_MS:0}
   outbox:
     fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
     batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}

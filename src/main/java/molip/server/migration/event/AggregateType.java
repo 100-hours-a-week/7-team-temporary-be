@@ -1,7 +1,7 @@
 package molip.server.migration.event;
 
 public enum AggregateType {
-    USER,
+    USERS,
     USER_IMAGE,
     IMAGE,
     DAY_PLAN,

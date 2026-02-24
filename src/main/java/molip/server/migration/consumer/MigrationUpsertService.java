@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        name = {"migration.enabled", "migration.datasource.url"},
+        name = {"migration.enabled"},
         havingValue = "true")
 public class MigrationUpsertService {
 
@@ -38,7 +38,7 @@ public class MigrationUpsertService {
         long eventVersion = message.eventVersion();
 
         switch (aggregateType) {
-            case USER -> upsertUser(payload, eventVersion, eventType, occurredAt);
+            case USERS -> upsertUser(payload, eventVersion, eventType, occurredAt);
             case USER_IMAGE -> upsertUserImage(payload, eventVersion, eventType, occurredAt);
             case IMAGE -> upsertImage(payload, eventVersion, eventType, occurredAt);
             case DAY_PLAN -> upsertDayPlan(payload, eventVersion, eventType, occurredAt);
