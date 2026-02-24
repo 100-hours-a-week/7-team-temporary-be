@@ -6,10 +6,10 @@ server:
 
 spring:
   datasource:
-    url: ${WRITE_DB_URL:${MYSQL_URL}}
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/molip}
     driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${WRITE_DB_USERNAME:${MYSQL_USERNAME}}
-    password: ${WRITE_DB_PASSWORD:${MYSQL_PASSWORD}}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:00000000}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -116,17 +116,6 @@ migration:
     url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/migration}
     username: ${MIGRATION_DB_USERNAME:root}
     password: ${MIGRATION_DB_PASSWORD:00000000}
-
-app:
-  datasource:
-    read:
-      url: ${READ_DB_URL:${MYSQL_URL:jdbc:mysql://localhost:3306/molip}}
-      username: ${READ_DB_USERNAME:${MYSQL_USERNAME:root}}
-      password: ${READ_DB_PASSWORD:${MYSQL_PASSWORD:00000000}}
-    write:
-      url: ${WRITE_DB_URL:${MYSQL_URL:jdbc:mysql://localhost:3306/molip}}
-      username: ${WRITE_DB_USERNAME:${MYSQL_USERNAME:root}}
-      password: ${WRITE_DB_PASSWORD:${MYSQL_PASSWORD:00000000}}
 
 kafka:
   enabled: ${KAFKA_ENABLED:true}
