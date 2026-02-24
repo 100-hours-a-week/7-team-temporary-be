@@ -38,7 +38,7 @@ public class ReflectionImagesRemovedEventHandler {
                 image.deleteImage();
                 imageService.deleteStoredImage(image.getImageType(), image.getUploadKey());
                 outboxEventService.recordDeleted(
-                        AggregateType.REFLECTION_IMAGE,
+                        AggregateType.DAY_REFLECTION_IMAGE,
                         item.getId(),
                         OutboxPayloadMapper.reflectionImage(item));
                 outboxEventService.recordDeleted(

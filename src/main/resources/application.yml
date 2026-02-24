@@ -126,6 +126,8 @@ kafka:
     dlq:
       max-attempts: ${KAFKA_CONSUMER_DLQ_MAX_ATTEMPTS:10}
       backoff-ms: ${KAFKA_CONSUMER_DLQ_BACKOFF_MS:0}
+      republish-enabled: ${KAFKA_CONSUMER_DLQ_REPUBLISH_ENABLED:true}
+      republish-delay-ms: ${KAFKA_CONSUMER_DLQ_REPUBLISH_DELAY_MS:1000}
   outbox:
     fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
     batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}
