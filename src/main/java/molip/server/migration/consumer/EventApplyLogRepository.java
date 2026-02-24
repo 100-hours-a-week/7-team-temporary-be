@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        name = {"migration.enabled", "migration.datasource.url"},
+        name = {"migration.enabled"},
         havingValue = "true")
 public class EventApplyLogRepository {
 

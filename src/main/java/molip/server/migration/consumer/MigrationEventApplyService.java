@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        name = {"migration.enabled", "migration.datasource.url"},
+        name = {"migration.enabled"},
         havingValue = "true")
 public class MigrationEventApplyService {
 

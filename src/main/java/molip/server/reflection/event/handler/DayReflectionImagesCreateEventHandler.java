@@ -35,7 +35,7 @@ public class DayReflectionImagesCreateEventHandler {
                 dayReflectionImageRepository.saveAll(reflectionImages);
         for (DayReflectionImage savedImage : savedImages) {
             outboxEventService.recordCreated(
-                    AggregateType.REFLECTION_IMAGE,
+                    AggregateType.DAY_REFLECTION_IMAGE,
                     savedImage.getId(),
                     OutboxPayloadMapper.reflectionImage(savedImage));
             outboxEventService.recordUpdated(

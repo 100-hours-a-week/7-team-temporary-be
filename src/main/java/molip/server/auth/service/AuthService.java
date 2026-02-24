@@ -21,6 +21,7 @@ import molip.server.user.entity.Users;
 import molip.server.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -39,6 +40,7 @@ public class AuthService {
     private final RefreshTokenStore refreshTokenStore;
     private final DeviceStore deviceStore;
 
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request, String deviceId) {
         validateEmail(request.email());
         validatePassword(request.password());
@@ -81,6 +83,7 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken, resolvedDeviceId);
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse reissue(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REFRESH_MISSING);
@@ -124,6 +127,7 @@ public class AuthService {
         return new AuthResponse(newAccessToken, newRefreshToken, deviceId);
     }
 
+    @Transactional(readOnly = true)
     public void logout(String accessToken) {
         Long userId = jwtUtil.extractUserId(accessToken);
         if (userId == null) {

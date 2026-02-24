@@ -5,6 +5,11 @@ server:
     connection-timeout: 5m
 
 spring:
+  datasource:
+    url: ${WRITE_DB_URL:jdbc:mysql://localhost:3306/molip}
+    driverClassName: com.mysql.cj.jdbc.Driver
+    username: ${WRITE_DB_USERNAME:${MYSQL_USERNAME}}
+    password: ${WRITE_DB_PASSWORD:${MYSQL_PASSWORD}}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -13,11 +18,6 @@ spring:
         format_sql: true
         use_sql_comments: true
         generate_statistics: true
-  datasource:
-    url: ${MYSQL_URL}
-    driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USERNAME}
-    password: ${MYSQL_PASSWORD}
   sql:
     init:
       mode: always
@@ -33,7 +33,7 @@ spring:
         secret-key: ${AWS_S3_SECRET_KEY}
         bucket: ${AWS_S3_BUCKET}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP_ID:molip-migration}
       auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
@@ -111,18 +111,36 @@ notification:
 
 
 migration:
-  enabled: ${MIGRATION_ENABLED:false}
+  enabled: ${MIGRATION_ENABLED:true}
   datasource:
-    url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/migration}
-    username: ${MIGRATION_DB_USERNAME:migration}
-    password: ${MIGRATION_DB_PASSWORD:migration}
+    url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/testread}
+    username: ${MIGRATION_DB_USERNAME}
+    password: ${MIGRATION_DB_PASSWORD}
+
+app:
+  datasource:
+    read:
+      url: ${READ_DB_URL:jdbc:mysql://localhost:3306/testread}
+      driverClassName: com.mysql.cj.jdbc.Driver
+      username: ${READ_DB_USERNAME}
+      password: ${READ_DB_PASSWORD}
+    write:
+      url: ${WRITE_DB_URL:jdbc:mysql://localhost:3306/molip}
+      driverClassName: com.mysql.cj.jdbc.Driver
+      username: ${WRITE_DB_USERNAME}
+      password: ${WRITE_DB_PASSWORD}
 
 kafka:
-  enabled: ${KAFKA_ENABLED:false}
+  enabled: ${KAFKA_ENABLED:true}
   producer:
-    enabled: ${KAFKA_PRODUCER_ENABLED:false}
+    enabled: ${KAFKA_PRODUCER_ENABLED:true}
   consumer:
-    enabled: ${KAFKA_CONSUMER_ENABLED:false}
+    enabled: ${KAFKA_CONSUMER_ENABLED:true}
+    dlq:
+      max-attempts: ${KAFKA_CONSUMER_DLQ_MAX_ATTEMPTS:10}
+      backoff-ms: ${KAFKA_CONSUMER_DLQ_BACKOFF_MS:0}
+      republish-enabled: ${KAFKA_CONSUMER_DLQ_REPUBLISH_ENABLED:true}
+      republish-delay-ms: ${KAFKA_CONSUMER_DLQ_REPUBLISH_DELAY_MS:1000}
   outbox:
     fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
     batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}

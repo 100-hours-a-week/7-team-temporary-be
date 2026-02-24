@@ -3,6 +3,9 @@ package molip.server.reflection.facade;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.entity.ReflectionLike;
 import molip.server.reflection.service.ReflectionLikeService;
@@ -19,6 +22,7 @@ public class ReflectionLikeCommandFacade {
     private final ReflectionLikeService reflectionLikeService;
     private final ReflectionService reflectionService;
     private final UserService userService;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public void likeReflection(Long userId, Long reflectionId) {
@@ -34,7 +38,11 @@ public class ReflectionLikeCommandFacade {
             throw new BaseException(ErrorCode.CONFLICT_ALREADY_LIKED);
         }
 
-        reflectionLikeService.save(user, reflection);
+        ReflectionLike savedLike = reflectionLikeService.save(user, reflection);
+        outboxEventService.recordCreated(
+                AggregateType.REFLECTION_LIKE,
+                savedLike.getId(),
+                OutboxPayloadMapper.reflectionLike(savedLike));
     }
 
     @Transactional
@@ -45,8 +53,11 @@ public class ReflectionLikeCommandFacade {
         Users existingUser = userService.getUser(userId);
 
         ReflectionLike like = reflectionLikeService.getLike(userId, reflectionId);
-
         like.delete();
+        outboxEventService.recordDeleted(
+                AggregateType.REFLECTION_LIKE,
+                like.getId(),
+                OutboxPayloadMapper.reflectionLike(like));
     }
 
     private void validateLike(Long userId, Long reflectionId) {

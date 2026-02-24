@@ -174,7 +174,7 @@ public class ReflectionCommandFacade {
 
         publishImageUpdateEvents(reflection.getId(), removeImageIds, addImages, reflection);
         outboxEventService.recordUpdated(
-                AggregateType.REFLECTION,
+                AggregateType.DAY_REFLECTION,
                 reflection.getId(),
                 OutboxPayloadMapper.reflection(reflection));
         cacheService.cacheReflection(
@@ -209,7 +209,7 @@ public class ReflectionCommandFacade {
 
         reflection.delete();
         outboxEventService.recordDeleted(
-                AggregateType.REFLECTION,
+                AggregateType.DAY_REFLECTION,
                 reflection.getId(),
                 OutboxPayloadMapper.reflection(reflection));
         cacheService.evictReflection(reflection.getId());

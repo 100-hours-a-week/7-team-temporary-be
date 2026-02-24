@@ -15,12 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        name = {
-            "kafka.enabled",
-            "kafka.consumer.enabled",
-            "migration.enabled",
-            "migration.datasource.url"
-        },
+        name = {"kafka.enabled", "kafka.consumer.enabled", "migration.enabled"},
         havingValue = "true")
 public class MigrationEventConsumer {
 

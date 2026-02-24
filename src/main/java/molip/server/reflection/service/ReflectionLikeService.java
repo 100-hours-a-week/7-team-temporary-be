@@ -45,8 +45,8 @@ public class ReflectionLikeService {
     }
 
     @Transactional
-    public void save(Users user, DayReflection reflection) {
-        reflectionLikeRepository.save(new ReflectionLike(user, reflection));
+    public ReflectionLike save(Users user, DayReflection reflection) {
+        return reflectionLikeRepository.save(new ReflectionLike(user, reflection));
     }
 
     @Transactional(readOnly = true)

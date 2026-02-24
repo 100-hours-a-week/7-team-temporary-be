@@ -1,6 +1,7 @@
 package molip.server.migration.config;
 
 import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
@@ -13,11 +14,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @ConditionalOnProperty(
-        name = {"migration.enabled", "migration.datasource.url"},
+        name = {"migration.enabled"},
         havingValue = "true")
 public class MigrationDataSourceConfig {
 
-    @Bean
+    @Bean(name = "migrationDataSourceProperties")
     @ConfigurationProperties("migration.datasource")
     public DataSourceProperties migrationDataSourceProperties() {
         return new DataSourceProperties();
@@ -25,17 +26,20 @@ public class MigrationDataSourceConfig {
 
     @Bean(name = "migrationDataSource")
     public DataSource migrationDataSource(
-            @NonNull DataSourceProperties migrationDataSourceProperties) {
+            @NonNull @Qualifier("migrationDataSourceProperties")
+                    DataSourceProperties migrationDataSourceProperties) {
         return migrationDataSourceProperties.initializeDataSourceBuilder().build();
     }
 
     @Bean(name = "migrationJdbcTemplate")
-    public JdbcTemplate migrationJdbcTemplate(DataSource migrationDataSource) {
+    public JdbcTemplate migrationJdbcTemplate(
+            @Qualifier("migrationDataSource") DataSource migrationDataSource) {
         return new JdbcTemplate(migrationDataSource);
     }
 
     @Bean(name = "migrationTransactionManager")
-    public PlatformTransactionManager migrationTransactionManager(DataSource migrationDataSource) {
+    public PlatformTransactionManager migrationTransactionManager(
+            @Qualifier("migrationDataSource") DataSource migrationDataSource) {
         return new DataSourceTransactionManager(migrationDataSource);
     }
 }

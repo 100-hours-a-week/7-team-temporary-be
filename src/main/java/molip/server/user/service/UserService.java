@@ -72,7 +72,7 @@ public class UserService {
         publishTermsAgreementEvent(savedUser.getId(), terms);
 
         outboxEventService.recordCreated(
-                AggregateType.USER, savedUser.getId(), OutboxPayloadMapper.user(savedUser));
+                AggregateType.USERS, savedUser.getId(), OutboxPayloadMapper.user(savedUser));
         cacheService.cacheUser(
                 UserCachePayload.from(savedUser, profileImageKey, savedUser.getVersion()));
 
@@ -101,7 +101,7 @@ public class UserService {
 
         user.modifyUserDetails(gender, birth, focusTimeZone, dayEndTime, nickname);
         outboxEventService.recordUpdated(
-                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
+                AggregateType.USERS, user.getId(), OutboxPayloadMapper.user(user));
         cacheService.cacheUser(UserCachePayload.from(user, null, user.getVersion()));
     }
 
@@ -125,7 +125,7 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(passwowrd);
         user.modifyPassword(encodedPassword);
         outboxEventService.recordUpdated(
-                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
+                AggregateType.USERS, user.getId(), OutboxPayloadMapper.user(user));
     }
 
     @Transactional
@@ -137,7 +137,7 @@ public class UserService {
 
         user.deleteUser();
         outboxEventService.recordDeleted(
-                AggregateType.USER, user.getId(), OutboxPayloadMapper.user(user));
+                AggregateType.USERS, user.getId(), OutboxPayloadMapper.user(user));
         cacheService.evictUser(user.getId());
     }
 

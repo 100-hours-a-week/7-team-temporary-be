@@ -51,7 +51,7 @@ public class ReflectionService {
         }
 
         outboxEventService.recordCreated(
-                AggregateType.REFLECTION,
+                AggregateType.DAY_REFLECTION,
                 reflection.getId(),
                 OutboxPayloadMapper.reflection(reflection));
         cacheService.cacheReflection(
@@ -124,7 +124,7 @@ public class ReflectionService {
 
         reflection.updateOpen(isOpen);
         outboxEventService.recordUpdated(
-                AggregateType.REFLECTION,
+                AggregateType.DAY_REFLECTION,
                 reflection.getId(),
                 OutboxPayloadMapper.reflection(reflection));
         List<String> imageKeys =

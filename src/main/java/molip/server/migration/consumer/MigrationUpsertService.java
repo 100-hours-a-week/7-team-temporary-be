@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        name = {"migration.enabled", "migration.datasource.url"},
+        name = {"migration.enabled"},
         havingValue = "true")
 public class MigrationUpsertService {
 
@@ -38,16 +38,18 @@ public class MigrationUpsertService {
         long eventVersion = message.eventVersion();
 
         switch (aggregateType) {
-            case USER -> upsertUser(payload, eventVersion, eventType, occurredAt);
+            case USERS -> upsertUser(payload, eventVersion, eventType, occurredAt);
             case USER_IMAGE -> upsertUserImage(payload, eventVersion, eventType, occurredAt);
             case IMAGE -> upsertImage(payload, eventVersion, eventType, occurredAt);
             case DAY_PLAN -> upsertDayPlan(payload, eventVersion, eventType, occurredAt);
             case SCHEDULE -> upsertSchedule(payload, eventVersion, eventType, occurredAt);
             case SCHEDULE_HISTORY ->
                     upsertScheduleHistory(payload, eventVersion, eventType, occurredAt);
-            case REFLECTION -> upsertReflection(payload, eventVersion, eventType, occurredAt);
-            case REFLECTION_IMAGE ->
+            case DAY_REFLECTION -> upsertReflection(payload, eventVersion, eventType, occurredAt);
+            case DAY_REFLECTION_IMAGE ->
                     upsertReflectionImage(payload, eventVersion, eventType, occurredAt);
+            case REFLECTION_LIKE ->
+                    upsertReflectionLike(payload, eventVersion, eventType, occurredAt);
             case NOTIFICATION -> upsertNotification(payload, eventVersion, eventType, occurredAt);
             case USER_FCM_TOKEN -> upsertUserFcmToken(payload, eventVersion, eventType, occurredAt);
             case TERMS_SIGN -> upsertTermsSign(payload, eventVersion, eventType, occurredAt);
@@ -284,6 +286,29 @@ public class MigrationUpsertService {
                 getLong(payload, "id"),
                 getLong(payload, "day_reflection_id"),
                 getLong(payload, "image_id"),
+                eventVersion,
+                getTimestamp(payload, "created_at"),
+                getTimestamp(payload, "updated_at"),
+                deletedAt);
+    }
+
+    private void upsertReflectionLike(
+            JsonNode payload, long eventVersion, String eventType, OffsetDateTime occurredAt) {
+        Timestamp deletedAt = resolveDeletedAt(payload, eventType, occurredAt);
+        String sql =
+                "insert into reflection_like (id, user_id, day_reflection_id, version, created_at, updated_at, deleted_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?) "
+                        + "on duplicate key update "
+                        + "user_id = if(values(version) > version, values(user_id), user_id), "
+                        + "day_reflection_id = if(values(version) > version, values(day_reflection_id), day_reflection_id), "
+                        + "updated_at = if(values(version) > version, values(updated_at), updated_at), "
+                        + "deleted_at = if(values(version) > version, values(deleted_at), deleted_at), "
+                        + "version = if(values(version) > version, values(version), version)";
+        migrationJdbcTemplate.update(
+                sql,
+                getLong(payload, "id"),
+                getLong(payload, "user_id"),
+                getLong(payload, "day_reflection_id"),
                 eventVersion,
                 getTimestamp(payload, "created_at"),
                 getTimestamp(payload, "updated_at"),
