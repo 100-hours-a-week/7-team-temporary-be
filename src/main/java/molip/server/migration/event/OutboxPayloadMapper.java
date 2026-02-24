@@ -13,6 +13,7 @@ import molip.server.notification.entity.Notification;
 import molip.server.notification.entity.UserFcmToken;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.entity.DayReflectionImage;
+import molip.server.reflection.entity.ReflectionLike;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.entity.ScheduleHistory;
@@ -143,6 +144,19 @@ public final class OutboxPayloadMapper {
                         reflectionImage.getCreatedAt(),
                         reflectionImage.getUpdatedAt(),
                         reflectionImage.getDeletedAt()));
+        return payload;
+    }
+
+    public static Map<String, Object> reflectionLike(ReflectionLike reflectionLike) {
+        Map<String, Object> payload =
+                baseEntityPayload(reflectionLike.getId(), reflectionLike.getVersion());
+        payload.put("user_id", reflectionLike.getUser().getId());
+        payload.put("day_reflection_id", reflectionLike.getReflection().getId());
+        payload.putAll(
+                auditPayload(
+                        reflectionLike.getCreatedAt(),
+                        reflectionLike.getUpdatedAt(),
+                        reflectionLike.getDeletedAt()));
         return payload;
     }
 
