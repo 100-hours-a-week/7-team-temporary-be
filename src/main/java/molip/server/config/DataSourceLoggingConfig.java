@@ -3,6 +3,7 @@ package molip.server.config;
 import java.util.Arrays;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -15,11 +16,16 @@ public class DataSourceLoggingConfig {
 
     @Bean
     public ApplicationRunner dataSourceLogger(
-            DataSource dataSource,
-            @Qualifier("migrationDataSource") DataSource migrationDataSource) {
+            @Qualifier("writeDataSource") DataSource writeDataSource,
+            @Qualifier("readDataSource") DataSource readDataSource,
+            @Qualifier("migrationDataSource") ObjectProvider<DataSource> migrationDataSource) {
         return args -> {
-            logDataSource("main", dataSource);
-            logDataSource("migration", migrationDataSource);
+            logDataSource("write", writeDataSource);
+            logDataSource("read", readDataSource);
+            DataSource migration = migrationDataSource.getIfAvailable();
+            if (migration != null) {
+                logDataSource("migration", migration);
+            }
         };
     }
 
