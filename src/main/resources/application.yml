@@ -120,12 +120,12 @@ migration:
 app:
   datasource:
     read:
-      url: ${READ_DB_URL:jdbc:mysql://localhost:3306/testread}}
+      url: ${READ_DB_URL:jdbc:mysql://localhost:3306/testread}
       driverClassName: com.mysql.cj.jdbc.Driver
       username: ${READ_DB_USERNAME}
       password: ${READ_DB_PASSWORD}
     write:
-      url: ${WRITE_DB_URL:jdbc:mysql://localhost:3306/molip}}
+      url: ${WRITE_DB_URL:jdbc:mysql://localhost:3306/molip}
       driverClassName: com.mysql.cj.jdbc.Driver
       username: ${WRITE_DB_USERNAME}
       password: ${WRITE_DB_PASSWORD}
