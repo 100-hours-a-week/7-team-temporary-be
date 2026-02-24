@@ -15,10 +15,12 @@ public class DataSourceLoggingConfig {
 
     @Bean
     public ApplicationRunner dataSourceLogger(
-            DataSource dataSource,
+            @Qualifier("writeDataSource") DataSource writeDataSource,
+            @Qualifier("readDataSource") DataSource readDataSource,
             @Qualifier("migrationDataSource") DataSource migrationDataSource) {
         return args -> {
-            logDataSource("main", dataSource);
+            logDataSource("write", writeDataSource);
+            logDataSource("read", readDataSource);
             logDataSource("migration", migrationDataSource);
         };
     }

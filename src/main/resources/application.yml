@@ -5,6 +5,11 @@ server:
     connection-timeout: 5m
 
 spring:
+  datasource:
+    url: ${WRITE_DB_URL:${MYSQL_URL}}
+    driverClassName: com.mysql.cj.jdbc.Driver
+    username: ${WRITE_DB_USERNAME:${MYSQL_USERNAME}}
+    password: ${WRITE_DB_PASSWORD:${MYSQL_PASSWORD}}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -13,11 +18,6 @@ spring:
         format_sql: true
         use_sql_comments: true
         generate_statistics: true
-  datasource:
-    url: ${MYSQL_URL}
-    driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USERNAME}
-    password: ${MYSQL_PASSWORD}
   sql:
     init:
       mode: always
@@ -116,6 +116,17 @@ migration:
     url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/migration}
     username: ${MIGRATION_DB_USERNAME:root}
     password: ${MIGRATION_DB_PASSWORD:00000000}
+
+app:
+  datasource:
+    read:
+      url: ${READ_DB_URL:${MYSQL_URL:jdbc:mysql://localhost:3306/molip}}
+      username: ${READ_DB_USERNAME:${MYSQL_USERNAME:root}}
+      password: ${READ_DB_PASSWORD:${MYSQL_PASSWORD:00000000}}
+    write:
+      url: ${WRITE_DB_URL:${MYSQL_URL:jdbc:mysql://localhost:3306/molip}}
+      username: ${WRITE_DB_USERNAME:${MYSQL_USERNAME:root}}
+      password: ${WRITE_DB_PASSWORD:${MYSQL_PASSWORD:00000000}}
 
 kafka:
   enabled: ${KAFKA_ENABLED:true}
