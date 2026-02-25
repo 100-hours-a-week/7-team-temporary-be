@@ -8,8 +8,11 @@ import molip.server.friend.dto.response.FriendRequestResponse;
 import molip.server.friend.entity.FriendRequest;
 import molip.server.friend.service.FriendRequestService;
 import molip.server.friend.service.FriendService;
+import molip.server.notification.event.FriendCreatedEvent;
+import molip.server.notification.event.FriendRequestedEvent;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,7 @@ public class FriendRequestCommandFacade {
     private final FriendService friendService;
     private final FriendRequestService friendRequestService;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public FriendRequestResponse sendFriendRequest(Long fromUserId, Long targetUserId) {
@@ -27,8 +31,11 @@ public class FriendRequestCommandFacade {
             throw new BaseException(ErrorCode.CONFLICT_ALREADY_FRIEND);
         }
 
+        Users fromUser = userService.getUser(fromUserId);
         Users toUser = userService.getUser(targetUserId);
         FriendRequest saved = friendRequestService.sendFriendRequest(fromUserId, toUser);
+        eventPublisher.publishEvent(
+                new FriendRequestedEvent(toUser.getId(), fromUser.getNickname()));
 
         return FriendRequestResponse.from(saved.getId());
     }
@@ -51,5 +58,7 @@ public class FriendRequestCommandFacade {
         Users sentUser = userService.getUser(request.getFromUserId());
 
         friendService.createFriendRelations(requestedUser, sentUser);
+        eventPublisher.publishEvent(
+                new FriendCreatedEvent(sentUser.getId(), requestedUser.getNickname()));
     }
 }

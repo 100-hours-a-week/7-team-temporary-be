@@ -116,6 +116,44 @@ public class NotificationService {
     }
 
     @Transactional
+    public void createFriendRequestedNotification(Users user, String requesterNickname) {
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                null,
+                                NotificationType.FRIEND_REQUESTED,
+                                buildFriendRequestedTitle(requesterNickname),
+                                "목록에서 확인해주세요!",
+                                NotificationStatus.PENDING,
+                                LocalDateTime.now()));
+
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
+    }
+
+    @Transactional
+    public void createFriendCreatedNotification(Users user, String accepterNickname) {
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                null,
+                                NotificationType.FRIEND_CREATED,
+                                buildFriendCreatedTitle(accepterNickname),
+                                "친구 요청이 수락되어 친구 관계가 맺어졌습니다.",
+                                NotificationStatus.PENDING,
+                                LocalDateTime.now()));
+
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
+    }
+
+    @Transactional
     public void markSent(Notification notification, LocalDateTime sentAt) {
 
         notification.markSent(sentAt);
@@ -172,5 +210,13 @@ public class NotificationService {
     private boolean shouldCreateReminder(LocalDateTime scheduledAt) {
 
         return !scheduledAt.isBefore(LocalDateTime.now());
+    }
+
+    private String buildFriendRequestedTitle(String requesterNickname) {
+        return requesterNickname + "님이 친구 요청을 보냈습니다.";
+    }
+
+    private String buildFriendCreatedTitle(String accepterNickname) {
+        return accepterNickname + "님이 친구 요청을 수락했습니다.";
     }
 }
