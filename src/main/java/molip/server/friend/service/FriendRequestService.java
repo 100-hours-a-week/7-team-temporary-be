@@ -4,12 +4,9 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.FriendRequestStatus;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
-import molip.server.friend.entity.Friend;
 import molip.server.friend.entity.FriendRequest;
-import molip.server.friend.repository.FriendRepository;
 import molip.server.friend.repository.FriendRequestRepository;
 import molip.server.user.entity.Users;
-import molip.server.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -19,14 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FriendRequestService {
 
-    private final FriendRepository friendRepository;
     private final FriendRequestRepository friendRequestRepository;
-    private final UserRepository userRepository;
 
     @Transactional
     public FriendRequest sendFriendRequest(Long fromUserId, Users toUser) {
         validateSelfRequest(fromUserId, toUser.getId());
-        validateAlreadyFriend(fromUserId, toUser.getId());
         validateDuplicatedRequest(fromUserId, toUser.getId());
         validateOppositeRequestExists(fromUserId, toUser.getId());
 
@@ -57,7 +51,8 @@ public class FriendRequestService {
     }
 
     @Transactional
-    public void acceptFriendRequest(Long userId, Long requestId, FriendRequestStatus status) {
+    public FriendRequest acceptFriendRequest(
+            Long userId, Long requestId, FriendRequestStatus status) {
         validateAcceptStatus(status);
 
         FriendRequest request =
@@ -67,11 +62,10 @@ public class FriendRequestService {
 
         validateAcceptReceiver(userId, request);
         validateRequestPending(request);
-        validateAlreadyFriend(userId, request.getFromUserId());
-
-        createFriendRelations(userId, request.getFromUserId());
 
         request.accept();
+
+        return request;
     }
 
     private void validateSelfRequest(Long fromUserId, Long toUserId) {
@@ -130,28 +124,5 @@ public class FriendRequestService {
         if (!request.getToUser().getId().equals(userId)) {
             throw new BaseException(ErrorCode.FORBIDDEN_ACCEPT_REQUEST);
         }
-    }
-
-    private void validateAlreadyFriend(Long userId, Long fromUserId) {
-
-        if (friendRepository.existsByUserIdAndFriendIdAndDeletedAtIsNull(userId, fromUserId)
-                || friendRepository.existsByUserIdAndFriendIdAndDeletedAtIsNull(
-                        fromUserId, userId)) {
-            throw new BaseException(ErrorCode.CONFLICT_ALREADY_FRIEND);
-        }
-    }
-
-    private void createFriendRelations(Long toUserId, Long fromUserId) {
-        Users receiver =
-                userRepository
-                        .findByIdAndDeletedAtIsNull(toUserId)
-                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
-        Users sender =
-                userRepository
-                        .findByIdAndDeletedAtIsNull(fromUserId)
-                        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND_TARGET));
-
-        friendRepository.save(new Friend(receiver, fromUserId));
-        friendRepository.save(new Friend(sender, toUserId));
     }
 }
