@@ -176,5 +176,6 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<FriendItemResponse>>> getFriends(int page, int size);
+    ResponseEntity<ServerResponse<PageResponse<FriendItemResponse>>> getFriends(
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 }
