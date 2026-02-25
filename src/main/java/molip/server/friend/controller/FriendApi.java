@@ -72,7 +72,7 @@ public interface FriendApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<FriendRequestItemResponse>>> getFriendRequests(
-            int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 
     @Operation(summary = "친구 요청 삭제")
     @SecurityRequirement(name = "JWT")

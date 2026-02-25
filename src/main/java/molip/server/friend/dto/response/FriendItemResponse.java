@@ -8,4 +8,13 @@ public record FriendItemResponse(
         @Schema(description = "친구 사용자 ID", example = "5") Long friendUserId,
         @Schema(description = "친구 이메일", example = "email@email.com") String friendEmail,
         @Schema(description = "친구 닉네임", example = "nick05") String friendNickname,
-        @Schema(description = "프로필 이미지") ImageInfoResponse profileImage) {}
+        @Schema(description = "프로필 이미지") ImageInfoResponse profileImage) {
+
+    public static FriendItemResponse of(
+            Long friendUserId,
+            String friendEmail,
+            String friendNickname,
+            ImageInfoResponse profileImage) {
+        return new FriendItemResponse(friendUserId, friendEmail, friendNickname, profileImage);
+    }
+}
