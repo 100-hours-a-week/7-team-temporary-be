@@ -26,6 +26,7 @@ public class FriendRequestService {
     @Transactional
     public FriendRequest sendFriendRequest(Long fromUserId, Users toUser) {
         validateSelfRequest(fromUserId, toUser.getId());
+        validateAlreadyFriend(fromUserId, toUser.getId());
         validateDuplicatedRequest(fromUserId, toUser.getId());
         validateOppositeRequestExists(fromUserId, toUser.getId());
 
