@@ -21,6 +21,9 @@ import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.event.ScheduleReminderResetEvent;
 import molip.server.schedule.entity.DayPlan;
@@ -43,17 +46,20 @@ public class ScheduleService {
     private final DayPlanService dayPlanService;
     private final Map<ScheduleType, ScheduleCreator> creatorMap;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     public ScheduleService(
             ScheduleRepository scheduleRepository,
             DayPlanService dayPlanService,
             List<ScheduleCreator> creators,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            OutboxEventService outboxEventService) {
 
         this.scheduleRepository = scheduleRepository;
         this.dayPlanService = dayPlanService;
         this.creatorMap = new EnumMap<>(ScheduleType.class);
         this.eventPublisher = eventPublisher;
+        this.outboxEventService = outboxEventService;
 
         for (ScheduleCreator creator : creators) {
             this.creatorMap.put(creator.supports(), creator);
@@ -80,6 +86,7 @@ public class ScheduleService {
         Schedule savedSchedule = scheduleRepository.save(schedule);
 
         publishScheduleCreatedEvent(savedSchedule);
+        recordScheduleCreated(savedSchedule);
 
         return savedSchedule;
     }
@@ -123,6 +130,8 @@ public class ScheduleService {
             schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
         }
 
+        recordScheduleUpdated(schedule);
+
         eventPublisher.publishEvent(
                 new ScheduleReminderResetEvent(
                         schedule.getId(),
@@ -146,6 +155,7 @@ public class ScheduleService {
         validateOwnership(userId, schedule);
 
         schedule.updateStatus(status);
+        recordScheduleUpdated(schedule);
     }
 
     @Transactional
@@ -181,7 +191,10 @@ public class ScheduleService {
                                                 .build())
                         .toList();
 
-        return scheduleRepository.saveAll(children);
+        List<Schedule> savedChildren = scheduleRepository.saveAll(children);
+        recordScheduleUpdated(parentSchedule);
+        recordSchedulesCreated(savedChildren);
+        return savedChildren;
     }
 
     @Transactional(readOnly = true)
@@ -341,6 +354,7 @@ public class ScheduleService {
                     schedule.getStartAt(),
                     schedule.getEndAt());
 
+            recordScheduleUpdated(schedule);
             updatedSchedules.add(schedule);
         }
 
@@ -361,6 +375,7 @@ public class ScheduleService {
         }
 
         schedule.deleteSchedule();
+        recordScheduleDeleted(schedule);
     }
 
     @Transactional
@@ -393,6 +408,9 @@ public class ScheduleService {
         targetSchedule.updateAssignmentStatus(AssignmentStatus.EXCLUDED);
         targetSchedule.updateType(ScheduleType.FLEX);
         targetSchedule.updateTime(null, null);
+
+        recordScheduleUpdated(excludedSchedule);
+        recordScheduleUpdated(targetSchedule);
     }
 
     private List<Schedule> createChildrenFromAi(
@@ -435,6 +453,7 @@ public class ScheduleService {
                     child.getEndAt());
         }
 
+        recordSchedulesCreated(savedChildren);
         return savedChildren;
     }
 
@@ -499,6 +518,8 @@ public class ScheduleService {
                 schedule.getFocusLevel(),
                 schedule.getIsUrgent());
 
+        recordScheduleUpdated(schedule);
+
         eventPublisher.publishEvent(
                 new ScheduleReminderResetEvent(
                         schedule.getId(),
@@ -519,6 +540,33 @@ public class ScheduleService {
 
         if (targetSchedule.getStartAt() == null || targetSchedule.getEndAt() == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+    }
+
+    private void recordScheduleCreated(Schedule schedule) {
+        outboxEventService.recordCreated(
+                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
+    }
+
+    private void recordScheduleUpdated(Schedule schedule) {
+        outboxEventService.recordUpdated(
+                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
+    }
+
+    private void recordScheduleDeleted(Schedule schedule) {
+        outboxEventService.recordDeleted(
+                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
+    }
+
+    private void recordSchedulesCreated(List<Schedule> schedules) {
+        for (Schedule schedule : schedules) {
+            recordScheduleCreated(schedule);
+        }
+    }
+
+    private void recordSchedulesUpdated(List<Schedule> schedules) {
+        for (Schedule schedule : schedules) {
+            recordScheduleUpdated(schedule);
         }
     }
 

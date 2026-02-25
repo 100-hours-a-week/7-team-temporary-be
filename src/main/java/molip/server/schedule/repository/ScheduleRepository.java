@@ -71,6 +71,20 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("dayPlanId") Long dayPlanId, Pageable pageable);
 
     @Query(
+            "select distinct dp.planDate from Schedule s "
+                    + "join s.dayPlan dp "
+                    + "join dp.user u "
+                    + "where u.id = :userId "
+                    + "and s.deletedAt is null "
+                    + "and s.startAt is not null "
+                    + "and s.endAt is not null "
+                    + "and dp.planDate between :startDate and :endDate")
+    List<LocalDate> findPlanDatesWithTimeAssignedSchedules(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    @Query(
             value =
                     "select s from Schedule s "
                             + "left join fetch s.parentSchedule "

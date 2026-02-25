@@ -158,13 +158,18 @@ public enum ErrorCode {
     INVALID_REQUEST_REFLECTION_IMAGES(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "이미지는 1개 이상 첨부되어야합니다."),
     FORBIDDEN_REFLECTION_ONLY_OWN(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 일정만 수정할 수 있습니다."),
+    FORBIDDEN_REFLECTION_OPEN_ONLY(HttpStatus.FORBIDDEN, "FORBIDDEN", "공개된 회고만 조회할 수 있습니다."),
     DAYPLAN_NOT_FOUND_REFLECTION(HttpStatus.NOT_FOUND, "DAYPLAN_NOT_FOUND", "일자 정보를 찾을 수 없습니다."),
     CONFLICT_REFLECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "CONFLICT", "이미 회고가 작성된 일정입니다."),
+    REFLECTION_ALREADY_DELETED(HttpStatus.NOT_FOUND, "REFLECTION_ALREADY_DELETED", "이미 삭제된 회고입니다."),
     REFLECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "REFLECTION_NOT_FOUND", "회고를 찾을 수 없습니다."),
     INVALID_REQUEST_REFLECTION_IMAGES_MIN(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "이미지가 1개 이상 포함되어야 합니다."),
+    INVALID_REQUEST_REFLECTION_OPEN_ONLY(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "공개된 회고만 조회 가능합니다."),
     FORBIDDEN_REFLECTION_UPDATE(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 회고만 수정할 수 있습니다."),
-    CONFLICT_ALREADY_LIKED(HttpStatus.CONFLICT, "CONFLICT", "이미 좋아요를 누른 회고입니다.");
+    CONFLICT_ALREADY_LIKED(HttpStatus.CONFLICT, "CONFLICT", "이미 좋아요를 누른 회고입니다."),
+    CONFLICT_NOT_LIKED(HttpStatus.CONFLICT, "CONFLICT", "좋아요를 누르지 않은 회고입니다.");
 
     private final HttpStatus status;
     private final String statusValue;

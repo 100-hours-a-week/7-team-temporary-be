@@ -1,6 +1,8 @@
 package molip.server.notification.facade;
 
 import lombok.RequiredArgsConstructor;
+import molip.server.notification.event.FriendCreatedEvent;
+import molip.server.notification.event.FriendRequestedEvent;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.event.ScheduleReminderResetEvent;
 import molip.server.notification.service.NotificationService;
@@ -31,5 +33,19 @@ public class NotificationCommandFacade {
 
         notificationService.resetScheduleReminder(
                 user, event.scheduleId(), event.title(), event.planDate(), event.startAt());
+    }
+
+    @Transactional
+    public void createFriendRequestedNotification(FriendRequestedEvent event) {
+        Users user = userService.getUser(event.targetUserId());
+
+        notificationService.createFriendRequestedNotification(user, event.requesterNickname());
+    }
+
+    @Transactional
+    public void createFriendCreatedNotification(FriendCreatedEvent event) {
+        Users user = userService.getUser(event.targetUserId());
+
+        notificationService.createFriendCreatedNotification(user, event.accepterNickname());
     }
 }

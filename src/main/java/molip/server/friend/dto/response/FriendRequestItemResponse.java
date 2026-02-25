@@ -12,4 +12,16 @@ public record FriendRequestItemResponse(
         @Schema(description = "보낸 사용자 닉네임", example = "nick05") String fromUserNickname,
         @Schema(description = "프로필 이미지") ImageInfoResponse profileImage,
         @Schema(description = "요청 생성 시각", example = "2026-01-13T10:10:10+09:00")
-                OffsetDateTime createdAt) {}
+                OffsetDateTime createdAt) {
+
+    public static FriendRequestItemResponse of(
+            Long requestId,
+            Long fromUserId,
+            String fromUserEmail,
+            String fromUserNickname,
+            ImageInfoResponse profileImage,
+            OffsetDateTime createdAt) {
+        return new FriendRequestItemResponse(
+                requestId, fromUserId, fromUserEmail, fromUserNickname, profileImage, createdAt);
+    }
+}

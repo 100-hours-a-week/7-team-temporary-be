@@ -3,6 +3,7 @@ package molip.server.common.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
@@ -21,4 +22,8 @@ public abstract class BaseEntity {
     @LastModifiedDate protected LocalDateTime updatedAt;
 
     protected LocalDateTime deletedAt;
+
+    @Version
+    @Column(nullable = false)
+    protected Long version;
 }

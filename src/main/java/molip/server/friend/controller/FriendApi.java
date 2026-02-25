@@ -14,6 +14,8 @@ import molip.server.friend.dto.response.FriendItemResponse;
 import molip.server.friend.dto.response.FriendRequestItemResponse;
 import molip.server.friend.dto.response.FriendRequestResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Friend", description = "친구 API")
 public interface FriendApi {
@@ -46,7 +48,8 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<FriendRequestResponse>> sendFriendRequest(Long targetUserId);
+    ResponseEntity<ServerResponse<FriendRequestResponse>> sendFriendRequest(
+            @AuthenticationPrincipal UserDetails userDetails, Long targetUserId);
 
     @Operation(summary = "친구 요청 조회")
     @SecurityRequirement(name = "JWT")
@@ -69,12 +72,12 @@ public interface FriendApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<FriendRequestItemResponse>>> getFriendRequests(
-            int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 
-    @Operation(summary = "친구 요청 삭제")
+    @Operation(summary = "친구 요청 삭제(거절)")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(responseCode = "204", description = "거절 성공"),
         @ApiResponse(
                 responseCode = "401",
                 description = "유효하지 않은 토큰",
@@ -96,7 +99,8 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> deleteFriendRequest(Long requestId);
+    ResponseEntity<Void> deleteFriendRequest(
+            @AuthenticationPrincipal UserDetails userDetails, Long requestId);
 
     @Operation(summary = "친구 요청 상태 변경")
     @SecurityRequirement(name = "JWT")
@@ -128,7 +132,9 @@ public interface FriendApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<Void> updateFriendRequestStatus(
-            Long requestId, FriendRequestStatusUpdateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long requestId,
+            FriendRequestStatusUpdateRequest request);
 
     @Operation(summary = "친구 삭제")
     @SecurityRequirement(name = "JWT")
@@ -147,7 +153,8 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> deleteFriend(Long friendUserId);
+    ResponseEntity<Void> deleteFriend(
+            @AuthenticationPrincipal UserDetails userDetails, Long friendUserId);
 
     @Operation(summary = "친구 목록 조회")
     @SecurityRequirement(name = "JWT")
@@ -169,5 +176,6 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<FriendItemResponse>>> getFriends(int page, int size);
+    ResponseEntity<ServerResponse<PageResponse<FriendItemResponse>>> getFriends(
+            @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 }

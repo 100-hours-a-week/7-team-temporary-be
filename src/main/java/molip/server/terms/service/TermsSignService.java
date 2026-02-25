@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.TermsType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.terms.dto.response.TermsSignHistoryResponse;
 import molip.server.terms.entity.TermsSign;
 import molip.server.terms.repository.TermsSignRepository;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TermsSignService {
     private final TermsSignRepository termsSignRepository;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public void updateTermsSign(Long userId, Long termsId, boolean isAgreed) {
@@ -28,6 +32,10 @@ public class TermsSignService {
         }
 
         termsSign.updateAgreement(isAgreed);
+        outboxEventService.recordUpdated(
+                AggregateType.TERMS_SIGN,
+                termsSign.getId(),
+                OutboxPayloadMapper.termsSign(termsSign));
     }
 
     @Transactional(readOnly = true)

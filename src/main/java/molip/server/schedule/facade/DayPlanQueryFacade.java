@@ -3,11 +3,23 @@ package molip.server.schedule.facade;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
+import molip.server.schedule.dto.cache.DayPlanCachePayload;
+import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
+import molip.server.schedule.dto.response.DayPlanScheduleExistResponse.DayPlanScheduleExistItem;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.repository.DayPlanRepository;
+import molip.server.schedule.repository.ScheduleRepository;
 import molip.server.user.entity.Users;
 import molip.server.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
@@ -20,6 +32,9 @@ public class DayPlanQueryFacade {
 
     private final DayPlanRepository dayPlanRepository;
     private final UserRepository userRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final OutboxEventService outboxEventService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional
     public DayPlan getOrCreateDayPlan(Long userId, String date) {
@@ -51,6 +66,35 @@ public class DayPlanQueryFacade {
                         .findByIdAndDeletedAtIsNull(userId)
                         .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-        return dayPlanRepository.save(new DayPlan(user, planDate));
+        DayPlan dayPlan = dayPlanRepository.save(new DayPlan(user, planDate));
+        outboxEventService.recordCreated(
+                AggregateType.DAY_PLAN, dayPlan.getId(), OutboxPayloadMapper.dayPlan(dayPlan));
+        cacheService.cacheDayPlan(DayPlanCachePayload.from(dayPlan));
+        return dayPlan;
+    }
+
+    @Transactional(readOnly = true)
+    public DayPlanScheduleExistResponse getDayPlanExistence(
+            Long userId, String startDate, String endDate) {
+
+        LocalDate start = parseDate(startDate);
+        LocalDate end = parseDate(endDate);
+        if (start.isAfter(end)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_DATE_REQUIRED);
+        }
+
+        Set<LocalDate> hasPlans =
+                new HashSet<>(
+                        scheduleRepository.findPlanDatesWithTimeAssignedSchedules(
+                                userId, start, end));
+
+        List<DayPlanScheduleExistItem> days = new ArrayList<>();
+        LocalDate cursor = start;
+        while (!cursor.isAfter(end)) {
+            days.add(new DayPlanScheduleExistItem(cursor, hasPlans.contains(cursor)));
+            cursor = cursor.plusDays(1);
+        }
+
+        return DayPlanScheduleExistResponse.of(start, end, days);
     }
 }
