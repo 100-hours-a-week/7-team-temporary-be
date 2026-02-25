@@ -61,9 +61,14 @@ public class FriendController implements FriendApi {
     }
 
     @DeleteMapping("/friend-requests/{requestId}")
-    @Deprecated
     @Override
-    public ResponseEntity<Void> deleteFriendRequest(@PathVariable Long requestId) {
+    public ResponseEntity<Void> deleteFriendRequest(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long requestId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        friendRequestCommandFacade.deleteFriendRequest(userId, requestId);
+
         return ResponseEntity.noContent().build();
     }
 

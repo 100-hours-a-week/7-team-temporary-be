@@ -99,7 +99,8 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> deleteFriendRequest(Long requestId);
+    ResponseEntity<Void> deleteFriendRequest(
+            @AuthenticationPrincipal UserDetails userDetails, Long requestId);
 
     @Operation(summary = "친구 요청 상태 변경")
     @SecurityRequirement(name = "JWT")
