@@ -78,9 +78,10 @@ public class UserQueryFacade {
                 users.getContent().stream()
                         .map(
                                 user ->
-                                        new UserSearchItemResponse(
+                                        UserSearchItemResponse.of(
                                                 user.getId(),
                                                 user.getNickname(),
+                                                user.getEmail(),
                                                 resolveProfileImage(user.getId())))
                         .toList(),
                 page,
