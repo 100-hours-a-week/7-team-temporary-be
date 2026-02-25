@@ -8,10 +8,10 @@ import molip.server.friend.dto.request.FriendRequestStatusUpdateRequest;
 import molip.server.friend.dto.response.FriendItemResponse;
 import molip.server.friend.dto.response.FriendRequestItemResponse;
 import molip.server.friend.dto.response.FriendRequestResponse;
+import molip.server.friend.facade.FriendQueryFacade;
 import molip.server.friend.facade.FriendRequestCommandFacade;
 import molip.server.friend.facade.FriendRequestQueryFacade;
 import molip.server.friend.service.FriendService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class FriendController implements FriendApi {
 
+    private final FriendQueryFacade friendQueryFacade;
     private final FriendRequestCommandFacade friendRequestCommandFacade;
     private final FriendRequestQueryFacade friendRequestQueryFacade;
     private final FriendService friendService;
@@ -101,11 +102,17 @@ public class FriendController implements FriendApi {
     }
 
     @GetMapping("/friends")
-    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<PageResponse<FriendItemResponse>>> getFriends(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        PageResponse<FriendItemResponse> response =
+                friendQueryFacade.getFriends(userId, page, size);
+
+        return ResponseEntity.ok(ServerResponse.success(SuccessCode.FRIEND_LIST_SUCCESS, response));
     }
 }

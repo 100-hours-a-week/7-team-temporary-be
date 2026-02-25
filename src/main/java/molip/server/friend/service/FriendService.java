@@ -6,6 +6,9 @@ import molip.server.common.exception.ErrorCode;
 import molip.server.friend.entity.Friend;
 import molip.server.friend.repository.FriendRepository;
 import molip.server.user.entity.Users;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +54,22 @@ public class FriendService {
 
         if (opposite != null) {
             opposite.deleteFriend();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Friend> getFriends(Long userId, int page, int size) {
+        validatePage(page, size);
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+
+        return friendRepository.findByUserIdAndDeletedAtIsNull(userId, pageRequest);
+    }
+
+    private void validatePage(int page, int size) {
+
+        if (page < 1 || size < 1) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
     }
 }
