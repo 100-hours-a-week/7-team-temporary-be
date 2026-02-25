@@ -1,6 +1,7 @@
 package molip.server.friend.facade;
 
 import lombok.RequiredArgsConstructor;
+import molip.server.common.enums.FriendRequestStatus;
 import molip.server.friend.dto.response.FriendRequestResponse;
 import molip.server.friend.entity.FriendRequest;
 import molip.server.friend.service.FriendRequestService;
@@ -28,5 +29,11 @@ public class FriendRequestCommandFacade {
     public void deleteFriendRequest(Long userId, Long requestId) {
 
         friendRequestService.deleteFriendRequest(userId, requestId);
+    }
+
+    @Transactional
+    public void updateFriendRequestStatus(Long userId, Long requestId, FriendRequestStatus status) {
+
+        friendRequestService.acceptFriendRequest(userId, requestId, status);
     }
 }

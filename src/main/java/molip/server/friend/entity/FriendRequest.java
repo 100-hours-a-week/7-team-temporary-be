@@ -49,4 +49,9 @@ public class FriendRequest extends BaseEntity {
         this.status = FriendRequestStatus.REJECTED;
         this.respondedAt = LocalDateTime.now();
     }
+
+    public void accept() {
+        this.status = FriendRequestStatus.ACCEPTED;
+        this.respondedAt = LocalDateTime.now();
+    }
 }
