@@ -153,7 +153,8 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> deleteFriend(Long friendUserId);
+    ResponseEntity<Void> deleteFriend(
+            @AuthenticationPrincipal UserDetails userDetails, Long friendUserId);
 
     @Operation(summary = "친구 목록 조회")
     @SecurityRequirement(name = "JWT")

@@ -10,6 +10,7 @@ import molip.server.friend.dto.response.FriendRequestItemResponse;
 import molip.server.friend.dto.response.FriendRequestResponse;
 import molip.server.friend.facade.FriendRequestCommandFacade;
 import molip.server.friend.facade.FriendRequestQueryFacade;
+import molip.server.friend.service.FriendService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,6 +30,7 @@ public class FriendController implements FriendApi {
 
     private final FriendRequestCommandFacade friendRequestCommandFacade;
     private final FriendRequestQueryFacade friendRequestQueryFacade;
+    private final FriendService friendService;
 
     @PostMapping("/friend-requests/{targetUserId}")
     @Override
@@ -87,9 +89,14 @@ public class FriendController implements FriendApi {
     }
 
     @DeleteMapping("/friends/{friendUserId}")
-    @Deprecated
     @Override
-    public ResponseEntity<Void> deleteFriend(@PathVariable Long friendUserId) {
+    public ResponseEntity<Void> deleteFriend(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long friendUserId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        friendService.deleteFriend(userId, friendUserId);
+
         return ResponseEntity.noContent().build();
     }
 
