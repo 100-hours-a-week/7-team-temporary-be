@@ -7,4 +7,11 @@ import molip.server.common.response.ImageInfoResponse;
 public record UserSearchItemResponse(
         @Schema(description = "사용자 ID", example = "2") Long userId,
         @Schema(description = "닉네임", example = "nick01") String nickname,
-        @Schema(description = "프로필 이미지") ImageInfoResponse profileImage) {}
+        @Schema(description = "이메일", example = "email@email.com") String email,
+        @Schema(description = "프로필 이미지") ImageInfoResponse profileImage) {
+
+    public static UserSearchItemResponse of(
+            Long userId, String nickname, String email, ImageInfoResponse profileImage) {
+        return new UserSearchItemResponse(userId, nickname, email, profileImage);
+    }
+}
