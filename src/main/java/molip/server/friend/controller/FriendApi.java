@@ -132,7 +132,9 @@ public interface FriendApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<Void> updateFriendRequestStatus(
-            Long requestId, FriendRequestStatusUpdateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long requestId,
+            FriendRequestStatusUpdateRequest request);
 
     @Operation(summary = "친구 삭제")
     @SecurityRequirement(name = "JWT")

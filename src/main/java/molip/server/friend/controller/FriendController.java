@@ -73,10 +73,16 @@ public class FriendController implements FriendApi {
     }
 
     @PatchMapping("/friend-requests/{requestId}")
-    @Deprecated
     @Override
     public ResponseEntity<Void> updateFriendRequestStatus(
-            @PathVariable Long requestId, @RequestBody FriendRequestStatusUpdateRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long requestId,
+            @RequestBody FriendRequestStatusUpdateRequest request) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        friendRequestCommandFacade.updateFriendRequestStatus(userId, requestId, request.status());
+
         return ResponseEntity.noContent().build();
     }
 
