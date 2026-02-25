@@ -1,5 +1,6 @@
 package molip.server.friend.repository;
 
+import java.util.Optional;
 import molip.server.common.enums.FriendRequestStatus;
 import molip.server.friend.entity.FriendRequest;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,8 @@ public interface FriendRequestRepository extends JpaRepository<FriendRequest, Lo
 
     boolean existsByFromUserIdAndToUserIdAndStatusAndDeletedAtIsNull(
             Long fromUserId, Long toUserId, FriendRequestStatus status);
+
+    Optional<FriendRequest> findByIdAndDeletedAtIsNull(Long requestId);
 
     @Query(
             "select fr "

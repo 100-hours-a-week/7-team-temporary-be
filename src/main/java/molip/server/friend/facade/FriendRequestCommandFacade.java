@@ -23,4 +23,10 @@ public class FriendRequestCommandFacade {
 
         return FriendRequestResponse.from(saved.getId());
     }
+
+    @Transactional
+    public void deleteFriendRequest(Long userId, Long requestId) {
+
+        friendRequestService.deleteFriendRequest(userId, requestId);
+    }
 }

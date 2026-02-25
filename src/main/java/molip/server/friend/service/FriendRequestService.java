@@ -37,6 +37,19 @@ public class FriendRequestService {
                 userId, FriendRequestStatus.PENDING, pageRequest);
     }
 
+    @Transactional
+    public void deleteFriendRequest(Long userId, Long requestId) {
+        FriendRequest request =
+                friendRequestRepository
+                        .findByIdAndDeletedAtIsNull(requestId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.REQUEST_NOT_FOUND));
+
+        validateRequestReceiver(userId, request);
+        validateRequestPending(request);
+
+        request.deleteRequest();
+    }
+
     private void validateSelfRequest(Long fromUserId, Long toUserId) {
 
         if (fromUserId.equals(toUserId)) {
@@ -64,6 +77,20 @@ public class FriendRequestService {
 
         if (page < 1 || size < 1) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+        }
+    }
+
+    private void validateRequestReceiver(Long userId, FriendRequest request) {
+
+        if (!request.getToUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_DELETE_REQUEST);
+        }
+    }
+
+    private void validateRequestPending(FriendRequest request) {
+
+        if (request.getStatus() != FriendRequestStatus.PENDING) {
+            throw new BaseException(ErrorCode.CONFLICT_ALREADY_HANDLED_REQUEST);
         }
     }
 }
