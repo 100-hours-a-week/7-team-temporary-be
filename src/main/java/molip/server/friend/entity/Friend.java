@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,5 +32,9 @@ public class Friend extends BaseEntity {
     public Friend(Users user, Long friendId) {
         this.user = user;
         this.friendId = friendId;
+    }
+
+    public void deleteFriend() {
+        this.deletedAt = LocalDateTime.now();
     }
 }
