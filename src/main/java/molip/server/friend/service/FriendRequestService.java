@@ -31,7 +31,6 @@ public class FriendRequestService {
     private void validateSelfRequest(Long fromUserId, Long toUserId) {
 
         if (fromUserId.equals(toUserId)) {
-
             throw new BaseException(ErrorCode.INVALID_REQUEST_SELF_FRIEND);
         }
     }

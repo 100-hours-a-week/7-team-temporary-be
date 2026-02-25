@@ -14,6 +14,8 @@ import molip.server.friend.dto.response.FriendItemResponse;
 import molip.server.friend.dto.response.FriendRequestItemResponse;
 import molip.server.friend.dto.response.FriendRequestResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Friend", description = "친구 API")
 public interface FriendApi {
@@ -46,7 +48,8 @@ public interface FriendApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<FriendRequestResponse>> sendFriendRequest(Long targetUserId);
+    ResponseEntity<ServerResponse<FriendRequestResponse>> sendFriendRequest(
+            @AuthenticationPrincipal UserDetails userDetails, Long targetUserId);
 
     @Operation(summary = "친구 요청 조회")
     @SecurityRequirement(name = "JWT")
