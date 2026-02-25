@@ -45,7 +45,8 @@ public class FriendRequest extends BaseEntity {
         this.status = FriendRequestStatus.PENDING;
     }
 
-    public void deleteRequest() {
-        this.deletedAt = LocalDateTime.now();
+    public void reject() {
+        this.status = FriendRequestStatus.REJECTED;
+        this.respondedAt = LocalDateTime.now();
     }
 }

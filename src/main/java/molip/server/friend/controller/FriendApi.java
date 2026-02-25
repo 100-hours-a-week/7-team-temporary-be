@@ -74,10 +74,10 @@ public interface FriendApi {
     ResponseEntity<ServerResponse<PageResponse<FriendRequestItemResponse>>> getFriendRequests(
             @AuthenticationPrincipal UserDetails userDetails, int page, int size);
 
-    @Operation(summary = "친구 요청 삭제")
+    @Operation(summary = "친구 요청 삭제(거절)")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(responseCode = "204", description = "거절 성공"),
         @ApiResponse(
                 responseCode = "401",
                 description = "유효하지 않은 토큰",

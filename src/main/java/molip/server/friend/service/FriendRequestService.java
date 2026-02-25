@@ -47,7 +47,7 @@ public class FriendRequestService {
         validateRequestReceiver(userId, request);
         validateRequestPending(request);
 
-        request.deleteRequest();
+        request.reject();
     }
 
     private void validateSelfRequest(Long fromUserId, Long toUserId) {
