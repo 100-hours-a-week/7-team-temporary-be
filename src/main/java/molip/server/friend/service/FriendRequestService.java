@@ -1,5 +1,8 @@
 package molip.server.friend.service;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.FriendRequestStatus;
 import molip.server.common.exception.BaseException;
@@ -66,6 +69,26 @@ public class FriendRequestService {
         request.accept();
 
         return request;
+    }
+
+    @Transactional(readOnly = true)
+    public Set<Long> getPendingRelationUserIds(Long userId, List<Long> searchedUserIds) {
+
+        if (searchedUserIds == null || searchedUserIds.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<Long> pendingUserIds = new HashSet<>();
+
+        pendingUserIds.addAll(
+                friendRequestRepository.findFriendRequestsSentByMe(
+                        userId, searchedUserIds, FriendRequestStatus.PENDING));
+
+        pendingUserIds.addAll(
+                friendRequestRepository.findFriendRequestsSentByOthers(
+                        userId, searchedUserIds, FriendRequestStatus.PENDING));
+
+        return pendingUserIds;
     }
 
     private void validateSelfRequest(Long fromUserId, Long toUserId) {
