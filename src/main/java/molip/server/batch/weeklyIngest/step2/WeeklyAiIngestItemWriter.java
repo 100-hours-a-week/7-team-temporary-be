@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -71,7 +72,7 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                         .withTableName("planner_records")
                         .usingGeneratedKeyColumns("id");
 
-        LocalDate runDate = LocalDate.now(ZONE_ID);
+        LocalDate runDate = resolveRunDate(stepExecution);
         this.periodEnd = runDate.minusDays(1);
         this.periodStart = periodEnd.minusDays(6);
     }
@@ -320,5 +321,19 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                         .sum();
         double rate = (double) totalMinutes / availableMinutes;
         return Math.round(rate * 10000.0) / 10000.0;
+    }
+
+    private LocalDate resolveRunDate(StepExecution stepExecution) {
+        String runDateText =
+                stepExecution.getJobExecution().getExecutionContext().getString("batchRunDate");
+        if (runDateText == null || runDateText.isBlank()) {
+            return LocalDate.now(ZONE_ID);
+        }
+
+        try {
+            return LocalDate.parse(runDateText);
+        } catch (DateTimeParseException e) {
+            return LocalDate.now(ZONE_ID);
+        }
     }
 }

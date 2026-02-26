@@ -1,5 +1,7 @@
 package molip.server.batch.weeklyIngest;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -22,10 +24,12 @@ public class WeeklyIngestBatchScheduler {
     @Scheduled(cron = "0 0 22 ? * SUN", zone = "Asia/Seoul")
     public void runWeeklyIngestJob() {
         try {
+            LocalDate runDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
             jobOperator.start(
                     weeklyIngestJob,
                     new JobParametersBuilder()
-                            .addString("runAt", ZonedDateTime.now().toString())
+                            .addString("runAt", ZonedDateTime.now().toString(), false)
+                            .addString("runDate", runDate.toString(), true)
                             .toJobParameters());
         } catch (Exception e) {
             log.error("Weekly ingest job failed to start.", e);

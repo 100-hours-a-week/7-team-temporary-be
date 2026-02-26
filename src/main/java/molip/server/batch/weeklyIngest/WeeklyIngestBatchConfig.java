@@ -2,6 +2,7 @@ package molip.server.batch.weeklyIngest;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import lombok.RequiredArgsConstructor;
 import molip.server.batch.entity.BatchJobRun;
 import molip.server.batch.enums.BatchRunStatus;
@@ -62,12 +63,13 @@ public class WeeklyIngestBatchConfig {
         return new JobExecutionListener() {
             @Override
             public void beforeJob(JobExecution jobExecution) {
-                LocalDate runDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
+                LocalDate runDate = resolveRunDate(jobExecution);
                 BatchJobRun jobRun =
                         batchTrackingService.createJobRun(
                                 jobExecution.getJobInstance().getJobName(), runDate);
                 batchTrackingService.markJobStarted(jobRun.getId());
                 jobExecution.getExecutionContext().putLong("batchJobRunId", jobRun.getId());
+                jobExecution.getExecutionContext().putString("batchRunDate", runDate.toString());
             }
 
             @Override
@@ -82,6 +84,20 @@ public class WeeklyIngestBatchConfig {
                                 ? null
                                 : jobExecution.getAllFailureExceptions().getFirst().getMessage();
                 batchTrackingService.markJobFinished(jobRunId, status, lastError);
+            }
+
+            private LocalDate resolveRunDate(JobExecution jobExecution) {
+                String runDateParam = jobExecution.getJobParameters().getString("runDate");
+                if (runDateParam == null || runDateParam.isBlank()) {
+                    return LocalDate.now(ZoneId.of("Asia/Seoul"));
+                }
+
+                try {
+                    return LocalDate.parse(runDateParam);
+                } catch (DateTimeParseException e) {
+                    log.warn("Invalid runDate parameter: {}. Fallback to now.", runDateParam);
+                    return LocalDate.now(ZoneId.of("Asia/Seoul"));
+                }
             }
         };
     }
