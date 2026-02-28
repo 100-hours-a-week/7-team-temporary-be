@@ -7,4 +7,5 @@ import java.util.List;
 public record ReflectionUpdateRequest(
         @Schema(description = "회고 이미지 Key 목록", example = "[\"a1b2c3\",\"d4e5f6\"]")
                 List<String> reflectionImageKeys,
-        @Schema(description = "내용", example = "this is reflection") String content) {}
+        @Schema(description = "내용", example = "this is reflection") String content,
+        @Schema(description = "공개 여부", example = "true") Boolean isOpen) {}
