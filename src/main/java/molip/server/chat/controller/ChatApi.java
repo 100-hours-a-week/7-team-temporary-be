@@ -76,7 +76,8 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> deleteChatRoom(Long roomId);
+    ResponseEntity<Void> deleteChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 
     @Operation(summary = "채팅방 정보 수정")
     @SecurityRequirement(name = "JWT")

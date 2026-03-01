@@ -25,6 +25,23 @@ public class ChatService {
         return chatRoomRepository.save(chatRoom);
     }
 
+    @Transactional
+    public void deleteChatRoom(Long userId, Long roomId) {
+        validateDeleteChatRoom(userId, roomId);
+
+        ChatRoom chatRoom =
+                chatRoomRepository
+                        .findById(roomId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_ROOM));
+
+        if (chatRoom.getDeletedAt() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_ROOM_ALREADY_DELETED);
+        }
+        validateDeletePermission(userId, chatRoom);
+
+        chatRoom.deleteRoom();
+    }
+
     private void validateCreateChatRoom(
             Long ownerId, String title, String description, Integer maxParticipants) {
         if (ownerId == null
@@ -35,6 +52,18 @@ public class ChatService {
                 || maxParticipants == null
                 || maxParticipants <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateDeleteChatRoom(Long userId, Long roomId) {
+        if (userId == null || roomId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateDeletePermission(Long userId, ChatRoom chatRoom) {
+        if (!userId.equals(chatRoom.getOwnerId())) {
+            throw new BaseException(ErrorCode.FORBIDDEN_ROOM_DELETE);
         }
     }
 }

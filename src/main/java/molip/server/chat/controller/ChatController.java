@@ -54,10 +54,14 @@ public class ChatController implements ChatApi {
                         ChatRoomCreateResponse.from(chatRoom.getId())));
     }
 
-    @Deprecated
     @DeleteMapping("/chat-rooms/{roomId}")
     @Override
-    public ResponseEntity<Void> deleteChatRoom(@PathVariable Long roomId) {
+    public ResponseEntity<Void> deleteChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        chatService.deleteChatRoom(userId, roomId);
+
         return ResponseEntity.noContent().build();
     }
 
