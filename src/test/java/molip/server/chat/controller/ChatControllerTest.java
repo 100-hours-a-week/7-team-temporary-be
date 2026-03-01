@@ -2,6 +2,9 @@ package molip.server.chat.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,6 +72,15 @@ class ChatControllerTest {
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.message").value("채팅방이 생성되었습니다."))
                 .andExpect(jsonPath("$.data.roomId").value(101L));
+    }
+
+    @Test
+    void 채팅방_삭제에_성공하면_204를_반환한다() throws Exception {
+        // when & then
+        mockMvc.perform(delete("/chat-rooms/{roomId}", 101L).with(authenticatedUser(1L)))
+                .andExpect(status().isNoContent());
+
+        then(chatService).should(times(1)).deleteChatRoom(1L, 101L);
     }
 
     private RequestPostProcessor authenticatedUser(Long userId) {
