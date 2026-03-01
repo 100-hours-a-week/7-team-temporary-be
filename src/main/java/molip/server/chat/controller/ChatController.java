@@ -1,5 +1,6 @@
 package molip.server.chat.controller;
 
+import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
@@ -9,12 +10,17 @@ import molip.server.chat.dto.response.ChatRoomCreateResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
+import molip.server.chat.entity.ChatRoom;
+import molip.server.chat.service.ChatService;
+import molip.server.common.SuccessCode;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.response.CursorResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -26,22 +32,36 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Deprecated
+@RequiredArgsConstructor
 public class ChatController implements ChatApi {
+
+    private final ChatService chatService;
 
     @PostMapping("/chat-rooms")
     @Override
     public ResponseEntity<ServerResponse<ChatRoomCreateResponse>> createChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ChatRoomCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ChatRoom chatRoom =
+                chatService.createChatRoom(
+                        userId, request.title(), request.description(), request.maxParticipants());
+
+        return ResponseEntity.ok(
+                ServerResponse.success(
+                        SuccessCode.CHAT_ROOM_CREATED,
+                        ChatRoomCreateResponse.from(chatRoom.getId())));
     }
 
+    @Deprecated
     @DeleteMapping("/chat-rooms/{roomId}")
     @Override
     public ResponseEntity<Void> deleteChatRoom(@PathVariable Long roomId) {
         return ResponseEntity.noContent().build();
     }
 
+    @Deprecated
     @PutMapping("/chat-rooms/{roomId}")
     @Override
     public ResponseEntity<Void> updateChatRoom(
@@ -49,6 +69,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.noContent().build();
     }
 
+    @Deprecated
     @GetMapping("/chat-rooms/{roomId}")
     @Override
     public ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(
@@ -56,6 +77,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
+    @Deprecated
     @GetMapping(value = "/chat-rooms")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
@@ -65,6 +87,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
+    @Deprecated
     @GetMapping(value = "/chat-rooms/participants")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> getMyChatRooms(
@@ -74,6 +97,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
+    @Deprecated
     @PostMapping("/chat-rooms/{roomId}/participants")
     @Override
     public ResponseEntity<ServerResponse<ChatRoomEnterResponse>> enterChatRoom(
@@ -81,6 +105,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
+    @Deprecated
     @GetMapping("/chat-rooms/{roomId}/message")
     @Override
     public ResponseEntity<ServerResponse<CursorResponse<ChatMessageItemResponse>>> getMessages(
@@ -90,6 +115,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 
+    @Deprecated
     @PatchMapping("/chat-rooms/participants/{participantId}")
     @Override
     public ResponseEntity<Void> updateParticipantCamera(
@@ -98,6 +124,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.noContent().build();
     }
 
+    @Deprecated
     @DeleteMapping("/chat-rooms/{roomId}/participants/{participantId}")
     @Override
     public ResponseEntity<Void> leaveChatRoom(
@@ -105,6 +132,7 @@ public class ChatController implements ChatApi {
         return ResponseEntity.noContent().build();
     }
 
+    @Deprecated
     @PatchMapping("/chat-rooms/participants/{participantId}/message")
     @Override
     public ResponseEntity<Void> updateLastSeenMessage(
