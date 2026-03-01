@@ -142,6 +142,29 @@ class SocketHandlerTest {
         assertThat(response).contains("\"retryable\":false");
     }
 
+    @Test
+    @DisplayName("명시적 disconnect 요청이면 세션을 삭제하고 정상 종료한다")
+    void disconnectSuccess() throws Exception {
+        // given
+        String payload =
+                """
+                {"event":"socket.disconnect","payload":{"code":"LOGOUT","message":"로그아웃으로 연결을 종료합니다."}}
+                """;
+
+        attributes.put("userId", 1L);
+        attributes.put("deviceId", "device-uuid");
+
+        given(session.getAttributes()).willReturn(attributes);
+        given(session.getId()).willReturn("session-uuid");
+
+        // when
+        socketHandler.handle(session, new TextMessage(payload));
+
+        // then
+        verify(redisSocketSessionStore).delete("session-uuid", 1L, "device-uuid");
+        verify(session).close(CloseStatus.NORMAL);
+    }
+
     private static class TestableSocketHandler extends SocketHandler {
 
         private TestableSocketHandler(
