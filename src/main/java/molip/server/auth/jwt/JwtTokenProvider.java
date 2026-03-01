@@ -35,6 +35,24 @@ public class JwtTokenProvider {
         return isValidToken(token);
     }
 
+    public JwtValidationStatus getAccessTokenStatus(String token) {
+        JwtValidationStatus tokenStatus = jwtUtil.getTokenStatus(token);
+        if (tokenStatus != JwtValidationStatus.VALID) {
+            return tokenStatus;
+        }
+
+        Long userId = jwtUtil.extractUserId(token);
+        Long tokenVersion = jwtUtil.extractTokenVersion(token);
+        if (userId == null || tokenVersion == null) {
+            return JwtValidationStatus.INVALID;
+        }
+
+        boolean isBlackList = tokenBlacklistStore.contains(userId, token);
+        boolean isVersionMatch = tokenVersionStore.get(userId) == tokenVersion;
+
+        return !isBlackList && isVersionMatch ? JwtValidationStatus.VALID : JwtValidationStatus.INVALID;
+    }
+
     private boolean isValidToken(String token) {
         if (token == null) {
             return false;
