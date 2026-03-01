@@ -21,6 +21,8 @@ import molip.server.common.response.CursorResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Chat", description = "채팅 API")
 public interface ChatApi {
@@ -47,7 +49,7 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ChatRoomCreateResponse>> createChatRoom(
-            ChatRoomCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails, ChatRoomCreateRequest request);
 
     @Operation(summary = "채팅방 삭제")
     @SecurityRequirement(name = "JWT")
