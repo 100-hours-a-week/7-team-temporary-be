@@ -9,6 +9,7 @@ import molip.server.auth.jwt.JwtTokenProvider;
 import molip.server.auth.jwt.JwtUtil;
 import molip.server.auth.jwt.JwtValidationStatus;
 import molip.server.socket.dto.request.SocketConnectRequest;
+import molip.server.socket.dto.request.SocketDisconnectRequest;
 import molip.server.socket.dto.request.SocketEventRequest;
 import molip.server.socket.dto.response.SocketConnectedResponse;
 import molip.server.socket.dto.response.SocketErrorResponse;
@@ -25,6 +26,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 public class SocketHandler extends TextWebSocketHandler {
 
     private static final String SOCKET_CONNECT_EVENT = "socket.connect";
+    private static final String SOCKET_DISCONNECT_EVENT = "socket.disconnect";
     private static final String SOCKET_CONNECTED_EVENT = "socket.connected";
     private static final String SOCKET_ERROR_EVENT = "socket.error";
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
@@ -55,30 +57,44 @@ public class SocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        if (!SOCKET_CONNECT_EVENT.equals(eventRequest.event()) || eventRequest.payload() == null) {
+        if (eventRequest.payload() == null) {
             return;
         }
 
-        SocketConnectRequest connectRequest =
-                objectMapper.treeToValue(eventRequest.payload(), SocketConnectRequest.class);
+        if (SOCKET_CONNECT_EVENT.equals(eventRequest.event())) {
+            SocketConnectRequest connectRequest =
+                    objectMapper.treeToValue(eventRequest.payload(), SocketConnectRequest.class);
 
-        try {
-            handleConnect(session, connectRequest);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            sendErrorAndClose(
-                    session,
-                    "CONNECT_INTERNAL_ERROR",
-                    "소켓 연결 처리 중 오류가 발생했습니다.",
-                    false,
-                    CloseStatus.SERVER_ERROR);
+            try {
+                handleConnect(session, connectRequest);
+            } catch (IOException e) {
+                throw e;
+            } catch (Exception e) {
+                sendErrorAndClose(
+                        session,
+                        "CONNECT_INTERNAL_ERROR",
+                        "소켓 연결 처리 중 오류가 발생했습니다.",
+                        false,
+                        CloseStatus.SERVER_ERROR);
+            }
+
+            return;
         }
+
+        if (!SOCKET_DISCONNECT_EVENT.equals(eventRequest.event())) {
+            return;
+        }
+
+        SocketDisconnectRequest disconnectRequest =
+                objectMapper.treeToValue(eventRequest.payload(), SocketDisconnectRequest.class);
+
+        handleDisconnect(session, disconnectRequest);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status)
             throws Exception {
+        cleanupSession(session);
         super.afterConnectionClosed(session, status);
     }
 
@@ -205,5 +221,31 @@ public class SocketHandler extends TextWebSocketHandler {
 
         String token = bearerToken.substring(7).trim();
         return token.isBlank() ? null : token;
+    }
+
+    private void handleDisconnect(
+            WebSocketSession session, SocketDisconnectRequest disconnectRequest)
+            throws IOException {
+        if (disconnectRequest.code() == null
+                || disconnectRequest.code().isBlank()
+                || disconnectRequest.message() == null
+                || disconnectRequest.message().isBlank()) {
+            session.close(CloseStatus.BAD_DATA);
+            return;
+        }
+
+        cleanupSession(session);
+        session.close(CloseStatus.NORMAL);
+    }
+
+    private void cleanupSession(WebSocketSession session) {
+        Object userIdAttribute = session.getAttributes().get("userId");
+        Object deviceIdAttribute = session.getAttributes().get("deviceId");
+        if (!(userIdAttribute instanceof Long userId)
+                || !(deviceIdAttribute instanceof String deviceId)) {
+            return;
+        }
+
+        socketSessionStore.delete(session.getId(), userId, deviceId);
     }
 }
