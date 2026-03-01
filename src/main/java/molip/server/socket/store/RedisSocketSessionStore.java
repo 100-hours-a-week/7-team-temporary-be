@@ -12,12 +12,11 @@ public class RedisSocketSessionStore {
 
     private final StringRedisTemplate redisTemplate;
 
-    public void save(String sessionId, Long userId, String deviceId, OffsetDateTime connectedAt) {
-        String previousSessionId = redisTemplate.opsForValue().get(userDeviceKey(userId, deviceId));
-        if (previousSessionId != null && !previousSessionId.equals(sessionId)) {
-            redisTemplate.delete(sessionKey(previousSessionId));
-        }
+    public String findSessionId(Long userId, String deviceId) {
+        return redisTemplate.opsForValue().get(userDeviceKey(userId, deviceId));
+    }
 
+    public void save(String sessionId, Long userId, String deviceId, OffsetDateTime connectedAt) {
         String value = userId + "|" + deviceId + "|" + connectedAt.toString();
 
         redisTemplate.opsForValue().set(sessionKey(sessionId), value);

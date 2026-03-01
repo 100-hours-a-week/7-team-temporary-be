@@ -3,7 +3,7 @@ package molip.server.socket.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import molip.server.auth.jwt.JwtTokenProvider;
 import molip.server.auth.jwt.JwtUtil;
@@ -27,6 +27,7 @@ public class SocketHandler extends TextWebSocketHandler {
     private static final String SOCKET_CONNECT_EVENT = "socket.connect";
     private static final String SOCKET_CONNECTED_EVENT = "socket.connected";
     private static final String SOCKET_ERROR_EVENT = "socket.error";
+    private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final ObjectMapper objectMapper;
     private final JwtTokenProvider jwtTokenProvider;
@@ -49,6 +50,7 @@ public class SocketHandler extends TextWebSocketHandler {
                     session,
                     "CONNECT_INVALID_PAYLOAD",
                     "소켓 연결 요청 형식이 올바르지 않습니다.",
+                    false,
                     CloseStatus.BAD_DATA);
             return;
         }
@@ -60,7 +62,18 @@ public class SocketHandler extends TextWebSocketHandler {
         SocketConnectRequest connectRequest =
                 objectMapper.treeToValue(eventRequest.payload(), SocketConnectRequest.class);
 
-        handleConnect(session, connectRequest);
+        try {
+            handleConnect(session, connectRequest);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            sendErrorAndClose(
+                    session,
+                    "CONNECT_INTERNAL_ERROR",
+                    "소켓 연결 처리 중 오류가 발생했습니다.",
+                    false,
+                    CloseStatus.SERVER_ERROR);
+        }
     }
 
     @Override
@@ -74,11 +87,15 @@ public class SocketHandler extends TextWebSocketHandler {
         String bearerToken = connectRequest.accessToken();
         String deviceId = connectRequest.deviceId();
 
-        if (bearerToken == null || bearerToken.isBlank() || deviceId == null || deviceId.isBlank()) {
+        if (bearerToken == null
+                || bearerToken.isBlank()
+                || deviceId == null
+                || deviceId.isBlank()) {
             sendErrorAndClose(
                     session,
                     "CONNECT_INVALID_PAYLOAD",
                     "accessToken 또는 deviceId가 누락되었습니다.",
+                    false,
                     CloseStatus.BAD_DATA);
             return;
         }
@@ -89,6 +106,7 @@ public class SocketHandler extends TextWebSocketHandler {
                     session,
                     "CONNECT_INVALID_PAYLOAD",
                     "accessToken 형식이 올바르지 않습니다.",
+                    false,
                     CloseStatus.BAD_DATA);
             return;
         }
@@ -99,6 +117,7 @@ public class SocketHandler extends TextWebSocketHandler {
                     session,
                     "CONNECT_TOKEN_EXPIRED",
                     "액세스 토큰이 만료되었습니다.",
+                    true,
                     CloseStatus.POLICY_VIOLATION);
             return;
         }
@@ -108,6 +127,7 @@ public class SocketHandler extends TextWebSocketHandler {
                     session,
                     "CONNECT_UNAUTHORIZED",
                     "유효하지 않은 토큰입니다.",
+                    false,
                     CloseStatus.POLICY_VIOLATION);
             return;
         }
@@ -119,6 +139,7 @@ public class SocketHandler extends TextWebSocketHandler {
                     session,
                     "CONNECT_UNAUTHORIZED",
                     "유효하지 않은 토큰입니다.",
+                    false,
                     CloseStatus.POLICY_VIOLATION);
             return;
         }
@@ -128,11 +149,23 @@ public class SocketHandler extends TextWebSocketHandler {
                     session,
                     "CONNECT_INVALID_PAYLOAD",
                     "deviceId가 토큰 정보와 일치하지 않습니다.",
+                    false,
                     CloseStatus.BAD_DATA);
             return;
         }
 
-        OffsetDateTime connectedAt = OffsetDateTime.now(ZoneOffset.UTC);
+        String existingSessionId = socketSessionStore.findSessionId(userId, deviceId);
+        if (existingSessionId != null && !existingSessionId.equals(session.getId())) {
+            sendErrorAndClose(
+                    session,
+                    "CONNECT_DUPLICATE_SESSION",
+                    "이미 연결된 세션이 존재합니다.",
+                    false,
+                    CloseStatus.POLICY_VIOLATION);
+            return;
+        }
+
+        OffsetDateTime connectedAt = OffsetDateTime.now(KOREA_ZONE_ID);
 
         session.getAttributes().put("accessToken", bearerToken);
         session.getAttributes().put("deviceId", deviceId);
@@ -145,20 +178,23 @@ public class SocketHandler extends TextWebSocketHandler {
                 session,
                 SOCKET_CONNECTED_EVENT,
                 SocketConnectedResponse.of(
-                        session.getId(), userId, connectedAt, OffsetDateTime.now(ZoneOffset.UTC)));
+                        session.getId(), userId, connectedAt, OffsetDateTime.now(KOREA_ZONE_ID)));
     }
 
     private void sendErrorAndClose(
-            WebSocketSession session, String code, String message, CloseStatus closeStatus)
+            WebSocketSession session,
+            String code,
+            String message,
+            boolean retryable,
+            CloseStatus closeStatus)
             throws IOException {
-        sendEvent(session, SOCKET_ERROR_EVENT, SocketErrorResponse.of(code, message));
+        sendEvent(session, SOCKET_ERROR_EVENT, SocketErrorResponse.of(code, message, retryable));
         session.close(closeStatus);
     }
 
     private void sendEvent(WebSocketSession session, String event, Object payload)
             throws IOException {
-        String response =
-                objectMapper.writeValueAsString(SocketEventResponse.of(event, payload));
+        String response = objectMapper.writeValueAsString(SocketEventResponse.of(event, payload));
         session.sendMessage(new TextMessage(response));
     }
 

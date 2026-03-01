@@ -50,7 +50,9 @@ public class JwtTokenProvider {
         boolean isBlackList = tokenBlacklistStore.contains(userId, token);
         boolean isVersionMatch = tokenVersionStore.get(userId) == tokenVersion;
 
-        return !isBlackList && isVersionMatch ? JwtValidationStatus.VALID : JwtValidationStatus.INVALID;
+        return !isBlackList && isVersionMatch
+                ? JwtValidationStatus.VALID
+                : JwtValidationStatus.INVALID;
     }
 
     private boolean isValidToken(String token) {
