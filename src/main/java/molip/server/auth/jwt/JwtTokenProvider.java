@@ -2,8 +2,8 @@ package molip.server.auth.jwt;
 
 import lombok.RequiredArgsConstructor;
 import molip.server.auth.jwt.userDetails.CustomUserDetailsService;
-import molip.server.auth.store.TokenBlacklistStore;
-import molip.server.auth.store.TokenVersionStore;
+import molip.server.auth.store.redis.RedisTokenBlacklistStore;
+import molip.server.auth.store.redis.RedisTokenVersionStore;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,8 +15,8 @@ public class JwtTokenProvider {
 
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
-    private final TokenBlacklistStore tokenBlacklistStore;
-    private final TokenVersionStore tokenVersionStore;
+    private final RedisTokenBlacklistStore tokenBlacklistStore;
+    private final RedisTokenVersionStore tokenVersionStore;
 
     public Authentication getAuthentication(String token) {
         Long userId = jwtUtil.extractUserId(token);
@@ -33,6 +33,26 @@ public class JwtTokenProvider {
 
     public boolean validateRefreshToken(String token) {
         return isValidToken(token);
+    }
+
+    public JwtValidationStatus getAccessTokenStatus(String token) {
+        JwtValidationStatus tokenStatus = jwtUtil.getTokenStatus(token);
+        if (tokenStatus != JwtValidationStatus.VALID) {
+            return tokenStatus;
+        }
+
+        Long userId = jwtUtil.extractUserId(token);
+        Long tokenVersion = jwtUtil.extractTokenVersion(token);
+        if (userId == null || tokenVersion == null) {
+            return JwtValidationStatus.INVALID;
+        }
+
+        boolean isBlackList = tokenBlacklistStore.contains(userId, token);
+        boolean isVersionMatch = tokenVersionStore.get(userId) == tokenVersion;
+
+        return !isBlackList && isVersionMatch
+                ? JwtValidationStatus.VALID
+                : JwtValidationStatus.INVALID;
     }
 
     private boolean isValidToken(String token) {
