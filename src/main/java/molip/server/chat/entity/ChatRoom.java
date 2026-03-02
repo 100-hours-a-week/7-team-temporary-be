@@ -41,6 +41,12 @@ public class ChatRoom extends BaseEntity {
         this.maxParticipants = maxParticipants;
     }
 
+    public void updateRoom(String title, String description, int maxParticipants) {
+        this.title = title;
+        this.description = description;
+        this.maxParticipants = maxParticipants;
+    }
+
     public void deleteRoom() {
         this.deletedAt = LocalDateTime.now();
     }

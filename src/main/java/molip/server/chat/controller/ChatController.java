@@ -70,11 +70,17 @@ public class ChatController implements ChatApi {
         return ResponseEntity.noContent().build();
     }
 
-    @Deprecated
     @PutMapping("/chat-rooms/{roomId}")
     @Override
     public ResponseEntity<Void> updateChatRoom(
-            @PathVariable Long roomId, @RequestBody ChatRoomUpdateRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long roomId,
+            @RequestBody ChatRoomUpdateRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        chatService.updateChatRoom(
+                userId, roomId, request.title(), request.description(), request.maxParticipants());
+
         return ResponseEntity.noContent().build();
     }
 
