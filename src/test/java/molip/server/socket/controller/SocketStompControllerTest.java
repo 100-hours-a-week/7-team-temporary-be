@@ -47,7 +47,8 @@ class SocketStompControllerTest {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
         headerAccessor.setSessionAttributes(new HashMap<>());
 
-        given(jwtTokenProvider.getAccessTokenStatus("valid-token")).willReturn(JwtValidationStatus.VALID);
+        given(jwtTokenProvider.getAccessTokenStatus("valid-token"))
+                .willReturn(JwtValidationStatus.VALID);
         given(jwtUtil.extractUserId("valid-token")).willReturn(1L);
         given(jwtUtil.extractDeviceId("valid-token")).willReturn("device-uuid");
         given(socketSessionStore.findSessionId(1L, "device-uuid")).willReturn(null);
@@ -101,7 +102,8 @@ class SocketStompControllerTest {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
         headerAccessor.setSessionAttributes(new HashMap<>());
 
-        given(jwtTokenProvider.getAccessTokenStatus("valid-token")).willReturn(JwtValidationStatus.VALID);
+        given(jwtTokenProvider.getAccessTokenStatus("valid-token"))
+                .willReturn(JwtValidationStatus.VALID);
         given(jwtUtil.extractUserId("valid-token")).willReturn(1L);
         given(jwtUtil.extractDeviceId("valid-token")).willReturn("device-uuid");
         given(socketSessionStore.findSessionId(1L, "device-uuid")).willReturn("existing-session");

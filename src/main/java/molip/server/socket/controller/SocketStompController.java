@@ -36,9 +36,7 @@ public class SocketStompController {
             SocketConnectRequest request,
             @Header("simpSessionId") String sessionId,
             SimpMessageHeaderAccessor headerAccessor) {
-        if (request == null
-                || isBlank(request.accessToken())
-                || isBlank(request.deviceId())) {
+        if (request == null || isBlank(request.accessToken()) || isBlank(request.deviceId())) {
             return error("CONNECT_INVALID_PAYLOAD", "accessToken 또는 deviceId가 누락되었습니다.", false);
         }
 
@@ -97,7 +95,8 @@ public class SocketStompController {
 
         Object userIdAttribute = headerAccessor.getSessionAttributes().get("userId");
         Object deviceIdAttribute = headerAccessor.getSessionAttributes().get("deviceId");
-        if (!(userIdAttribute instanceof Long userId) || !(deviceIdAttribute instanceof String deviceId)) {
+        if (!(userIdAttribute instanceof Long userId)
+                || !(deviceIdAttribute instanceof String deviceId)) {
             return;
         }
 

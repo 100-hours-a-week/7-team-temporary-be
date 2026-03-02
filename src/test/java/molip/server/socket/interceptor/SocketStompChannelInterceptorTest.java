@@ -39,7 +39,8 @@ class SocketStompChannelInterceptorTest {
         sessionAttributes.put("userId", 1L);
         sessionAttributes.put("deviceId", "device-uuid");
         accessor.setSessionAttributes(sessionAttributes);
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
         // when
         interceptor.preSend(message, messageChannel);
