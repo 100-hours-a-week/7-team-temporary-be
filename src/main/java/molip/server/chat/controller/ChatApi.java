@@ -210,7 +210,8 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ChatRoomEnterResponse>> enterChatRoom(Long roomId);
+    ResponseEntity<ServerResponse<ChatRoomEnterResponse>> enterChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 
     @Operation(summary = "메시지 목록 조회")
     @SecurityRequirement(name = "JWT")

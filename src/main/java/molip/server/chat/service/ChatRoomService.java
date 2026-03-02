@@ -74,7 +74,7 @@ public class ChatRoomService {
     }
 
     @Transactional(readOnly = true)
-    public ChatRoom getChatRoomDetail(Long roomId) {
+    public ChatRoom getChatRoom(Long roomId) {
         validateGetChatRoomDetail(roomId);
 
         ChatRoom chatRoom =

@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ChatQueryFacade {
+public class ChatRoomQueryFacade {
 
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
@@ -43,7 +43,7 @@ public class ChatQueryFacade {
     private final ImageService imageService;
 
     public ChatRoomDetailResponse getChatRoomDetail(Long roomId) {
-        ChatRoom chatRoom = chatRoomService.getChatRoomDetail(roomId);
+        ChatRoom chatRoom = chatRoomService.getChatRoom(roomId);
 
         List<ChatRoomParticipant> participants =
                 chatRoomParticipantService.getActiveParticipants(roomId);
