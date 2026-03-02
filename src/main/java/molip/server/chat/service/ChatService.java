@@ -42,6 +42,25 @@ public class ChatService {
         chatRoom.deleteRoom();
     }
 
+    @Transactional
+    public void updateChatRoom(
+            Long userId, Long roomId, String title, String description, Integer maxParticipants) {
+        validateUpdateChatRoom(userId, roomId, title, description, maxParticipants);
+
+        ChatRoom chatRoom =
+                chatRoomRepository
+                        .findById(roomId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_ROOM));
+
+        if (chatRoom.getDeletedAt() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_ROOM_ALREADY_DELETED);
+        }
+
+        validateUpdatePermission(userId, chatRoom);
+
+        chatRoom.updateRoom(title.trim(), description.trim(), maxParticipants);
+    }
+
     private void validateCreateChatRoom(
             Long ownerId, String title, String description, Integer maxParticipants) {
         if (ownerId == null
@@ -61,9 +80,29 @@ public class ChatService {
         }
     }
 
+    private void validateUpdateChatRoom(
+            Long userId, Long roomId, String title, String description, Integer maxParticipants) {
+        if (userId == null
+                || roomId == null
+                || title == null
+                || title.isBlank()
+                || description == null
+                || description.isBlank()
+                || maxParticipants == null
+                || maxParticipants <= 0) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
     private void validateDeletePermission(Long userId, ChatRoom chatRoom) {
         if (!userId.equals(chatRoom.getOwnerId())) {
             throw new BaseException(ErrorCode.FORBIDDEN_ROOM_DELETE);
+        }
+    }
+
+    private void validateUpdatePermission(Long userId, ChatRoom chatRoom) {
+        if (!userId.equals(chatRoom.getOwnerId())) {
+            throw new BaseException(ErrorCode.FORBIDDEN_ROOM_UPDATE);
         }
     }
 }

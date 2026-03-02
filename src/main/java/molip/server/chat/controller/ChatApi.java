@@ -109,7 +109,10 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> updateChatRoom(Long roomId, ChatRoomUpdateRequest request);
+    ResponseEntity<Void> updateChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long roomId,
+            ChatRoomUpdateRequest request);
 
     @Operation(summary = "채팅방 세부 정보 조회")
     @SecurityRequirement(name = "JWT")
