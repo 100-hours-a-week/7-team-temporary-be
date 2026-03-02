@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import molip.server.auth.store.DeviceStore;
+import molip.server.auth.store.redis.RedisDeviceStore;
 import molip.server.socket.dto.response.SocketUnreadChangedResponse;
 import molip.server.socket.service.SocketUserChannelBroadcaster;
 import molip.server.socket.store.RedisSocketSessionStore;
@@ -20,7 +20,7 @@ public class ChatUserRealtimeSubscriber implements MessageListener {
     private static final String UNREAD_CHANGED_EVENT = "unreadChanged";
 
     private final ObjectMapper objectMapper;
-    private final DeviceStore deviceStore;
+    private final RedisDeviceStore deviceStore;
     private final RedisSocketSessionStore socketSessionStore;
     private final SocketUserChannelBroadcaster socketUserChannelBroadcaster;
 

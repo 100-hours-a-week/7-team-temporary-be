@@ -18,6 +18,8 @@ import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.enums.ImageType;
+import molip.server.common.exception.BaseException;
+import molip.server.common.exception.ErrorCode;
 import molip.server.common.response.ImageInfoResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
