@@ -13,4 +13,25 @@ public record ChatRoomDetailResponse(
         @Schema(description = "최대 인원", example = "10") int maxParticipants,
         @Schema(description = "방장 정보") ChatRoomOwnerResponse owner,
         @Schema(description = "참가자 목록") List<ChatRoomParticipantResponse> participants,
-        @Schema(description = "참가자 수", example = "2") int participantsCount) {}
+        @Schema(description = "참가자 수", example = "2") int participantsCount) {
+
+    public static ChatRoomDetailResponse of(
+            Long roomId,
+            ChatRoomType type,
+            String title,
+            String description,
+            int maxParticipants,
+            ChatRoomOwnerResponse owner,
+            List<ChatRoomParticipantResponse> participants,
+            int participantsCount) {
+        return new ChatRoomDetailResponse(
+                roomId,
+                type,
+                title,
+                description,
+                maxParticipants,
+                owner,
+                participants,
+                participantsCount);
+    }
+}

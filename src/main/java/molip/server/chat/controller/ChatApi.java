@@ -135,7 +135,8 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(Long roomId);
+    ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 
     @Operation(summary = "제목으로 채팅방 검색")
     @SecurityRequirement(name = "JWT")
@@ -146,7 +147,7 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
-                description = "검색어 필요",
+                description = "페이지 정보 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
                 responseCode = "401",

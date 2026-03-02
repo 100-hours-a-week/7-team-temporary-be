@@ -2,17 +2,22 @@ package molip.server.chat.service;
 
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.entity.ChatRoom;
+import molip.server.chat.event.ChatRoomCreatedEvent;
 import molip.server.chat.repository.ChatRoomRepository;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class ChatService {
+public class ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ChatRoom createChatRoom(
@@ -22,7 +27,11 @@ public class ChatService {
         ChatRoom chatRoom =
                 new ChatRoom(ownerId, title.trim(), description.trim(), maxParticipants);
 
-        return chatRoomRepository.save(chatRoom);
+        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+        eventPublisher.publishEvent(new ChatRoomCreatedEvent(savedChatRoom, ownerId));
+
+        return savedChatRoom;
     }
 
     @Transactional
@@ -37,6 +46,7 @@ public class ChatService {
         if (chatRoom.getDeletedAt() != null) {
             throw new BaseException(ErrorCode.CONFLICT_ROOM_ALREADY_DELETED);
         }
+
         validateDeletePermission(userId, chatRoom);
 
         chatRoom.deleteRoom();
@@ -59,6 +69,35 @@ public class ChatService {
         validateUpdatePermission(userId, chatRoom);
 
         chatRoom.updateRoom(title.trim(), description.trim(), maxParticipants);
+    }
+
+    @Transactional(readOnly = true)
+    public ChatRoom getChatRoomDetail(Long roomId) {
+        validateGetChatRoomDetail(roomId);
+
+        ChatRoom chatRoom =
+                chatRoomRepository
+                        .findById(roomId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.ROOM_NOT_FOUND));
+
+        if (chatRoom.getDeletedAt() != null) {
+            throw new BaseException(ErrorCode.ROOM_NOT_FOUND);
+        }
+
+        return chatRoom;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ChatRoom> searchChatRooms(String title, int page, int size) {
+        validateSearchChatRooms(page, size);
+
+        if (title == null || title.isBlank()) {
+            return chatRoomRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(
+                    PageRequest.of(page - 1, size));
+        }
+
+        return chatRoomRepository.findByTitleContainingAndDeletedAtIsNullOrderByCreatedAtDesc(
+                title.trim(), PageRequest.of(page - 1, size));
     }
 
     private void validateCreateChatRoom(
@@ -91,6 +130,18 @@ public class ChatService {
                 || maxParticipants == null
                 || maxParticipants <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateGetChatRoomDetail(Long roomId) {
+        if (roomId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateSearchChatRooms(int page, int size) {
+        if (page <= 0 || size <= 0) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
     }
 
