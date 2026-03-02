@@ -1,15 +1,20 @@
 package molip.server.chat.controller;
 
 import lombok.RequiredArgsConstructor;
+import molip.server.chat.dto.request.ChatMessageSendRequest;
+import molip.server.chat.dto.request.ChatMessageUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
+import molip.server.chat.dto.response.ChatMessageSendResponse;
 import molip.server.chat.dto.response.ChatRoomCreateResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
+import molip.server.chat.dto.response.ChatRoomSummaryResponse;
+import molip.server.chat.dto.response.ChatRoomUnreadCountResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.service.ChatService;
 import molip.server.common.SuccessCode;
@@ -142,5 +147,52 @@ public class ChatController implements ChatApi {
     public ResponseEntity<Void> updateLastSeenMessage(
             Long participantId, UpdateLastReadMessageRequest request) {
         return null;
+    }
+
+    @Deprecated
+    @PostMapping("/chat-rooms/{roomId}/messages")
+    @Override
+    public ResponseEntity<ServerResponse<ChatMessageSendResponse>> sendMessageFallback(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long roomId,
+            @RequestBody ChatMessageSendRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
+
+    @Deprecated
+    @DeleteMapping("/chat-rooms/{roomId}/messages/{messageId}")
+    @Override
+    public ResponseEntity<Void> deleteMessage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long roomId,
+            @PathVariable Long messageId) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    }
+
+    @Deprecated
+    @PatchMapping("/chat-rooms/{roomId}/messages/{messageId}")
+    @Override
+    public ResponseEntity<Void> updateMessage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long roomId,
+            @PathVariable Long messageId,
+            @RequestBody ChatMessageUpdateRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    }
+
+    @Deprecated
+    @GetMapping("/chat-rooms/participants/summary")
+    @Override
+    public ResponseEntity<ServerResponse<ChatRoomSummaryResponse>> getChatRoomSummaries(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    }
+
+    @Deprecated
+    @GetMapping("/chat-rooms/{roomId}/unread")
+    @Override
+    public ResponseEntity<ServerResponse<ChatRoomUnreadCountResponse>> getUnreadCount(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 }

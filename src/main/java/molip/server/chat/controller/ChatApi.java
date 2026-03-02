@@ -7,15 +7,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import molip.server.chat.dto.request.ChatMessageSendRequest;
+import molip.server.chat.dto.request.ChatMessageUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
+import molip.server.chat.dto.response.ChatMessageSendResponse;
 import molip.server.chat.dto.response.ChatRoomCreateResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
+import molip.server.chat.dto.response.ChatRoomSummaryResponse;
+import molip.server.chat.dto.response.ChatRoomUnreadCountResponse;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.response.CursorResponse;
 import molip.server.common.response.PageResponse;
@@ -322,4 +327,157 @@ public interface ChatApi {
     })
     ResponseEntity<Void> updateLastSeenMessage(
             Long participantId, UpdateLastReadMessageRequest request);
+
+    @Operation(summary = "메시지 전송(REST fallback)")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "메시지 저장 성공",
+                content =
+                        @Content(schema = @Schema(implementation = ChatMessageSendResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "필수 값 누락 또는 형식 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "메시지 전송 권한 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "채팅방 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "409",
+                description = "동일 요청 중복 처리",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ChatMessageSendResponse>> sendMessageFallback(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long roomId,
+            ChatMessageSendRequest request);
+
+    @Operation(summary = "메시지 삭제")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "메시지 삭제 성공"),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "메시지 삭제 권한 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "메시지 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "409",
+                description = "이미 삭제된 메시지",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> deleteMessage(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long messageId);
+
+    @Operation(summary = "메시지 수정")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "메시지 수정 성공"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "수정 내용 누락",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "메시지 수정 권한 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "메시지 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "409",
+                description = "수정 불가 상태",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> updateMessage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long roomId,
+            Long messageId,
+            ChatMessageUpdateRequest request);
+
+    @Operation(summary = "채팅방 목록 요약")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "요약 조회 성공",
+                content =
+                        @Content(schema = @Schema(implementation = ChatRoomSummaryResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ChatRoomSummaryResponse>> getChatRoomSummaries(
+            @AuthenticationPrincipal UserDetails userDetails);
+
+    @Operation(summary = "특정 방 unread 재조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "unread 조회 성공",
+                content =
+                        @Content(
+                                schema =
+                                        @Schema(
+                                                implementation =
+                                                        ChatRoomUnreadCountResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "조회 권한 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "채팅방 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ChatRoomUnreadCountResponse>> getUnreadCount(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 }
