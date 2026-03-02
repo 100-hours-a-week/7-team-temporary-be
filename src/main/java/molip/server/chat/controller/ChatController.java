@@ -97,18 +97,22 @@ public class ChatController implements ChatApi {
                 ServerResponse.success(SuccessCode.CHAT_ROOM_DETAIL_SUCCESS, response));
     }
 
-    @Deprecated
-    @GetMapping(value = "/chat-rooms")
+    @GetMapping("/chat-rooms")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
-            @RequestParam String title,
+            @RequestParam(required = false) String title,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        PageResponse<ChatRoomSearchItemResponse> response =
+                chatQueryFacade.searchChatRooms(title, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));
     }
 
     @Deprecated
-    @GetMapping(value = "/chat-rooms/participants")
+    @GetMapping("/chat-rooms/participants")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> getMyChatRooms(
             @RequestParam ChatRoomType type,

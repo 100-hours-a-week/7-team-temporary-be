@@ -147,7 +147,7 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = PageResponse.class))),
         @ApiResponse(
                 responseCode = "400",
-                description = "검색어 필요",
+                description = "페이지 정보 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
                 responseCode = "401",
