@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
+    boolean existsByTitleAndDeletedAtIsNull(String title);
+
     Page<ChatRoom> findByTitleContainingAndDeletedAtIsNullOrderByCreatedAtDesc(
             String title, Pageable pageable);
 

@@ -107,6 +107,7 @@ public enum ErrorCode {
     CONFLICT_ROOM_ALREADY_DELETED(HttpStatus.CONFLICT, "CONFLICT", "이미 삭제된 채팅방입니다."),
     FORBIDDEN_ROOM_UPDATE(HttpStatus.FORBIDDEN, "FORBIDDEN", "채팅방을 수정할 권한이 없습니다."),
     CONFLICT_ROOM_CAPACITY(HttpStatus.CONFLICT, "CONFLICT", "현재 참여자 수보다 최대 인원을 낮출 수 없습니다."),
+    CONFLICT_CHAT_ROOM_TITLE(HttpStatus.CONFLICT, "CONFLICT", "이미 같은 이름의 채팅방이 존재합니다."),
     INVALID_REQUEST_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "검색어가 필요합니다."),
     INVALID_REQUEST_CHAT_TYPE(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "채팅방 타입이 올바르지 않습니다."),
     CONFLICT_ALREADY_PARTICIPATED(HttpStatus.CONFLICT, "CONFLICT", "이미 채팅방에 참가 중입니다."),

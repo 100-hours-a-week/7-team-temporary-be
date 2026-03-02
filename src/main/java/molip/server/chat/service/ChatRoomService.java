@@ -24,6 +24,8 @@ public class ChatRoomService {
             Long ownerId, String title, String description, Integer maxParticipants) {
         validateCreateChatRoom(ownerId, title, description, maxParticipants);
 
+        validateDuplicatedTitle(title.trim());
+
         ChatRoom chatRoom =
                 new ChatRoom(ownerId, title.trim(), description.trim(), maxParticipants);
 
@@ -110,6 +112,12 @@ public class ChatRoomService {
                 || maxParticipants == null
                 || maxParticipants <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateDuplicatedTitle(String title) {
+        if (chatRoomRepository.existsByTitleAndDeletedAtIsNull(title)) {
+            throw new BaseException(ErrorCode.CONFLICT_CHAT_ROOM_TITLE);
         }
     }
 
