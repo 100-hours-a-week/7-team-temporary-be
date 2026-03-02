@@ -7,6 +7,8 @@ import molip.server.chat.repository.ChatRoomRepository;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,6 +87,14 @@ public class ChatRoomService {
         return chatRoom;
     }
 
+    @Transactional(readOnly = true)
+    public Page<ChatRoom> searchChatRooms(String title, int page, int size) {
+        validateSearchChatRooms(title, page, size);
+
+        return chatRoomRepository.findByTitleContainingAndDeletedAtIsNullOrderByCreatedAtDesc(
+                title.trim(), PageRequest.of(page - 1, size));
+    }
+
     private void validateCreateChatRoom(
             Long ownerId, String title, String description, Integer maxParticipants) {
         if (ownerId == null
@@ -121,6 +131,16 @@ public class ChatRoomService {
     private void validateGetChatRoomDetail(Long roomId) {
         if (roomId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateSearchChatRooms(String title, int page, int size) {
+        if (title == null || title.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_TITLE_REQUIRED);
+        }
+
+        if (page <= 0 || size <= 0) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
     }
 

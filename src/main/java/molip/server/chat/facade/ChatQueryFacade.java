@@ -3,10 +3,12 @@ package molip.server.chat.facade;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomOwnerResponse;
 import molip.server.chat.dto.response.ChatRoomParticipantResponse;
+import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.service.ChatRoomParticipantService;
@@ -15,11 +17,13 @@ import molip.server.common.enums.ImageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.common.response.ImageInfoResponse;
+import molip.server.common.response.PageResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.service.ImageService;
 import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserImageService;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -66,6 +70,29 @@ public class ChatQueryFacade {
                 owner,
                 participantResponses,
                 participants.size());
+    }
+
+    public PageResponse<ChatRoomSearchItemResponse> searchChatRooms(
+            String title, int page, int size) {
+
+        Page<ChatRoom> chatRoomPage = chatRoomService.searchChatRooms(title, page, size);
+
+        List<Long> chatRoomIds = chatRoomPage.getContent().stream().map(ChatRoom::getId).toList();
+
+        Map<Long, Integer> participantsCountMap =
+                chatRoomParticipantService.countActiveParticipantsByChatRoomIds(chatRoomIds);
+
+        List<ChatRoomSearchItemResponse> content =
+                chatRoomPage.getContent().stream()
+                        .map(
+                                chatRoom ->
+                                        ChatRoomSearchItemResponse.of(
+                                                chatRoom,
+                                                participantsCountMap.getOrDefault(
+                                                        chatRoom.getId(), 0)))
+                        .toList();
+
+        return PageResponse.of(chatRoomPage, content, page, size);
     }
 
     private ChatRoomOwnerResponse buildOwner(ChatRoomParticipant ownerParticipant) {
