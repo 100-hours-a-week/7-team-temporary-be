@@ -9,12 +9,11 @@ import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
+import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomCreateResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
-import molip.server.chat.dto.response.ChatRoomSummaryResponse;
-import molip.server.chat.dto.response.ChatRoomUnreadCountResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.facade.ChatQueryFacade;
 import molip.server.chat.service.ChatRoomService;
@@ -111,14 +110,20 @@ public class ChatController implements ChatApi {
                 ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));
     }
 
-    @Deprecated
     @GetMapping("/chat-rooms/participants")
     @Override
-    public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> getMyChatRooms(
+    public ResponseEntity<ServerResponse<PageResponse<ChatMyRoomItemResponse>>> getMyChatRooms(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam ChatRoomType type,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        PageResponse<ChatMyRoomItemResponse> response =
+                chatQueryFacade.getMyChatRooms(userId, type, page, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));
     }
 
     @Deprecated
@@ -193,21 +198,5 @@ public class ChatController implements ChatApi {
             @PathVariable Long messageId,
             @RequestBody ChatMessageUpdateRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
-    }
-
-    @Deprecated
-    @GetMapping("/chat-rooms/participants/summary")
-    @Override
-    public ResponseEntity<ServerResponse<ChatRoomSummaryResponse>> getChatRoomSummaries(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-    }
-
-    @Deprecated
-    @GetMapping("/chat-rooms/{roomId}/unread")
-    @Override
-    public ResponseEntity<ServerResponse<ChatRoomUnreadCountResponse>> getUnreadCount(
-            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
     }
 }

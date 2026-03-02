@@ -5,14 +5,18 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomOwnerResponse;
 import molip.server.chat.dto.response.ChatRoomParticipantResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
+import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
+import molip.server.common.enums.ChatRoomType;
 import molip.server.common.enums.ImageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -34,6 +38,7 @@ public class ChatQueryFacade {
 
     private final ChatRoomService chatRoomService;
     private final ChatRoomParticipantService chatRoomParticipantService;
+    private final ChatMessageService chatMessageService;
     private final UserImageService userImageService;
     private final ImageService imageService;
 
@@ -93,6 +98,49 @@ public class ChatQueryFacade {
                         .toList();
 
         return PageResponse.of(chatRoomPage, content, page, size);
+    }
+
+    public PageResponse<ChatMyRoomItemResponse> getMyChatRooms(
+            Long userId, ChatRoomType type, int page, int size) {
+        Page<ChatRoomParticipant> participationPage =
+                chatRoomParticipantService.getMyActiveParticipations(userId, type, page, size);
+
+        List<Long> chatRoomIds =
+                participationPage.getContent().stream()
+                        .map(participant -> participant.getChatRoom().getId())
+                        .toList();
+
+        Map<Long, Integer> participantsCountMap =
+                chatRoomParticipantService.countActiveParticipantsByChatRoomIds(chatRoomIds);
+
+        List<ChatMyRoomItemResponse> content =
+                participationPage.getContent().stream()
+                        .map(
+                                participation -> {
+                                    ChatRoom chatRoom = participation.getChatRoom();
+                                    ChatMessage latestMessage =
+                                            chatMessageService
+                                                    .getLatestMessage(chatRoom.getId())
+                                                    .orElse(null);
+                                    int unreadCount =
+                                            chatMessageService.countUnreadMessages(
+                                                    chatRoom.getId(),
+                                                    participation.getLastSeenMessageId());
+
+                                    return ChatMyRoomItemResponse.of(
+                                            chatRoom,
+                                            participantsCountMap.getOrDefault(chatRoom.getId(), 0),
+                                            unreadCount,
+                                            latestMessage != null
+                                                    ? latestMessage.getContent()
+                                                    : null,
+                                            latestMessage != null
+                                                    ? toKst(latestMessage.getSentAt())
+                                                    : null);
+                                })
+                        .toList();
+
+        return PageResponse.of(participationPage, content, page, size);
     }
 
     private ChatRoomOwnerResponse buildOwner(ChatRoomParticipant ownerParticipant) {
