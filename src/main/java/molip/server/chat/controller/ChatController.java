@@ -16,7 +16,8 @@ import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
 import molip.server.chat.dto.response.ChatRoomSummaryResponse;
 import molip.server.chat.dto.response.ChatRoomUnreadCountResponse;
 import molip.server.chat.entity.ChatRoom;
-import molip.server.chat.service.ChatService;
+import molip.server.chat.facade.ChatQueryFacade;
+import molip.server.chat.service.ChatRoomService;
 import molip.server.common.SuccessCode;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.response.CursorResponse;
@@ -40,7 +41,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ChatController implements ChatApi {
 
-    private final ChatService chatService;
+    private final ChatRoomService chatRoomService;
+    private final ChatQueryFacade chatQueryFacade;
 
     @PostMapping("/chat-rooms")
     @Override
@@ -50,7 +52,7 @@ public class ChatController implements ChatApi {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         ChatRoom chatRoom =
-                chatService.createChatRoom(
+                chatRoomService.createChatRoom(
                         userId, request.title(), request.description(), request.maxParticipants());
 
         return ResponseEntity.ok(
@@ -65,7 +67,7 @@ public class ChatController implements ChatApi {
             @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        chatService.deleteChatRoom(userId, roomId);
+        chatRoomService.deleteChatRoom(userId, roomId);
 
         return ResponseEntity.noContent().build();
     }
@@ -78,18 +80,21 @@ public class ChatController implements ChatApi {
             @RequestBody ChatRoomUpdateRequest request) {
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        chatService.updateChatRoom(
+        chatRoomService.updateChatRoom(
                 userId, roomId, request.title(), request.description(), request.maxParticipants());
 
         return ResponseEntity.noContent().build();
     }
 
-    @Deprecated
     @GetMapping("/chat-rooms/{roomId}")
     @Override
     public ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(
-            @PathVariable Long roomId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
+
+        ChatRoomDetailResponse response = chatQueryFacade.getChatRoomDetail(roomId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CHAT_ROOM_DETAIL_SUCCESS, response));
     }
 
     @Deprecated

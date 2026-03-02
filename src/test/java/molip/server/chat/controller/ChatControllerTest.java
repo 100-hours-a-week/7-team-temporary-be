@@ -13,7 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.entity.ChatRoom;
-import molip.server.chat.service.ChatService;
+import molip.server.chat.facade.ChatQueryFacade;
+import molip.server.chat.service.ChatRoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +35,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 @ExtendWith(MockitoExtension.class)
 class ChatControllerTest {
 
-    @Mock private ChatService chatService;
+    @Mock private ChatRoomService chatRoomService;
+    @Mock private ChatQueryFacade chatQueryFacade;
 
     @InjectMocks private ChatController chatController;
 
@@ -60,7 +62,7 @@ class ChatControllerTest {
                 new ChatRoom(1L, request.title(), request.description(), request.maxParticipants());
         ReflectionTestUtils.setField(chatRoom, "id", 101L);
 
-        given(chatService.createChatRoom(any(), any(), any(), any())).willReturn(chatRoom);
+        given(chatRoomService.createChatRoom(any(), any(), any(), any())).willReturn(chatRoom);
 
         // when & then
         mockMvc.perform(
@@ -80,7 +82,7 @@ class ChatControllerTest {
         mockMvc.perform(delete("/chat-rooms/{roomId}", 101L).with(authenticatedUser(1L)))
                 .andExpect(status().isNoContent());
 
-        then(chatService).should(times(1)).deleteChatRoom(1L, 101L);
+        then(chatRoomService).should(times(1)).deleteChatRoom(1L, 101L);
     }
 
     private RequestPostProcessor authenticatedUser(Long userId) {
