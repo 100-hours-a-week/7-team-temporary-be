@@ -12,4 +12,16 @@ public record ChatRoomParticipantResponse(
         @Schema(description = "카메라 활성화 여부", example = "false") boolean cameraEnabled,
         @Schema(description = "프로필 이미지") ImageInfoResponse profileImage,
         @Schema(description = "참가 시각", example = "2026-01-13T10:10:10+09:00")
-                OffsetDateTime joinedAt) {}
+                OffsetDateTime joinedAt) {
+
+    public static ChatRoomParticipantResponse of(
+            Long participantId,
+            Long userId,
+            String nickname,
+            boolean cameraEnabled,
+            ImageInfoResponse profileImage,
+            OffsetDateTime joinedAt) {
+        return new ChatRoomParticipantResponse(
+                participantId, userId, nickname, cameraEnabled, profileImage, joinedAt);
+    }
+}

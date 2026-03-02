@@ -17,14 +17,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
-class ChatServiceTest {
+class ChatRoomServiceTest {
 
     @Mock private ChatRoomRepository chatRoomRepository;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
-    @InjectMocks private ChatService chatService;
+    @InjectMocks private ChatRoomService chatRoomService;
 
     @Test
     void 채팅방_생성에_성공하면_OPEN_CHAT_타입으로_저장된다() {
@@ -40,7 +42,8 @@ class ChatServiceTest {
         given(chatRoomRepository.save(any(ChatRoom.class))).willReturn(savedChatRoom);
 
         // when
-        ChatRoom result = chatService.createChatRoom(ownerId, title, description, maxParticipants);
+        ChatRoom result =
+                chatRoomService.createChatRoom(ownerId, title, description, maxParticipants);
 
         // then
         assertThat(result.getId()).isEqualTo(101L);
@@ -62,7 +65,7 @@ class ChatServiceTest {
                 assertThrows(
                         BaseException.class,
                         () ->
-                                chatService.createChatRoom(
+                                chatRoomService.createChatRoom(
                                         ownerId, title, description, maxParticipants));
 
         // then
@@ -82,7 +85,7 @@ class ChatServiceTest {
                 assertThrows(
                         BaseException.class,
                         () ->
-                                chatService.createChatRoom(
+                                chatRoomService.createChatRoom(
                                         ownerId, title, description, maxParticipants));
 
         // then
@@ -100,7 +103,7 @@ class ChatServiceTest {
         given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(chatRoom));
 
         // when
-        chatService.deleteChatRoom(userId, roomId);
+        chatRoomService.deleteChatRoom(userId, roomId);
 
         // then
         assertThat(chatRoom.getDeletedAt()).isNotNull();
@@ -116,7 +119,8 @@ class ChatServiceTest {
 
         // when
         BaseException exception =
-                assertThrows(BaseException.class, () -> chatService.deleteChatRoom(userId, roomId));
+                assertThrows(
+                        BaseException.class, () -> chatRoomService.deleteChatRoom(userId, roomId));
 
         // then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND_ROOM);
@@ -135,7 +139,8 @@ class ChatServiceTest {
 
         // when
         BaseException exception =
-                assertThrows(BaseException.class, () -> chatService.deleteChatRoom(userId, roomId));
+                assertThrows(
+                        BaseException.class, () -> chatRoomService.deleteChatRoom(userId, roomId));
 
         // then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CONFLICT_ROOM_ALREADY_DELETED);
@@ -153,7 +158,8 @@ class ChatServiceTest {
 
         // when
         BaseException exception =
-                assertThrows(BaseException.class, () -> chatService.deleteChatRoom(userId, roomId));
+                assertThrows(
+                        BaseException.class, () -> chatRoomService.deleteChatRoom(userId, roomId));
 
         // then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN_ROOM_DELETE);

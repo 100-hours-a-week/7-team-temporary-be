@@ -8,4 +8,10 @@ public record ChatRoomOwnerResponse(
         @Schema(description = "사용자 ID", example = "1") Long userId,
         @Schema(description = "닉네임", example = "ownerNick") String nickname,
         @Schema(description = "카메라 활성화 여부", example = "false") boolean cameraEnabled,
-        @Schema(description = "프로필 이미지") ImageInfoResponse profileImage) {}
+        @Schema(description = "프로필 이미지") ImageInfoResponse profileImage) {
+
+    public static ChatRoomOwnerResponse of(
+            Long userId, String nickname, boolean cameraEnabled, ImageInfoResponse profileImage) {
+        return new ChatRoomOwnerResponse(userId, nickname, cameraEnabled, profileImage);
+    }
+}

@@ -135,7 +135,8 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(Long roomId);
+    ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 
     @Operation(summary = "제목으로 채팅방 검색")
     @SecurityRequirement(name = "JWT")
