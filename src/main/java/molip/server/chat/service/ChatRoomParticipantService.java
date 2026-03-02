@@ -32,6 +32,15 @@ public class ChatRoomParticipantService {
         return chatRoomParticipantRepository.save(participant);
     }
 
+    @Transactional
+    public ChatRoomParticipant createParticipant(Users user, ChatRoom chatRoom) {
+        validateCreateParticipant(user, chatRoom);
+
+        ChatRoomParticipant participant = new ChatRoomParticipant(user, chatRoom, false);
+
+        return chatRoomParticipantRepository.save(participant);
+    }
+
     @Transactional(readOnly = true)
     public List<ChatRoomParticipant> getActiveParticipants(Long chatRoomId) {
 
@@ -68,6 +77,24 @@ public class ChatRoomParticipantService {
 
         return chatRoomParticipantRepository.findActiveParticipationsByUserIdAndChatRoomType(
                 userId, type, PageRequest.of(page - 1, size));
+    }
+
+    private void validateCreateParticipant(Users user, ChatRoom chatRoom) {
+        if (user == null || chatRoom == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (getActiveParticipant(chatRoom.getId(), user.getId()).isPresent()) {
+            throw new BaseException(ErrorCode.CONFLICT_ALREADY_PARTICIPATED);
+        }
+
+        int participantsCount =
+                countActiveParticipantsByChatRoomIds(List.of(chatRoom.getId()))
+                        .getOrDefault(chatRoom.getId(), 0);
+
+        if (participantsCount >= chatRoom.getMaxParticipants()) {
+            throw new BaseException(ErrorCode.CONFLICT_ROOM_FULL);
+        }
     }
 
     private void validateGetMyActiveParticipations(

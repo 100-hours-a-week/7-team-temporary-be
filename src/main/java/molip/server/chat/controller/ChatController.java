@@ -15,7 +15,8 @@ import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
 import molip.server.chat.entity.ChatRoom;
-import molip.server.chat.facade.ChatQueryFacade;
+import molip.server.chat.facade.ChatRoomCommandFacade;
+import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.common.SuccessCode;
 import molip.server.common.enums.ChatRoomType;
@@ -41,7 +42,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChatController implements ChatApi {
 
     private final ChatRoomService chatRoomService;
-    private final ChatQueryFacade chatQueryFacade;
+    private final ChatRoomCommandFacade chatRoomCommandFacade;
+    private final ChatRoomQueryFacade chatRoomQueryFacade;
 
     @PostMapping("/chat-rooms")
     @Override
@@ -90,7 +92,7 @@ public class ChatController implements ChatApi {
     public ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(
             @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
 
-        ChatRoomDetailResponse response = chatQueryFacade.getChatRoomDetail(roomId);
+        ChatRoomDetailResponse response = chatRoomQueryFacade.getChatRoomDetail(roomId);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_DETAIL_SUCCESS, response));
@@ -104,7 +106,7 @@ public class ChatController implements ChatApi {
             @RequestParam(required = false, defaultValue = "10") int size) {
 
         PageResponse<ChatRoomSearchItemResponse> response =
-                chatQueryFacade.searchChatRooms(title, page, size);
+                chatRoomQueryFacade.searchChatRooms(title, page, size);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));
@@ -120,18 +122,22 @@ public class ChatController implements ChatApi {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         PageResponse<ChatMyRoomItemResponse> response =
-                chatQueryFacade.getMyChatRooms(userId, type, page, size);
+                chatRoomQueryFacade.getMyChatRooms(userId, type, page, size);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));
     }
 
-    @Deprecated
     @PostMapping("/chat-rooms/{roomId}/participants")
     @Override
     public ResponseEntity<ServerResponse<ChatRoomEnterResponse>> enterChatRoom(
-            @PathVariable Long roomId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ChatRoomEnterResponse response = chatRoomCommandFacade.enterChatRoom(userId, roomId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CHAT_ROOM_ENTER_SUCCESS, response));
     }
 
     @Deprecated
