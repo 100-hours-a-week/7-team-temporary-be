@@ -100,7 +100,7 @@ public class ChatController implements ChatApi {
     @GetMapping("/chat-rooms")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
-            @RequestParam String title,
+            @RequestParam(required = false) String title,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
 

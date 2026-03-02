@@ -11,4 +11,6 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     Page<ChatRoom> findByTitleContainingAndDeletedAtIsNullOrderByCreatedAtDesc(
             String title, Pageable pageable);
+
+    Page<ChatRoom> findByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);
 }

@@ -89,7 +89,12 @@ public class ChatRoomService {
 
     @Transactional(readOnly = true)
     public Page<ChatRoom> searchChatRooms(String title, int page, int size) {
-        validateSearchChatRooms(title, page, size);
+        validateSearchChatRooms(page, size);
+
+        if (title == null || title.isBlank()) {
+            return chatRoomRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(
+                    PageRequest.of(page - 1, size));
+        }
 
         return chatRoomRepository.findByTitleContainingAndDeletedAtIsNullOrderByCreatedAtDesc(
                 title.trim(), PageRequest.of(page - 1, size));
@@ -134,11 +139,7 @@ public class ChatRoomService {
         }
     }
 
-    private void validateSearchChatRooms(String title, int page, int size) {
-        if (title == null || title.isBlank()) {
-            throw new BaseException(ErrorCode.INVALID_REQUEST_TITLE_REQUIRED);
-        }
-
+    private void validateSearchChatRooms(int page, int size) {
         if (page <= 0 || size <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
