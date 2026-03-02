@@ -2,19 +2,19 @@ package molip.server.socket.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
-import molip.server.auth.jwt.JwtTokenProvider;
-import molip.server.auth.jwt.JwtUtil;
-import molip.server.auth.jwt.JwtValidationStatus;
+import java.util.Optional;
 import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
-import molip.server.socket.dto.response.SocketConnectedResponse;
-import molip.server.socket.dto.response.SocketErrorResponse;
+import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
-import molip.server.socket.store.RedisSocketSessionStore;
+import molip.server.socket.service.SocketHandshakeService;
+import molip.server.socket.session.SocketSessionContext;
+import molip.server.socket.session.SocketSessionSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,113 +28,82 @@ class SocketStompControllerTest {
 
     private SocketStompController socketStompController;
 
-    @Mock private JwtTokenProvider jwtTokenProvider;
-    @Mock private JwtUtil jwtUtil;
-    @Mock private RedisSocketSessionStore socketSessionStore;
+    @Mock private SocketHandshakeService socketHandshakeService;
+    @Mock private SocketSessionSupport socketSessionSupport;
 
     @BeforeEach
     void setUp() {
         socketStompController =
-                new SocketStompController(jwtTokenProvider, jwtUtil, socketSessionStore);
+                new SocketStompController(socketHandshakeService, socketSessionSupport);
     }
 
     @Test
-    @DisplayName("유효한 socket.connect 요청이면 socket.connected를 반환하고 세션을 저장한다")
-    void connectSuccess() {
+    @DisplayName("socket.connect 요청은 handshake service에 위임한다")
+    void connectDelegatesToHandshakeService() {
         // given
         SocketConnectRequest request =
                 new SocketConnectRequest("Bearer valid-token", "device-uuid");
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
         headerAccessor.setSessionAttributes(new HashMap<>());
+        SocketEventResponse<?> expected = SocketEventResponse.of("socket.connected", "ok");
 
-        given(jwtTokenProvider.getAccessTokenStatus("valid-token"))
-                .willReturn(JwtValidationStatus.VALID);
-        given(jwtUtil.extractUserId("valid-token")).willReturn(1L);
-        given(jwtUtil.extractDeviceId("valid-token")).willReturn("device-uuid");
-        given(socketSessionStore.findSessionId(1L, "device-uuid")).willReturn(null);
-
-        // when
-        SocketEventResponse<?> response =
-                socketStompController.connect(request, "session-uuid", headerAccessor);
-
-        // then
-        assertThat(response.event()).isEqualTo("socket.connected");
-        assertThat(response.payload()).isInstanceOf(SocketConnectedResponse.class);
-        assertThat(headerAccessor.getSessionAttributes().get("userId")).isEqualTo(1L);
-        verify(socketSessionStore)
-                .save(
-                        org.mockito.ArgumentMatchers.eq("session-uuid"),
-                        org.mockito.ArgumentMatchers.eq(1L),
-                        org.mockito.ArgumentMatchers.eq("device-uuid"),
-                        org.mockito.ArgumentMatchers.any(OffsetDateTime.class));
-    }
-
-    @Test
-    @DisplayName("만료된 토큰이면 socket.error를 반환한다")
-    void connectFailsWhenTokenExpired() {
-        // given
-        SocketConnectRequest request =
-                new SocketConnectRequest("Bearer expired-token", "device-uuid");
-        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
-        headerAccessor.setSessionAttributes(new HashMap<>());
-
-        given(jwtTokenProvider.getAccessTokenStatus("expired-token"))
-                .willReturn(JwtValidationStatus.EXPIRED);
+        doReturn(expected)
+                .when(socketHandshakeService)
+                .connect(request, "session-uuid", headerAccessor);
 
         // when
         SocketEventResponse<?> response =
                 socketStompController.connect(request, "session-uuid", headerAccessor);
 
         // then
-        assertThat(response.event()).isEqualTo("socket.error");
-        assertThat(response.payload()).isInstanceOf(SocketErrorResponse.class);
-        SocketErrorResponse error = (SocketErrorResponse) response.payload();
-        assertThat(error.code()).isEqualTo("CONNECT_TOKEN_EXPIRED");
-        assertThat(error.retryable()).isTrue();
+        assertThat(response).isEqualTo(expected);
+        verify(socketHandshakeService).connect(request, "session-uuid", headerAccessor);
     }
 
     @Test
-    @DisplayName("중복 세션이면 socket.error를 반환한다")
-    void connectFailsWhenDuplicateSessionExists() {
-        // given
-        SocketConnectRequest request =
-                new SocketConnectRequest("Bearer valid-token", "device-uuid");
-        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
-        headerAccessor.setSessionAttributes(new HashMap<>());
-
-        given(jwtTokenProvider.getAccessTokenStatus("valid-token"))
-                .willReturn(JwtValidationStatus.VALID);
-        given(jwtUtil.extractUserId("valid-token")).willReturn(1L);
-        given(jwtUtil.extractDeviceId("valid-token")).willReturn("device-uuid");
-        given(socketSessionStore.findSessionId(1L, "device-uuid")).willReturn("existing-session");
-
-        // when
-        SocketEventResponse<?> response =
-                socketStompController.connect(request, "session-uuid", headerAccessor);
-
-        // then
-        assertThat(response.event()).isEqualTo("socket.error");
-        SocketErrorResponse error = (SocketErrorResponse) response.payload();
-        assertThat(error.code()).isEqualTo("CONNECT_DUPLICATE_SESSION");
-        assertThat(error.retryable()).isFalse();
-    }
-
-    @Test
-    @DisplayName("명시적 socket.disconnect 요청이면 세션을 삭제한다")
-    void disconnectDeletesSocketSession() {
+    @DisplayName("명시적 socket.disconnect 요청이면 세션 컨텍스트가 있을 때 handshake service에 위임한다")
+    void disconnectDelegatesWhenSessionContextExists() {
         // given
         SocketDisconnectRequest request =
                 new SocketDisconnectRequest("LOGOUT", "로그아웃으로 연결을 종료합니다.");
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
-        HashMap<String, Object> sessionAttributes = new HashMap<>();
-        sessionAttributes.put("userId", 1L);
-        sessionAttributes.put("deviceId", "device-uuid");
-        headerAccessor.setSessionAttributes(sessionAttributes);
+        headerAccessor.setSessionAttributes(new HashMap<>());
+        SocketSessionContext sessionContext =
+                SocketSessionContext.of(
+                        "Bearer valid-token", "device-uuid", 1L, OffsetDateTime.now());
+
+        given(socketSessionSupport.getSessionContext(headerAccessor))
+                .willReturn(Optional.of(sessionContext));
 
         // when
         socketStompController.disconnect(request, "session-uuid", headerAccessor);
 
         // then
-        verify(socketSessionStore).delete("session-uuid", 1L, "device-uuid");
+        verify(socketHandshakeService).disconnect("session-uuid", sessionContext);
+    }
+
+    @Test
+    @DisplayName("subscribe.user는 인증 완료 세션이면 handshake service에 위임한다")
+    void subscribeUserDelegatesWhenAuthenticated() {
+        // given
+        SocketUserSubscribeRequest request = new SocketUserSubscribeRequest(OffsetDateTime.now());
+        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
+        headerAccessor.setSessionAttributes(new HashMap<>());
+        SocketSessionContext sessionContext =
+                SocketSessionContext.of(
+                        "Bearer valid-token", "device-uuid", 1L, OffsetDateTime.now());
+        SocketEventResponse<?> expected = SocketEventResponse.of("subscribed.user", "ok");
+
+        given(socketSessionSupport.getSessionContext(headerAccessor))
+                .willReturn(Optional.of(sessionContext));
+        doReturn(expected).when(socketHandshakeService).subscribeUser(request, sessionContext);
+
+        // when
+        SocketEventResponse<?> response =
+                socketStompController.subscribeUser(request, headerAccessor);
+
+        // then
+        assertThat(response).isEqualTo(expected);
+        verify(socketHandshakeService).subscribeUser(request, sessionContext);
     }
 }
