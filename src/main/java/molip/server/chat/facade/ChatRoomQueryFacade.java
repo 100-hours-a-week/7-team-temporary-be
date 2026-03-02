@@ -18,8 +18,6 @@ import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.enums.ImageType;
-import molip.server.common.exception.BaseException;
-import molip.server.common.exception.ErrorCode;
 import molip.server.common.response.ImageInfoResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
@@ -122,25 +120,30 @@ public class ChatRoomQueryFacade {
                                             chatMessageService
                                                     .getLatestMessage(chatRoom.getId())
                                                     .orElse(null);
-                                    int unreadCount =
-                                            chatMessageService.countUnreadMessages(
-                                                    chatRoom.getId(),
-                                                    participation.getLastSeenMessageId());
+                                    int participantsCount =
+                                            participantsCountMap.getOrDefault(chatRoom.getId(), 0);
 
-                                    return ChatMyRoomItemResponse.of(
-                                            chatRoom,
-                                            participantsCountMap.getOrDefault(chatRoom.getId(), 0),
-                                            unreadCount,
-                                            latestMessage != null
-                                                    ? latestMessage.getContent()
-                                                    : null,
-                                            latestMessage != null
-                                                    ? toKst(latestMessage.getSentAt())
-                                                    : null);
+                                    return buildMyChatRoomItem(
+                                            participation, latestMessage, participantsCount);
                                 })
                         .toList();
 
         return PageResponse.of(participationPage, content, page, size);
+    }
+
+    public ChatMyRoomItemResponse buildMyChatRoomItem(
+            ChatRoomParticipant participation, ChatMessage latestMessage, int participantsCount) {
+        ChatRoom chatRoom = participation.getChatRoom();
+        int unreadCount =
+                chatMessageService.countUnreadMessages(
+                        chatRoom.getId(), participation.getLastSeenMessageId());
+
+        return ChatMyRoomItemResponse.of(
+                chatRoom,
+                participantsCount,
+                unreadCount,
+                latestMessage != null ? latestMessage.getContent() : null,
+                latestMessage != null ? toKst(latestMessage.getSentAt()) : null);
     }
 
     private ChatRoomOwnerResponse buildOwner(ChatRoomParticipant ownerParticipant) {

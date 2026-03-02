@@ -1,4 +1,4 @@
-package molip.server.chat.realtime;
+package molip.server.chat.redis.realtime.chatroom;
 
 public record ChatRoomRealtimeEnvelope(String eventType, Long roomId, String payloadJson) {
 
