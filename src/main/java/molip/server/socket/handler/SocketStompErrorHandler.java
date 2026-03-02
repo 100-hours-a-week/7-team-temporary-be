@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import molip.server.socket.dto.response.SocketErrorResponse;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.MessageBuilder;
@@ -31,8 +30,7 @@ public class SocketStompErrorHandler extends StompSubProtocolErrorHandler {
     private SocketErrorResponse createErrorResponse(Throwable ex) {
         String rawMessage = ex.getMessage();
         if (rawMessage == null || rawMessage.isBlank()) {
-            return SocketErrorResponse.of(
-                    "CONNECT_INTERNAL_ERROR", "소켓 연결 중 오류가 발생했습니다.", true);
+            return SocketErrorResponse.of("CONNECT_INTERNAL_ERROR", "소켓 연결 중 오류가 발생했습니다.", true);
         }
 
         int separatorIndex = rawMessage.indexOf(':');

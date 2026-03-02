@@ -33,14 +33,16 @@ class SocketStompErrorHandlerTest {
 
         // when
         Message<byte[]> errorMessage =
-                socketStompErrorHandler.handleClientMessageProcessingError(clientMessage, exception);
+                socketStompErrorHandler.handleClientMessageProcessingError(
+                        clientMessage, exception);
 
         // then
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(errorMessage);
         SocketErrorResponse response =
                 objectMapper.readValue(errorMessage.getPayload(), SocketErrorResponse.class);
 
-        assertThat(accessor.getCommand()).isEqualTo(org.springframework.messaging.simp.stomp.StompCommand.ERROR);
+        assertThat(accessor.getCommand())
+                .isEqualTo(org.springframework.messaging.simp.stomp.StompCommand.ERROR);
         assertThat(accessor.getMessage()).isEqualTo("액세스 토큰이 만료되었습니다.");
         assertThat(response.code()).isEqualTo("CONNECT_TOKEN_EXPIRED");
         assertThat(response.message()).isEqualTo("액세스 토큰이 만료되었습니다.");
@@ -57,7 +59,8 @@ class SocketStompErrorHandlerTest {
 
         // when
         Message<byte[]> errorMessage =
-                socketStompErrorHandler.handleClientMessageProcessingError(clientMessage, exception);
+                socketStompErrorHandler.handleClientMessageProcessingError(
+                        clientMessage, exception);
 
         // then
         SocketErrorResponse response =
