@@ -46,4 +46,8 @@ public class ChatRoomParticipant extends BaseEntity {
     public void updateLastSeenMessageId(Long lastSeenMessageId) {
         this.lastSeenMessageId = lastSeenMessageId;
     }
+
+    public void leave() {
+        this.leftAt = LocalDateTime.now();
+    }
 }

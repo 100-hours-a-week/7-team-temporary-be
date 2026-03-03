@@ -8,12 +8,14 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.event.ChatRoomParticipantLeftEvent;
 import molip.server.chat.repository.ChatRoomParticipantRepository;
 import molip.server.chat.repository.projection.ChatRoomParticipantCountProjection;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.user.entity.Users;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatRoomParticipantService {
 
     private final ChatRoomParticipantRepository chatRoomParticipantRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ChatRoomParticipant createOwnerParticipant(Users user, ChatRoom chatRoom) {
@@ -91,6 +94,24 @@ public class ChatRoomParticipantService {
         participant.updateLastSeenMessageId(lastSeenMessageId);
     }
 
+    @Transactional
+    public void leaveParticipant(ChatRoomParticipant participant) {
+        validateLeaveParticipant(participant);
+
+        participant.leave();
+    }
+
+    @Transactional
+    public void leaveChatRoom(Long userId, Long roomId, Long participantId) {
+        ChatRoomParticipant participant = validateLeaveChatRoom(userId, roomId, participantId);
+
+        participant.leave();
+
+        eventPublisher.publishEvent(
+                new ChatRoomParticipantLeftEvent(
+                        participant.getChatRoom(), participant, participant.getUser()));
+    }
+
     private void validateCreateParticipant(Users user, ChatRoom chatRoom) {
         if (user == null || chatRoom == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
@@ -130,5 +151,41 @@ public class ChatRoomParticipantService {
                 && lastSeenMessageId < participant.getLastSeenMessageId()) {
             throw new BaseException(ErrorCode.CONFLICT_LAST_SEEN_DECREASE);
         }
+    }
+
+    private void validateLeaveParticipant(ChatRoomParticipant participant) {
+        if (participant == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (participant.getLeftAt() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_ALREADY_LEFT);
+        }
+    }
+
+    private ChatRoomParticipant validateLeaveChatRoom(
+            Long userId, Long roomId, Long participantId) {
+        if (userId == null || roomId == null || participantId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        ChatRoomParticipant participant =
+                chatRoomParticipantRepository
+                        .findById(participantId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+
+        if (!participant.getChatRoom().getId().equals(roomId)) {
+            throw new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND);
+        }
+
+        if (!participant.getUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_PARTICIPANT_REMOVE);
+        }
+
+        if (participant.getLeftAt() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_ALREADY_LEFT);
+        }
+
+        return participant;
     }
 }

@@ -8,10 +8,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.response.ChatMessageCreatedResponse;
 import molip.server.chat.dto.response.ChatMyRoomItemResponse;
-import molip.server.chat.dto.response.ChatParticipantJoinedResponse;
+import molip.server.chat.dto.response.ChatParticipantLeftResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoomParticipant;
-import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
+import molip.server.chat.event.ChatRoomParticipantLeftEvent;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
 import molip.server.chat.redis.realtime.chatuser.ChatUserRealtimePublisher;
@@ -25,7 +25,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @RequiredArgsConstructor
-public class ChatRoomParticipantEnteredEventHandler {
+public class ChatRoomParticipantLeftEventHandler {
 
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
@@ -36,24 +36,22 @@ public class ChatRoomParticipantEnteredEventHandler {
     private final ChatUserRealtimePublisher chatUserRealtimePublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handle(ChatRoomParticipantEnteredEvent event) {
-        OffsetDateTime joinedAt = toKst(event.participant().getCreatedAt());
+    public void handle(ChatRoomParticipantLeftEvent event) {
         String eventId = UUID.randomUUID().toString();
 
         chatRoomRealtimePublisher.publish(
-                "participant.joined",
+                "participant.left",
                 event.chatRoom().getId(),
-                ChatParticipantJoinedResponse.of(
+                ChatParticipantLeftResponse.of(
                         eventId,
                         event.chatRoom().getId(),
                         event.participant().getId(),
                         event.user().getId(),
-                        event.user().getNickname(),
-                        joinedAt));
+                        toKst(event.participant().getLeftAt())));
 
         ChatMessage systemMessage =
                 chatMessageService.createSystemMessage(
-                        event.chatRoom(), event.user().getNickname() + "님이 입장하였습니다.");
+                        event.chatRoom(), event.user().getNickname() + "님이 퇴장하였습니다.");
 
         List<ChatRoomParticipant> activeParticipants =
                 chatRoomParticipantService.getActiveParticipants(event.chatRoom().getId());
@@ -73,15 +71,13 @@ public class ChatRoomParticipantEnteredEventHandler {
                         List.of(),
                         toKst(systemMessage.getSentAt())));
 
-        activeParticipants.stream()
-                .filter(participant -> !participant.getUser().getId().equals(event.user().getId()))
-                .forEach(
-                        participant ->
-                                publishUnreadChanged(
-                                        event.chatRoom().getId(),
-                                        participant,
-                                        systemMessage,
-                                        participantsCount));
+        activeParticipants.forEach(
+                participant ->
+                        publishUnreadChanged(
+                                event.chatRoom().getId(),
+                                participant,
+                                systemMessage,
+                                participantsCount));
     }
 
     private void publishUnreadChanged(

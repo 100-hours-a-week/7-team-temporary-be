@@ -18,6 +18,7 @@ import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.chat.facade.ChatRoomQueryFacade;
+import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.common.SuccessCode;
 import molip.server.common.enums.ChatRoomType;
@@ -43,6 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChatController implements ChatApi {
 
     private final ChatRoomService chatRoomService;
+    private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatRoomCommandFacade chatRoomCommandFacade;
     private final ChatRoomQueryFacade chatRoomQueryFacade;
 
@@ -180,11 +182,16 @@ public class ChatController implements ChatApi {
         return ResponseEntity.noContent().build();
     }
 
-    @Deprecated
     @DeleteMapping("/chat-rooms/{roomId}/participants/{participantId}")
     @Override
     public ResponseEntity<Void> leaveChatRoom(
-            @PathVariable Long roomId, @PathVariable Long participantId) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long roomId,
+            @PathVariable Long participantId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        chatRoomParticipantService.leaveChatRoom(userId, roomId, participantId);
+
         return ResponseEntity.noContent().build();
     }
 
