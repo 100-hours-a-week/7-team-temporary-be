@@ -129,6 +129,9 @@ public enum ErrorCode {
     INVALID_REQUEST_MESSAGE_SEND(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "필수 값이 누락되었거나 메시지 형식이 올바르지 않습니다."),
     FORBIDDEN_MESSAGE_SEND(HttpStatus.FORBIDDEN, "FORBIDDEN", "채팅방 참가자만 메시지를 전송할 수 있습니다."),
+    INVALID_REQUEST_MESSAGE_UPDATE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "필수 값이 누락되었거나 메시지 수정 형식이 올바르지 않습니다."),
+    FORBIDDEN_MESSAGE_UPDATE(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 메시지만 수정할 수 있습니다."),
     CONFLICT_MESSAGE_REQUEST_PROCESSING(
             HttpStatus.CONFLICT, "CONFLICT", "동일한 요청이 현재 처리 중입니다. 잠시 후 다시 시도해주세요."),
 

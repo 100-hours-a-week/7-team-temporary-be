@@ -108,6 +108,39 @@ public class ChatMessageService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public ChatMessage getActiveMessage(Long messageId) {
+        if (messageId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
+        }
+
+        ChatMessage message =
+                chatMessageRepository
+                        .findById(messageId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.MESSAGE_NOT_FOUND));
+
+        if (message.getDeletedAt() != null || message.isDeleted()) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        return message;
+    }
+
+    @Transactional
+    public ChatMessage updateMessage(Long userId, Long roomId, Long messageId, String content) {
+        validateUpdateMessage(userId, roomId, messageId, content);
+
+        ChatMessage message = getActiveMessage(messageId);
+
+        validateMessageBelongsToRoom(message, roomId);
+        validateMessageOwnership(message, userId);
+        validateMessageEditable(message);
+
+        message.updateContent(normalizeUpdatedContent(content));
+
+        return message;
+    }
+
     private void validateGetMessages(Long chatRoomId, Long cursor, int size) {
         if (chatRoomId == null || size <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
@@ -143,6 +176,35 @@ public class ChatMessageService {
         }
     }
 
+    private void validateUpdateMessage(Long userId, Long roomId, Long messageId, String content) {
+        if (userId == null || roomId == null || messageId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
+        }
+
+        if (content == null || content.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
+        }
+    }
+
+    private void validateMessageBelongsToRoom(ChatMessage message, Long roomId) {
+        if (!message.getChatRoom().getId().equals(roomId)) {
+            throw new BaseException(ErrorCode.CONFLICT_MESSAGE_NOT_IN_ROOM);
+        }
+    }
+
+    private void validateMessageOwnership(ChatMessage message, Long userId) {
+        if (message.getSenderType() != SenderType.USER || !userId.equals(message.getSenderId())) {
+            throw new BaseException(ErrorCode.FORBIDDEN_MESSAGE_UPDATE);
+        }
+    }
+
+    private void validateMessageEditable(ChatMessage message) {
+        if (message.getMessageType() != MessageType.TEXT
+                && message.getMessageType() != MessageType.TEXT_WITH_IMAGES) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
+        }
+    }
+
     private String normalizeContent(String content) {
         if (content == null) {
             return null;
@@ -150,5 +212,15 @@ public class ChatMessageService {
 
         String normalized = content.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private String normalizeUpdatedContent(String content) {
+        String normalized = normalizeContent(content);
+
+        if (normalized == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
+        }
+
+        return normalized;
     }
 }

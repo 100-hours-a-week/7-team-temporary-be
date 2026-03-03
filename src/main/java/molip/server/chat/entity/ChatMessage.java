@@ -60,4 +60,8 @@ public class ChatMessage extends BaseEntity {
         this.senderType = senderType;
         this.senderId = senderId;
     }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }
