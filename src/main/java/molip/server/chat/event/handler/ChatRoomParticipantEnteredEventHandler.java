@@ -12,12 +12,12 @@ import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatParticipantJoinedResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.event.ChatMessageRealtimePayloadFactory;
 import molip.server.chat.event.ChatRoomParticipantEnteredCommittedEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
-import molip.server.common.enums.MessageType;
 import molip.server.socket.dto.response.SocketUnreadChangedResponse;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -34,6 +34,7 @@ public class ChatRoomParticipantEnteredEventHandler {
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatMessageService chatMessageService;
     private final ChatRoomQueryFacade chatRoomQueryFacade;
+    private final ChatMessageRealtimePayloadFactory chatMessageRealtimePayloadFactory;
     private final ApplicationEventPublisher eventPublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
@@ -70,16 +71,7 @@ public class ChatRoomParticipantEnteredEventHandler {
                 chatMessageService.getLatestNonSystemMessage(event.chatRoom().getId()).orElse(null);
 
         ChatMessageCreatedResponse messageCreated =
-                ChatMessageCreatedResponse.of(
-                        UUID.randomUUID().toString(),
-                        systemMessage.getId(),
-                        event.chatRoom().getId(),
-                        MessageType.SYSTEM,
-                        systemMessage.getSenderType(),
-                        systemMessage.getSenderId(),
-                        systemMessage.getContent(),
-                        List.of(),
-                        toKst(systemMessage.getSentAt()));
+                chatMessageRealtimePayloadFactory.buildMessageCreated(systemMessage, List.of());
 
         List<SocketUnreadChangedResponse> unreadChanges =
                 activeParticipants.stream()
