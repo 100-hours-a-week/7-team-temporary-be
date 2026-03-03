@@ -213,6 +213,7 @@ CREATE TABLE IF NOT EXISTS chat_room (
   type VARCHAR(20) NOT NULL,
   description VARCHAR(125) NOT NULL,
   max_participants INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -226,6 +227,7 @@ CREATE TABLE IF NOT EXISTS chat_room_participant (
   last_seen_message_id BIGINT NULL,
   camera_enabled TINYINT(1) NOT NULL,
   left_at DATETIME(6) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -235,7 +237,7 @@ CREATE TABLE IF NOT EXISTS chat_room_participant (
   CONSTRAINT fk_chat_room_participant_room_id FOREIGN KEY (chat_room_id) REFERENCES chat_room(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS message (
+CREATE TABLE IF NOT EXISTS chat_message (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   chat_room_id BIGINT NOT NULL,
   message_type VARCHAR(20) NOT NULL,
@@ -244,6 +246,7 @@ CREATE TABLE IF NOT EXISTS message (
   sent_at DATETIME(6) NOT NULL,
   sender_type VARCHAR(20) NOT NULL,
   sender_id BIGINT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -256,11 +259,12 @@ CREATE TABLE IF NOT EXISTS message_image (
   message_id BIGINT NOT NULL,
   image_id BIGINT NOT NULL,
   sort_order INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_message_image_message_deleted (message_id, deleted_at),
-  CONSTRAINT fk_message_image_message_id FOREIGN KEY (message_id) REFERENCES message(id),
+  CONSTRAINT fk_message_image_message_id FOREIGN KEY (message_id) REFERENCES chat_message(id),
   CONSTRAINT fk_message_image_image_id FOREIGN KEY (image_id) REFERENCES image(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -296,6 +300,7 @@ CREATE TABLE IF NOT EXISTS report (
   end_date DATE NOT NULL,
   ai_report_response_limit INTEGER NOT NULL,
   ai_report_response_used INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -308,6 +313,7 @@ CREATE TABLE IF NOT EXISTS report_daily_stat (
   report_id BIGINT NOT NULL,
   report_date DATE NOT NULL,
   achievement_rate INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -323,6 +329,7 @@ CREATE TABLE IF NOT EXISTS report_chat_message (
   is_deleted TINYINT(1) NOT NULL,
   sent_at DATETIME(6) NOT NULL,
   sender_type VARCHAR(20) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,

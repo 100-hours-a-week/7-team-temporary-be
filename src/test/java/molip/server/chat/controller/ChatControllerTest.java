@@ -13,7 +13,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.entity.ChatRoom;
-import molip.server.chat.facade.ChatQueryFacade;
+import molip.server.chat.facade.ChatRoomCommandFacade;
+import molip.server.chat.facade.ChatRoomQueryFacade;
+import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +38,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class ChatControllerTest {
 
     @Mock private ChatRoomService chatRoomService;
-    @Mock private ChatQueryFacade chatQueryFacade;
+    @Mock private ChatRoomParticipantService chatRoomParticipantService;
+    @Mock private ChatRoomCommandFacade chatRoomCommandFacade;
+    @Mock private ChatRoomQueryFacade chatRoomQueryFacade;
 
     @InjectMocks private ChatController chatController;
 

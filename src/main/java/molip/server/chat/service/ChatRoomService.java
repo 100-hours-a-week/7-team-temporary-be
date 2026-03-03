@@ -3,6 +3,8 @@ package molip.server.chat.service;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.event.ChatRoomCreatedEvent;
+import molip.server.chat.event.ChatRoomDeletedEvent;
+import molip.server.chat.event.ChatRoomUpdatedEvent;
 import molip.server.chat.repository.ChatRoomRepository;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -23,6 +25,8 @@ public class ChatRoomService {
     public ChatRoom createChatRoom(
             Long ownerId, String title, String description, Integer maxParticipants) {
         validateCreateChatRoom(ownerId, title, description, maxParticipants);
+
+        validateDuplicatedTitle(title.trim());
 
         ChatRoom chatRoom =
                 new ChatRoom(ownerId, title.trim(), description.trim(), maxParticipants);
@@ -50,6 +54,8 @@ public class ChatRoomService {
         validateDeletePermission(userId, chatRoom);
 
         chatRoom.deleteRoom();
+
+        eventPublisher.publishEvent(new ChatRoomDeletedEvent(chatRoom));
     }
 
     @Transactional
@@ -69,10 +75,12 @@ public class ChatRoomService {
         validateUpdatePermission(userId, chatRoom);
 
         chatRoom.updateRoom(title.trim(), description.trim(), maxParticipants);
+
+        eventPublisher.publishEvent(new ChatRoomUpdatedEvent(chatRoom));
     }
 
     @Transactional(readOnly = true)
-    public ChatRoom getChatRoomDetail(Long roomId) {
+    public ChatRoom getChatRoom(Long roomId) {
         validateGetChatRoomDetail(roomId);
 
         ChatRoom chatRoom =
@@ -110,6 +118,12 @@ public class ChatRoomService {
                 || maxParticipants == null
                 || maxParticipants <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+    }
+
+    private void validateDuplicatedTitle(String title) {
+        if (chatRoomRepository.existsByTitleAndDeletedAtIsNull(title)) {
+            throw new BaseException(ErrorCode.CONFLICT_CHAT_ROOM_TITLE);
         }
     }
 

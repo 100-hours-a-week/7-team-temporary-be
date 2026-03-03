@@ -15,12 +15,12 @@ import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
+import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomCreateResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
+import molip.server.chat.dto.response.ChatRoomOwnerCheckResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
-import molip.server.chat.dto.response.ChatRoomSummaryResponse;
-import molip.server.chat.dto.response.ChatRoomUnreadCountResponse;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.response.CursorResponse;
 import molip.server.common.response.PageResponse;
@@ -138,6 +138,30 @@ public interface ChatApi {
     ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(
             @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 
+    @Operation(summary = "방장 여부 조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content =
+                        @Content(
+                                schema =
+                                        @Schema(
+                                                implementation =
+                                                        ChatRoomOwnerCheckResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "방장 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ChatRoomOwnerCheckResponse>> checkOwner(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long ownerId);
+
     @Operation(summary = "제목으로 채팅방 검색")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
@@ -161,7 +185,7 @@ public interface ChatApi {
     ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
             String title, int page, int size);
 
-    @Operation(summary = "내 채팅방 타입에 따라 목록 조회")
+    @Operation(summary = "내가 참가자인 채팅방 목록 조회")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
         @ApiResponse(
@@ -181,8 +205,11 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> getMyChatRooms(
-            ChatRoomType type, int page, int size);
+    ResponseEntity<ServerResponse<PageResponse<ChatMyRoomItemResponse>>> getMyChatRooms(
+            @AuthenticationPrincipal UserDetails userDetails,
+            ChatRoomType type,
+            int page,
+            int size);
 
     @Operation(summary = "채팅방 입장")
     @SecurityRequirement(name = "JWT")
@@ -208,7 +235,8 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ChatRoomEnterResponse>> enterChatRoom(Long roomId);
+    ResponseEntity<ServerResponse<ChatRoomEnterResponse>> enterChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 
     @Operation(summary = "메시지 목록 조회")
     @SecurityRequirement(name = "JWT")
@@ -239,7 +267,7 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<CursorResponse<ChatMessageItemResponse>>> getMessages(
-            Long roomId, Long cursor, int size);
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long cursor, int size);
 
     @Operation(summary = "카메라 상태 변경")
     @SecurityRequirement(name = "JWT")
@@ -302,9 +330,10 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> leaveChatRoom(Long roomId, Long participantId);
+    ResponseEntity<Void> leaveChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long participantId);
 
-    @Operation(summary = "마지막으로 본 채팅 메시지 수정")
+    @Operation(summary = "마지막으로 본 채팅 메시지 수정(REST fallback)")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "마지막으로 본 메시지 수정 성공"),
@@ -330,7 +359,9 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<Void> updateLastSeenMessage(
-            Long participantId, UpdateLastReadMessageRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long participantId,
+            UpdateLastReadMessageRequest request);
 
     @Operation(summary = "메시지 전송(REST fallback)")
     @SecurityRequirement(name = "JWT")
@@ -432,56 +463,4 @@ public interface ChatApi {
             Long roomId,
             Long messageId,
             ChatMessageUpdateRequest request);
-
-    @Operation(summary = "채팅방 목록 요약")
-    @SecurityRequirement(name = "JWT")
-    @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "요약 조회 성공",
-                content =
-                        @Content(schema = @Schema(implementation = ChatRoomSummaryResponse.class))),
-        @ApiResponse(
-                responseCode = "401",
-                description = "유효하지 않은 토큰",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "500",
-                description = "서버 오류",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
-    })
-    ResponseEntity<ServerResponse<ChatRoomSummaryResponse>> getChatRoomSummaries(
-            @AuthenticationPrincipal UserDetails userDetails);
-
-    @Operation(summary = "특정 방 unread 재조회")
-    @SecurityRequirement(name = "JWT")
-    @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "unread 조회 성공",
-                content =
-                        @Content(
-                                schema =
-                                        @Schema(
-                                                implementation =
-                                                        ChatRoomUnreadCountResponse.class))),
-        @ApiResponse(
-                responseCode = "401",
-                description = "유효하지 않은 토큰",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "403",
-                description = "조회 권한 없음",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "404",
-                description = "채팅방 없음",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "500",
-                description = "서버 오류",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
-    })
-    ResponseEntity<ServerResponse<ChatRoomUnreadCountResponse>> getUnreadCount(
-            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 }
