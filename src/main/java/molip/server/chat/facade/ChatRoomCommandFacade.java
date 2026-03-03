@@ -1,11 +1,14 @@
 package molip.server.chat.facade;
 
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
+import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
+import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
@@ -25,6 +28,7 @@ public class ChatRoomCommandFacade {
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatMessageService chatMessageService;
     private final UserService userService;
+    private final ChatRoomRealtimePublisher chatRoomRealtimePublisher;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -51,6 +55,16 @@ public class ChatRoomCommandFacade {
 
         chatRoomParticipantService.updateLastSeenMessageId(
                 participant, request.lastSeenMessageId());
+
+        chatRoomRealtimePublisher.publish(
+                "lastSeenUpdated",
+                participant.getChatRoom().getId(),
+                ChatLastSeenUpdatedResponse.of(
+                        UUID.randomUUID().toString(),
+                        participant.getChatRoom().getId(),
+                        participant.getId(),
+                        participant.getUser().getId(),
+                        request.lastSeenMessageId()));
     }
 
     private ChatRoomParticipant getOwnedParticipant(Long userId, Long participantId) {

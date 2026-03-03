@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
+import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
 import molip.server.chat.dto.response.ChatMessageCreatedResponse;
 import molip.server.chat.dto.response.ChatParticipantJoinedResponse;
 import molip.server.socket.dto.response.SocketEventResponse;
@@ -18,6 +19,7 @@ public class ChatRoomRealtimeSubscriber implements MessageListener {
 
     private static final String PARTICIPANT_JOINED_EVENT = "participant.joined";
     private static final String MESSAGE_CREATED_EVENT = "message.created";
+    private static final String LAST_SEEN_UPDATED_EVENT = "lastSeenUpdated";
 
     private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate simpMessagingTemplate;
@@ -41,7 +43,17 @@ public class ChatRoomRealtimeSubscriber implements MessageListener {
                 ChatMessageCreatedResponse payload =
                         objectMapper.readValue(
                                 envelope.payloadJson(), ChatMessageCreatedResponse.class);
+
                 broadcast(envelope.roomId(), MESSAGE_CREATED_EVENT, payload);
+                return;
+            }
+
+            if (LAST_SEEN_UPDATED_EVENT.equals(envelope.eventType())) {
+                ChatLastSeenUpdatedResponse payload =
+                        objectMapper.readValue(
+                                envelope.payloadJson(), ChatLastSeenUpdatedResponse.class);
+
+                broadcast(envelope.roomId(), LAST_SEEN_UPDATED_EVENT, payload);
             }
         } catch (JsonProcessingException ignored) {
 
