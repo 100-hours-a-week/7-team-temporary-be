@@ -109,19 +109,41 @@ public class ChatMessageService {
     }
 
     @Transactional(readOnly = true)
+    public ChatMessage getMessage(Long messageId) {
+        if (messageId == null) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        return chatMessageRepository
+                .findById(messageId)
+                .orElseThrow(() -> new BaseException(ErrorCode.MESSAGE_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
     public ChatMessage getActiveMessage(Long messageId) {
         if (messageId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
         }
 
-        ChatMessage message =
-                chatMessageRepository
-                        .findById(messageId)
-                        .orElseThrow(() -> new BaseException(ErrorCode.MESSAGE_NOT_FOUND));
+        ChatMessage message = getMessage(messageId);
 
         if (message.getDeletedAt() != null || message.isDeleted()) {
             throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
         }
+
+        return message;
+    }
+
+    @Transactional
+    public ChatMessage deleteMessage(Long userId, Long roomId, Long messageId) {
+        validateDeleteMessage(userId, roomId, messageId);
+
+        ChatMessage message = getMessage(messageId);
+
+        validateMessageBelongsToRoom(message, roomId);
+        validateDeletableMessage(message, userId);
+
+        message.deleteMessage();
 
         return message;
     }
@@ -186,6 +208,12 @@ public class ChatMessageService {
         }
     }
 
+    private void validateDeleteMessage(Long userId, Long roomId, Long messageId) {
+        if (userId == null || roomId == null || messageId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_DELETE);
+        }
+    }
+
     private void validateMessageBelongsToRoom(ChatMessage message, Long roomId) {
         if (!message.getChatRoom().getId().equals(roomId)) {
             throw new BaseException(ErrorCode.CONFLICT_MESSAGE_NOT_IN_ROOM);
@@ -198,10 +226,28 @@ public class ChatMessageService {
         }
     }
 
+    private void validateMessageDeleteOwnership(ChatMessage message, Long userId) {
+        if (message.getSenderType() != SenderType.USER || !userId.equals(message.getSenderId())) {
+            throw new BaseException(ErrorCode.FORBIDDEN_MESSAGE_DELETE);
+        }
+    }
+
     private void validateMessageEditable(ChatMessage message) {
         if (message.getMessageType() != MessageType.TEXT
                 && message.getMessageType() != MessageType.TEXT_WITH_IMAGES) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
+        }
+    }
+
+    private void validateDeletableMessage(ChatMessage message, Long userId) {
+        if (message.getDeletedAt() != null || message.isDeleted()) {
+            throw new BaseException(ErrorCode.CONFLICT_MESSAGE_ALREADY_DELETED);
+        }
+
+        validateMessageDeleteOwnership(message, userId);
+
+        if (message.getMessageType() == MessageType.SYSTEM) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_DELETE);
         }
     }
 

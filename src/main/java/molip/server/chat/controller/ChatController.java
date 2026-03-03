@@ -26,7 +26,6 @@ import molip.server.common.enums.ChatRoomType;
 import molip.server.common.response.CursorResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -230,7 +229,11 @@ public class ChatController implements ChatApi {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long roomId,
             @PathVariable Long messageId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        chatRoomCommandFacade.deleteMessage(userId, roomId, messageId);
+
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/chat-rooms/{roomId}/messages/{messageId}")

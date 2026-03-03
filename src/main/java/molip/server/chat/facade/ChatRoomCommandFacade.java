@@ -150,6 +150,15 @@ public class ChatRoomCommandFacade {
         eventPublisher.publishEvent(new ChatMessageUpdatedEvent(message));
     }
 
+    @Transactional
+    public void deleteMessage(Long userId, Long roomId, Long messageId) {
+        validateDeleteMessageRequest(userId, roomId, messageId);
+
+        validateSendMessageAccess(userId, roomId);
+
+        chatMessageService.deleteMessage(userId, roomId, messageId);
+    }
+
     private ChatRoomParticipant getOwnedParticipant(Long userId, Long participantId) {
         if (userId == null || participantId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
@@ -188,6 +197,12 @@ public class ChatRoomCommandFacade {
                 || content == null
                 || content.isBlank()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
+        }
+    }
+
+    private void validateDeleteMessageRequest(Long userId, Long roomId, Long messageId) {
+        if (userId == null || roomId == null || messageId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_DELETE);
         }
     }
 
