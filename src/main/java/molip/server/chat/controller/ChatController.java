@@ -222,7 +222,6 @@ public class ChatController implements ChatApi {
         return ResponseEntity.status(result.httpStatus()).body(result.body());
     }
 
-    @Deprecated
     @DeleteMapping("/chat-rooms/{roomId}/messages/{messageId}")
     @Override
     public ResponseEntity<Void> deleteMessage(

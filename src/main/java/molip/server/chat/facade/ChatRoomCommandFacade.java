@@ -15,6 +15,7 @@ import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.event.ChatMessageDeletedEvent;
 import molip.server.chat.event.ChatMessageSentEvent;
 import molip.server.chat.event.ChatMessageUpdatedEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
@@ -156,7 +157,9 @@ public class ChatRoomCommandFacade {
 
         validateSendMessageAccess(userId, roomId);
 
-        chatMessageService.deleteMessage(userId, roomId, messageId);
+        ChatMessage message = chatMessageService.deleteMessage(userId, roomId, messageId);
+
+        eventPublisher.publishEvent(new ChatMessageDeletedEvent(message));
     }
 
     private ChatRoomParticipant getOwnedParticipant(Long userId, Long participantId) {
