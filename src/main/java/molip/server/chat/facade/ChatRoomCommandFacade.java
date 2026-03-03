@@ -15,6 +15,7 @@ import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.event.ChatMessageSentEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
 import molip.server.chat.redis.idempotency.ChatMessageIdempotencyRecord;
 import molip.server.chat.redis.idempotency.RedisChatMessageIdempotencyStore;
@@ -102,6 +103,8 @@ public class ChatRoomCommandFacade {
 
         redisChatMessageIdempotencyStore.markSucceeded(
                 userId, roomId, idempotencyKey, message.getId(), response.sentAt());
+
+        eventPublisher.publishEvent(new ChatMessageSentEvent(chatRoom, message, images, userId));
 
         return ChatMessageSendCommandResult.succeeded(response);
     }
