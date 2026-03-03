@@ -1,8 +1,11 @@
 package molip.server.socket.controller;
 
 import lombok.RequiredArgsConstructor;
+import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
+import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
+import molip.server.socket.dto.request.SocketLastSeenUpdateRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.service.SocketHandshakeService;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class SocketStompController {
 
+    private final ChatRoomCommandFacade chatRoomCommandFacade;
     private final SocketHandshakeService socketHandshakeService;
     private final SocketSessionSupport socketSessionSupport;
 
@@ -55,5 +59,23 @@ public class SocketStompController {
                         sessionContext ->
                                 socketHandshakeService.subscribeUser(request, sessionContext))
                 .orElseGet(socketHandshakeService::invalidSubscribeState);
+    }
+
+    @MessageMapping("/room/last-seen")
+    public void updateLastSeenMessage(
+            SocketLastSeenUpdateRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        if (request == null) {
+            return;
+        }
+
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresent(
+                        sessionContext ->
+                                chatRoomCommandFacade.updateLastSeenMessage(
+                                        sessionContext.userId(),
+                                        request.participantId(),
+                                        new UpdateLastReadMessageRequest(
+                                                request.lastSeenMessageId())));
     }
 }

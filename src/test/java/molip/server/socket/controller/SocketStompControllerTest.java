@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Optional;
+import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
@@ -28,13 +29,15 @@ class SocketStompControllerTest {
 
     private SocketStompController socketStompController;
 
+    @Mock private ChatRoomCommandFacade chatRoomCommandFacade;
     @Mock private SocketHandshakeService socketHandshakeService;
     @Mock private SocketSessionSupport socketSessionSupport;
 
     @BeforeEach
     void setUp() {
         socketStompController =
-                new SocketStompController(socketHandshakeService, socketSessionSupport);
+                new SocketStompController(
+                        chatRoomCommandFacade, socketHandshakeService, socketSessionSupport);
     }
 
     @Test

@@ -56,6 +56,18 @@ public class ChatMessageService {
     }
 
     @Transactional(readOnly = true)
+    public void validateMessageInRoom(Long roomId, Long messageId) {
+        if (roomId == null || messageId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (!chatMessageRepository.existsByIdAndChatRoomIdAndDeletedAtIsNullAndIsDeletedFalse(
+                messageId, roomId)) {
+            throw new BaseException(ErrorCode.CONFLICT_MESSAGE_NOT_IN_ROOM);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public Page<ChatMessage> getMessages(Long chatRoomId, Long cursor, int size) {
         validateGetMessages(chatRoomId, cursor, size);
 

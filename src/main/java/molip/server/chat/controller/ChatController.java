@@ -173,12 +173,17 @@ public class ChatController implements ChatApi {
         return ResponseEntity.noContent().build();
     }
 
-    @Deprecated
     @PatchMapping("/chat-rooms/participants/{participantId}/message")
     @Override
     public ResponseEntity<Void> updateLastSeenMessage(
-            Long participantId, UpdateLastReadMessageRequest request) {
-        return null;
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long participantId,
+            @RequestBody UpdateLastReadMessageRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        chatRoomCommandFacade.updateLastSeenMessage(userId, participantId, request);
+
+        return ResponseEntity.noContent().build();
     }
 
     @Deprecated
