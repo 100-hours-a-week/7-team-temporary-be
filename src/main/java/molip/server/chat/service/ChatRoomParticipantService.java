@@ -30,16 +30,18 @@ public class ChatRoomParticipantService {
 
     @Transactional
     public ChatRoomParticipant createOwnerParticipant(Users user, ChatRoom chatRoom) {
-        ChatRoomParticipant participant = new ChatRoomParticipant(user, chatRoom, false);
+        ChatRoomParticipant participant = new ChatRoomParticipant(user, chatRoom, null, false);
 
         return chatRoomParticipantRepository.save(participant);
     }
 
     @Transactional
-    public ChatRoomParticipant createParticipant(Users user, ChatRoom chatRoom) {
+    public ChatRoomParticipant createParticipant(
+            Users user, ChatRoom chatRoom, Long lastSeenMessageId) {
         validateCreateParticipant(user, chatRoom);
 
-        ChatRoomParticipant participant = new ChatRoomParticipant(user, chatRoom, false);
+        ChatRoomParticipant participant =
+                new ChatRoomParticipant(user, chatRoom, lastSeenMessageId, false);
 
         return chatRoomParticipantRepository.save(participant);
     }

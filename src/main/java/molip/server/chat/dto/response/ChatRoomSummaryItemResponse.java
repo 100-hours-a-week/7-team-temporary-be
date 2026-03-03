@@ -5,17 +5,21 @@ import java.time.OffsetDateTime;
 public record ChatRoomSummaryItemResponse(
         Long roomId,
         int unreadCount,
-        String lastMessagePreview,
-        OffsetDateTime lastMessageSentAt,
+        String lastUserMessagePreview,
+        OffsetDateTime lastUserMessageSentAt,
         int participantsCount) {
 
     public static ChatRoomSummaryItemResponse of(
             Long roomId,
             int unreadCount,
-            String lastMessagePreview,
-            OffsetDateTime lastMessageSentAt,
+            String lastUserMessagePreview,
+            OffsetDateTime lastUserMessageSentAt,
             int participantsCount) {
         return new ChatRoomSummaryItemResponse(
-                roomId, unreadCount, lastMessagePreview, lastMessageSentAt, participantsCount);
+                roomId,
+                unreadCount,
+                lastUserMessagePreview,
+                lastUserMessageSentAt,
+                participantsCount);
     }
 }

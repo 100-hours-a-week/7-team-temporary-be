@@ -115,8 +115,8 @@ public class ChatRoomParticipantLeftEventHandler {
                 userId,
                 roomId,
                 row.unreadCount(),
-                row.lastMessagePreview(),
-                row.lastMessageSentAt(),
+                row.lastUserMessagePreview(),
+                row.lastUserMessageSentAt(),
                 row.participantsCount());
     }
 

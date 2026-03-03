@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
+import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
@@ -35,9 +36,11 @@ public class ChatRoomCommandFacade {
     public ChatRoomEnterResponse enterChatRoom(Long userId, Long roomId) {
         ChatRoom chatRoom = chatRoomService.getChatRoom(roomId);
         Users user = userService.getUser(userId);
+        Long lastSeenMessageId =
+                chatMessageService.getLatestMessage(roomId).map(ChatMessage::getId).orElse(null);
 
         ChatRoomParticipant participant =
-                chatRoomParticipantService.createParticipant(user, chatRoom);
+                chatRoomParticipantService.createParticipant(user, chatRoom, lastSeenMessageId);
 
         eventPublisher.publishEvent(
                 new ChatRoomParticipantEnteredEvent(chatRoom, participant, user));
