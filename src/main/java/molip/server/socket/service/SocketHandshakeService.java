@@ -7,6 +7,7 @@ import molip.server.auth.jwt.JwtTokenProvider;
 import molip.server.auth.jwt.JwtUtil;
 import molip.server.auth.jwt.JwtValidationStatus;
 import molip.server.socket.dto.request.SocketConnectRequest;
+import molip.server.socket.dto.request.SocketPongRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketConnectedResponse;
 import molip.server.socket.dto.response.SocketErrorResponse;
@@ -31,6 +32,7 @@ public class SocketHandshakeService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtUtil jwtUtil;
     private final RedisSocketSessionStore socketSessionStore;
+    private final SocketHandshakeChannelBroadcaster socketHandshakeChannelBroadcaster;
     private final SocketSessionSupport socketSessionSupport;
 
     @Transactional
@@ -39,18 +41,21 @@ public class SocketHandshakeService {
             String sessionId,
             SimpMessageHeaderAccessor headerAccessor) {
         SocketEventResponse<?> invalidRequestResponse = validateConnectRequest(request);
+
         if (invalidRequestResponse != null) {
             return invalidRequestResponse;
         }
 
         String token = stripBearerPrefix(request.accessToken());
         SocketEventResponse<?> invalidTokenFormatResponse = validateAccessTokenFormat(token);
+
         if (invalidTokenFormatResponse != null) {
             return invalidTokenFormatResponse;
         }
 
         JwtValidationStatus tokenStatus = jwtTokenProvider.getAccessTokenStatus(token);
         SocketEventResponse<?> invalidTokenStatusResponse = validateTokenStatus(tokenStatus);
+
         if (invalidTokenStatusResponse != null) {
             return invalidTokenStatusResponse;
         }
@@ -59,6 +64,7 @@ public class SocketHandshakeService {
         String tokenDeviceId = jwtUtil.extractDeviceId(token);
         SocketEventResponse<?> invalidTokenPayloadResponse =
                 validateTokenPayload(userId, tokenDeviceId, request.deviceId());
+
         if (invalidTokenPayloadResponse != null) {
             return invalidTokenPayloadResponse;
         }
@@ -66,6 +72,7 @@ public class SocketHandshakeService {
         String existingSessionId = socketSessionStore.findSessionId(userId, request.deviceId());
         SocketEventResponse<?> duplicateSessionResponse =
                 validateDuplicateSession(existingSessionId, sessionId);
+
         if (duplicateSessionResponse != null) {
             return duplicateSessionResponse;
         }
@@ -77,6 +84,7 @@ public class SocketHandshakeService {
 
         socketSessionSupport.setSessionContext(headerAccessor, sessionContext);
         socketSessionStore.save(sessionId, userId, request.deviceId(), connectedAt);
+        socketHandshakeChannelBroadcaster.sendPing(sessionId, connectedAt);
 
         return SocketEventResponse.of(
                 SOCKET_CONNECTED_EVENT,
@@ -85,7 +93,15 @@ public class SocketHandshakeService {
     }
 
     public void disconnect(String sessionId, SocketSessionContext sessionContext) {
+        socketHandshakeChannelBroadcaster.sendDisconnect(sessionId, "LOGOUT", "로그아웃으로 연결을 종료합니다.");
+
         socketSessionStore.delete(sessionId, sessionContext.userId(), sessionContext.deviceId());
+    }
+
+    public void pong(SocketPongRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        OffsetDateTime lastPongAt = resolveLastPongAt(request);
+
+        socketSessionSupport.updateLastPongAt(headerAccessor, lastPongAt);
     }
 
     public SocketEventResponse<?> subscribeUser(
@@ -165,6 +181,14 @@ public class SocketHandshakeService {
         return OffsetDateTime.now(KOREA_ZONE_ID);
     }
 
+    private OffsetDateTime resolveLastPongAt(SocketPongRequest request) {
+        if (request != null && request.timestamp() != null) {
+            return request.timestamp();
+        }
+
+        return OffsetDateTime.now(KOREA_ZONE_ID);
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
@@ -175,6 +199,7 @@ public class SocketHandshakeService {
         }
 
         String token = bearerToken.substring(7).trim();
+
         return token.isBlank() ? null : token;
     }
 }

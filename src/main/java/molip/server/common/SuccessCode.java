@@ -32,6 +32,7 @@ public enum SuccessCode {
     CHAT_ROOM_MY_LIST_SUCCESS("SUCCESS", "내가 속한 채팅방 검색 결과입니다."),
     CHAT_ROOM_ENTER_SUCCESS("SUCCESS", "채팅방 입장에 성공했습니다."),
     CHAT_MESSAGE_LIST_SUCCESS("SUCCESS", "채팅 메시지 목록입니다."),
+    CHAT_MESSAGE_CREATED("SUCCESS", "메시지가 저장되었습니다."),
 
     SCHEDULE_CREATED("SUCCESS", "일정이 성공적으로 생성되었습니다."),
     DAY_TODO_LIST_SUCCESS("SUCCESS", "금일 TodoList 조회를 완료했습니다."),

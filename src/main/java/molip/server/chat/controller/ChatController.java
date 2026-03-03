@@ -8,6 +8,7 @@ import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
+import molip.server.chat.dto.response.ChatMessageSendCommandResult;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
 import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomCreateResponse;
@@ -208,14 +209,18 @@ public class ChatController implements ChatApi {
         return ResponseEntity.noContent().build();
     }
 
-    @Deprecated
     @PostMapping("/chat-rooms/{roomId}/messages")
     @Override
     public ResponseEntity<ServerResponse<ChatMessageSendResponse>> sendMessageFallback(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long roomId,
             @RequestBody ChatMessageSendRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ChatMessageSendCommandResult result =
+                chatRoomCommandFacade.sendMessageFallback(userId, roomId, request);
+
+        return ResponseEntity.status(result.httpStatus()).body(result.body());
     }
 
     @Deprecated

@@ -63,6 +63,24 @@ public class ChatMessageService {
         return chatMessageRepository.save(message);
     }
 
+    @Transactional
+    public ChatMessage createUserMessage(
+            ChatRoom chatRoom, MessageType messageType, String content, Long senderId) {
+        validateCreateUserMessage(chatRoom, messageType, content, senderId);
+
+        ChatMessage message =
+                new ChatMessage(
+                        chatRoom,
+                        messageType,
+                        normalizeContent(content),
+                        false,
+                        LocalDateTime.now(),
+                        SenderType.USER,
+                        senderId);
+
+        return chatMessageRepository.save(message);
+    }
+
     @Transactional(readOnly = true)
     public void validateMessageInRoom(Long roomId, Long messageId) {
         if (roomId == null || messageId == null) {
@@ -101,5 +119,36 @@ public class ChatMessageService {
                                 cursor, chatRoomId)) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_CURSOR_RANGE);
         }
+    }
+
+    private void validateCreateUserMessage(
+            ChatRoom chatRoom, MessageType messageType, String content, Long senderId) {
+        if (chatRoom == null || messageType == null || senderId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_SEND);
+        }
+
+        boolean hasContent = content != null && !content.isBlank();
+
+        if (messageType == MessageType.SYSTEM || messageType == MessageType.FILE) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_SEND);
+        }
+
+        if ((messageType == MessageType.TEXT || messageType == MessageType.TEXT_WITH_IMAGES)
+                && !hasContent) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_SEND);
+        }
+
+        if (messageType == MessageType.IMAGE && hasContent) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_SEND);
+        }
+    }
+
+    private String normalizeContent(String content) {
+        if (content == null) {
+            return null;
+        }
+
+        String normalized = content.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 }

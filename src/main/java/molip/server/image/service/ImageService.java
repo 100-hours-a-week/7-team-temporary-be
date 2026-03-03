@@ -1,6 +1,7 @@
 package molip.server.image.service;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.ImageType;
@@ -57,6 +58,16 @@ public class ImageService {
     public void deleteStoredImage(ImageType type, String imageKey) {
         String objectKey = resolveObjectKey(type, imageKey);
         s3Service.deleteObject(objectKey);
+    }
+
+    public List<Image> getActiveImagesByUploadKeys(List<String> imageKeys) {
+        if (imageKeys == null || imageKeys.isEmpty()) {
+            return List.of();
+        }
+
+        return imageRepository.findByUploadKeyInAndDeletedAtIsNull(imageKeys).stream()
+                .filter(image -> image.getUploadStatus() == UploadStatus.SUCCESS)
+                .toList();
     }
 
     private String resolveObjectKey(ImageType type, String imageKey) {
