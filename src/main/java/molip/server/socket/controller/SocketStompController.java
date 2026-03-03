@@ -12,7 +12,6 @@ import molip.server.socket.dto.request.SocketRoomSubscribeRequest;
 import molip.server.socket.dto.request.SocketRoomUnsubscribeRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
-import molip.server.socket.dto.response.SocketMessageSendRejectedResponse;
 import molip.server.socket.service.SocketHandshakeService;
 import molip.server.socket.service.SocketRoomMessageService;
 import molip.server.socket.service.SocketRoomSubscriptionService;
@@ -60,28 +59,37 @@ public class SocketStompController {
     }
 
     @MessageMapping("/handshake/pong")
-    public void pong(SocketPongRequest request, SimpMessageHeaderAccessor headerAccessor) {
+    public void pong(
+            SocketPongRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
         socketSessionSupport
                 .getSessionContext(headerAccessor)
-                .ifPresent(sessionContext -> socketHandshakeService.pong(request, headerAccessor));
+                .ifPresentOrElse(
+                        sessionContext -> socketHandshakeService.pong(request, headerAccessor),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
     }
 
     @MessageMapping("/user/subscribe")
     @SendToUser(value = "/queue/user", broadcast = false)
     public SocketEventResponse<?> subscribeUser(
-            SocketUserSubscribeRequest request, SimpMessageHeaderAccessor headerAccessor) {
+            SocketUserSubscribeRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
         return socketSessionSupport
                 .getSessionContext(headerAccessor)
                 .<SocketEventResponse<?>>map(
                         sessionContext ->
                                 socketHandshakeService.subscribeUser(request, sessionContext))
-                .orElseGet(socketHandshakeService::invalidSubscribeState);
+                .orElseGet(() -> reconnectRequired(sessionId));
     }
 
     @MessageMapping("/room/subscribe")
     @SendToUser(value = "/queue/room", broadcast = false)
     public SocketEventResponse<?> subscribeRoom(
-            SocketRoomSubscribeRequest request, SimpMessageHeaderAccessor headerAccessor) {
+            SocketRoomSubscribeRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
 
         return socketSessionSupport
                 .getSessionContext(headerAccessor)
@@ -89,46 +97,54 @@ public class SocketStompController {
                         sessionContext ->
                                 socketRoomSubscriptionService.subscribeRoom(
                                         request, sessionContext, headerAccessor))
-                .orElseGet(socketRoomSubscriptionService::invalidSubscribeState);
+                .orElseGet(() -> reconnectRequired(sessionId));
     }
 
     @MessageMapping("/room/unsubscribe")
     public void unsubscribeRoom(
-            SocketRoomUnsubscribeRequest request, SimpMessageHeaderAccessor headerAccessor) {
+            SocketRoomUnsubscribeRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
         if (request == null) {
             return;
         }
 
         socketSessionSupport
                 .getSessionContext(headerAccessor)
-                .ifPresent(
+                .ifPresentOrElse(
                         sessionContext ->
                                 socketRoomSubscriptionService.unsubscribeRoom(
-                                        request, sessionContext, headerAccessor));
+                                        request, sessionContext, headerAccessor),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
     }
 
     @MessageMapping("/room/last-seen")
     public void updateLastSeenMessage(
-            SocketLastSeenUpdateRequest request, SimpMessageHeaderAccessor headerAccessor) {
+            SocketLastSeenUpdateRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
         if (request == null) {
             return;
         }
 
         socketSessionSupport
                 .getSessionContext(headerAccessor)
-                .ifPresent(
+                .ifPresentOrElse(
                         sessionContext ->
                                 chatRoomCommandFacade.updateLastSeenMessage(
                                         sessionContext.userId(),
                                         request.participantId(),
                                         new UpdateLastReadMessageRequest(
-                                                request.lastSeenMessageId())));
+                                                request.lastSeenMessageId())),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
     }
 
     @MessageMapping("/room/message")
     @SendToUser(value = "/queue/room", broadcast = false)
     public SocketEventResponse<?> sendMessage(
-            SocketMessageSendRequest request, SimpMessageHeaderAccessor headerAccessor) {
+            SocketMessageSendRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
 
         return socketSessionSupport
                 .getSessionContext(headerAccessor)
@@ -136,17 +152,12 @@ public class SocketStompController {
                         sessionContext ->
                                 socketRoomMessageService.sendMessage(
                                         sessionContext.userId(), request))
-                .orElseGet(() -> invalidSendState(request));
+                .orElseGet(() -> reconnectRequired(sessionId));
     }
 
-    private SocketEventResponse<SocketMessageSendRejectedResponse> invalidSendState(
-            SocketMessageSendRequest request) {
-        return SocketEventResponse.of(
-                "message.sendRejected",
-                SocketMessageSendRejectedResponse.of(
-                        request == null ? null : request.idempotencyKey(),
-                        "MESSAGE_SEND_FORBIDDEN",
-                        "인증 완료 후에만 메시지를 전송할 수 있습니다.",
-                        false));
+    private SocketEventResponse<?> reconnectRequired(String sessionId) {
+        socketHandshakeService.requireReconnect(sessionId);
+
+        return null;
     }
 }

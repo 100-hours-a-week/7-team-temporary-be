@@ -111,7 +111,7 @@ class SocketStompControllerTest {
 
         // when
         SocketEventResponse<?> response =
-                socketStompController.subscribeUser(request, headerAccessor);
+                socketStompController.subscribeUser(request, "session-uuid", headerAccessor);
 
         // then
         assertThat(response).isEqualTo(expected);

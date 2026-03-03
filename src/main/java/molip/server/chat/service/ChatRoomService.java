@@ -3,6 +3,8 @@ package molip.server.chat.service;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.event.ChatRoomCreatedEvent;
+import molip.server.chat.event.ChatRoomDeletedEvent;
+import molip.server.chat.event.ChatRoomUpdatedEvent;
 import molip.server.chat.repository.ChatRoomRepository;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -52,6 +54,8 @@ public class ChatRoomService {
         validateDeletePermission(userId, chatRoom);
 
         chatRoom.deleteRoom();
+
+        eventPublisher.publishEvent(new ChatRoomDeletedEvent(chatRoom));
     }
 
     @Transactional
@@ -71,6 +75,8 @@ public class ChatRoomService {
         validateUpdatePermission(userId, chatRoom);
 
         chatRoom.updateRoom(title.trim(), description.trim(), maxParticipants);
+
+        eventPublisher.publishEvent(new ChatRoomUpdatedEvent(chatRoom));
     }
 
     @Transactional(readOnly = true)
