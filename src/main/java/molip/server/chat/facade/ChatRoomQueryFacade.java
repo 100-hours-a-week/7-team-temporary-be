@@ -5,21 +5,26 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import molip.server.chat.dto.response.ChatMessageItemResponse;
 import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomOwnerResponse;
 import molip.server.chat.dto.response.ChatRoomParticipantResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
+import molip.server.chat.dto.response.MessageImageInfoResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.entity.MessageImage;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
+import molip.server.chat.service.MessageImageService;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.enums.ImageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.common.response.CursorResponse;
 import molip.server.common.response.ImageInfoResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
@@ -39,6 +44,7 @@ public class ChatRoomQueryFacade {
     private final ChatRoomService chatRoomService;
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatMessageService chatMessageService;
+    private final MessageImageService messageImageService;
     private final UserImageService userImageService;
     private final ImageService imageService;
 
@@ -133,6 +139,36 @@ public class ChatRoomQueryFacade {
         return PageResponse.of(participationPage, content, page, size);
     }
 
+    public CursorResponse<ChatMessageItemResponse> getMessages(
+            Long userId, Long roomId, Long cursor, int size) {
+        validateChatMessageAccess(userId, roomId);
+
+        Page<ChatMessage> messagePage = chatMessageService.getMessages(roomId, cursor, size);
+
+        List<ChatMessage> messages = messagePage.getContent();
+
+        List<Long> messageIds = messages.stream().map(ChatMessage::getId).toList();
+
+        Map<Long, List<MessageImage>> messageImageMap =
+                messageImageService.getMessageImagesByMessageIds(messageIds);
+
+        List<ChatMessageItemResponse> content =
+                messages.stream()
+                        .map(
+                                message ->
+                                        buildChatMessageItem(
+                                                message,
+                                                messageImageMap.getOrDefault(
+                                                        message.getId(), List.of())))
+                        .toList();
+
+        boolean hasNext = messagePage.hasNext();
+
+        Long nextCursor = hasNext && !messages.isEmpty() ? messages.getLast().getId() : null;
+
+        return new CursorResponse<>(content, nextCursor, hasNext, size);
+    }
+
     public ChatMyRoomItemResponse buildMyChatRoomItem(
             ChatRoomParticipant participation, ChatMessage latestMessage, int participantsCount) {
         ChatRoom chatRoom = participation.getChatRoom();
@@ -170,6 +206,30 @@ public class ChatRoomQueryFacade {
                 toKst(participant.getCreatedAt()));
     }
 
+    private ChatMessageItemResponse buildChatMessageItem(
+            ChatMessage message, List<MessageImage> messageImages) {
+
+        List<MessageImageInfoResponse> images =
+                messageImages.stream().map(this::toMessageImageInfoResponse).toList();
+
+        return ChatMessageItemResponse.of(
+                message.getId(),
+                message.getMessageType(),
+                message.getSenderType(),
+                message.getSenderId(),
+                message.getContent(),
+                images,
+                toKst(message.getSentAt()));
+    }
+
+    private void validateChatMessageAccess(Long userId, Long roomId) {
+        chatRoomService.getChatRoom(roomId);
+
+        chatRoomParticipantService
+                .getActiveParticipant(roomId, userId)
+                .orElseThrow(() -> new BaseException(ErrorCode.FORBIDDEN_CHAT_ACCESS));
+    }
+
     private ImageInfoResponse getProfileImage(Long userId) {
         return userImageService
                 .getLatestUserImage(userId)
@@ -184,6 +244,18 @@ public class ChatRoomQueryFacade {
 
     private ImageInfoResponse toImageInfoResponse(ImageGetUrlResponse response) {
         return ImageInfoResponse.of(response.url(), response.expiresAt(), response.imageKey());
+    }
+
+    private MessageImageInfoResponse toMessageImageInfoResponse(MessageImage messageImage) {
+        ImageGetUrlResponse response =
+                imageService.issueGetUrlWithoutValidation(
+                        ImageType.MESSAGES, messageImage.getImage().getUploadKey());
+
+        return MessageImageInfoResponse.of(
+                response.url(),
+                response.expiresAt(),
+                response.imageKey(),
+                messageImage.getSortOrder());
     }
 
     private OffsetDateTime toKst(java.time.LocalDateTime dateTime) {

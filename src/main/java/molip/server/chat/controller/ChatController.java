@@ -140,14 +140,20 @@ public class ChatController implements ChatApi {
                 ServerResponse.success(SuccessCode.CHAT_ROOM_ENTER_SUCCESS, response));
     }
 
-    @Deprecated
     @GetMapping("/chat-rooms/{roomId}/message")
     @Override
     public ResponseEntity<ServerResponse<CursorResponse<ChatMessageItemResponse>>> getMessages(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long roomId,
             @RequestParam(required = false) Long cursor,
             @RequestParam(required = false, defaultValue = "50") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        CursorResponse<ChatMessageItemResponse> response =
+                chatRoomQueryFacade.getMessages(userId, roomId, cursor, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CHAT_MESSAGE_LIST_SUCCESS, response));
     }
 
     @Deprecated

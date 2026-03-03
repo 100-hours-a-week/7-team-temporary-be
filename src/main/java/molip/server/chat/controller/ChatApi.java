@@ -242,7 +242,7 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<CursorResponse<ChatMessageItemResponse>>> getMessages(
-            Long roomId, Long cursor, int size);
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long cursor, int size);
 
     @Operation(summary = "카메라 상태 변경")
     @SecurityRequirement(name = "JWT")
