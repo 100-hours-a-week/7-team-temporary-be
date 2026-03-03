@@ -16,6 +16,7 @@ import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.event.ChatMessageSentEvent;
+import molip.server.chat.event.ChatMessageUpdatedEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
 import molip.server.chat.redis.idempotency.ChatMessageIdempotencyRecord;
 import molip.server.chat.redis.idempotency.RedisChatMessageIdempotencyStore;
@@ -141,9 +142,12 @@ public class ChatRoomCommandFacade {
     @Transactional
     public void updateMessage(Long userId, Long roomId, Long messageId, String content) {
         validateUpdateMessageRequest(userId, roomId, messageId, content);
+
         validateSendMessageAccess(userId, roomId);
 
-        chatMessageService.updateMessage(userId, roomId, messageId, content);
+        ChatMessage message = chatMessageService.updateMessage(userId, roomId, messageId, content);
+
+        eventPublisher.publishEvent(new ChatMessageUpdatedEvent(message));
     }
 
     private ChatRoomParticipant getOwnedParticipant(Long userId, Long participantId) {
