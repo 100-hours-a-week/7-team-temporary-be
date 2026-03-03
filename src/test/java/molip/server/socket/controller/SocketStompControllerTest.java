@@ -15,6 +15,7 @@ import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.service.SocketHandshakeService;
 import molip.server.socket.service.SocketRoomMessageService;
+import molip.server.socket.service.SocketRoomSubscriptionService;
 import molip.server.socket.session.SocketSessionContext;
 import molip.server.socket.session.SocketSessionSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +33,7 @@ class SocketStompControllerTest {
 
     @Mock private ChatRoomCommandFacade chatRoomCommandFacade;
     @Mock private SocketHandshakeService socketHandshakeService;
+    @Mock private SocketRoomSubscriptionService socketRoomSubscriptionService;
     @Mock private SocketRoomMessageService socketRoomMessageService;
     @Mock private SocketSessionSupport socketSessionSupport;
 
@@ -41,6 +43,7 @@ class SocketStompControllerTest {
                 new SocketStompController(
                         chatRoomCommandFacade,
                         socketHandshakeService,
+                        socketRoomSubscriptionService,
                         socketRoomMessageService,
                         socketSessionSupport);
     }

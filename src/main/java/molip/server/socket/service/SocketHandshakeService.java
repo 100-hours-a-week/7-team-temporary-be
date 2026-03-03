@@ -39,18 +39,21 @@ public class SocketHandshakeService {
             String sessionId,
             SimpMessageHeaderAccessor headerAccessor) {
         SocketEventResponse<?> invalidRequestResponse = validateConnectRequest(request);
+
         if (invalidRequestResponse != null) {
             return invalidRequestResponse;
         }
 
         String token = stripBearerPrefix(request.accessToken());
         SocketEventResponse<?> invalidTokenFormatResponse = validateAccessTokenFormat(token);
+
         if (invalidTokenFormatResponse != null) {
             return invalidTokenFormatResponse;
         }
 
         JwtValidationStatus tokenStatus = jwtTokenProvider.getAccessTokenStatus(token);
         SocketEventResponse<?> invalidTokenStatusResponse = validateTokenStatus(tokenStatus);
+
         if (invalidTokenStatusResponse != null) {
             return invalidTokenStatusResponse;
         }
@@ -59,6 +62,7 @@ public class SocketHandshakeService {
         String tokenDeviceId = jwtUtil.extractDeviceId(token);
         SocketEventResponse<?> invalidTokenPayloadResponse =
                 validateTokenPayload(userId, tokenDeviceId, request.deviceId());
+
         if (invalidTokenPayloadResponse != null) {
             return invalidTokenPayloadResponse;
         }
@@ -66,6 +70,7 @@ public class SocketHandshakeService {
         String existingSessionId = socketSessionStore.findSessionId(userId, request.deviceId());
         SocketEventResponse<?> duplicateSessionResponse =
                 validateDuplicateSession(existingSessionId, sessionId);
+
         if (duplicateSessionResponse != null) {
             return duplicateSessionResponse;
         }
@@ -175,6 +180,7 @@ public class SocketHandshakeService {
         }
 
         String token = bearerToken.substring(7).trim();
+
         return token.isBlank() ? null : token;
     }
 }
