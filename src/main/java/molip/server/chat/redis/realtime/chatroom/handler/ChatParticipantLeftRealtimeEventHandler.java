@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
+import molip.server.chat.dto.response.ChatParticipantLeftResponse;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimeEnvelope;
 import molip.server.socket.dto.response.SocketEventResponse;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -13,9 +13,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ChatLastSeenUpdatedRealtimeEventHandler implements ChatRoomRealtimeEventHandler {
+public class ChatParticipantLeftRealtimeEventHandler implements ChatRoomRealtimeEventHandler {
 
-    private static final String EVENT_TYPE = "lastSeenUpdated";
+    private static final String EVENT_TYPE = "participant.left";
 
     private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate simpMessagingTemplate;
@@ -28,16 +28,16 @@ public class ChatLastSeenUpdatedRealtimeEventHandler implements ChatRoomRealtime
     @Override
     public void handle(ChatRoomRealtimeEnvelope envelope) {
         try {
-            ChatLastSeenUpdatedResponse payload =
+            ChatParticipantLeftResponse payload =
                     objectMapper.readValue(
-                            envelope.payloadJson(), ChatLastSeenUpdatedResponse.class);
+                            envelope.payloadJson(), ChatParticipantLeftResponse.class);
 
             log.info(
-                    "broadcast room event: eventType={}, roomId={}, participantId={}, lastSeenMessageId={}",
+                    "broadcast room event: eventType={}, roomId={}, participantId={}, userId={}",
                     EVENT_TYPE,
                     envelope.roomId(),
                     payload.participantId(),
-                    payload.lastSeenMessageId());
+                    payload.userId());
             simpMessagingTemplate.convertAndSend(
                     "/sub/room/" + envelope.roomId(), SocketEventResponse.of(EVENT_TYPE, payload));
         } catch (JsonProcessingException ignored) {

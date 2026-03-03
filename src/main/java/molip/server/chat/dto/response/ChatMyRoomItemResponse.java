@@ -14,16 +14,16 @@ public record ChatMyRoomItemResponse(
         @Schema(description = "최대 인원", example = "10") int maxParticipants,
         @Schema(description = "참여자 수", example = "2") int participantsCount,
         @Schema(description = "안 읽은 메시지 수", example = "3") int unreadCount,
-        @Schema(description = "마지막 메시지 미리보기", example = "안녕하세요") String lastMessagePreview,
-        @Schema(description = "마지막 메시지 전송 시각", example = "2026-01-13T19:20:10+09:00")
-                OffsetDateTime lastMessageSentAt) {
+        @Schema(description = "마지막 사용자 메시지 미리보기", example = "안녕하세요") String lastUserMessagePreview,
+        @Schema(description = "마지막 사용자 메시지 전송 시각", example = "2026-01-13T19:20:10+09:00")
+                OffsetDateTime lastUserMessageSentAt) {
 
     public static ChatMyRoomItemResponse of(
             ChatRoom chatRoom,
             int participantsCount,
             int unreadCount,
-            String lastMessagePreview,
-            OffsetDateTime lastMessageSentAt) {
+            String lastUserMessagePreview,
+            OffsetDateTime lastUserMessageSentAt) {
         return new ChatMyRoomItemResponse(
                 chatRoom.getId(),
                 chatRoom.getType(),
@@ -32,7 +32,7 @@ public record ChatMyRoomItemResponse(
                 chatRoom.getMaxParticipants(),
                 participantsCount,
                 unreadCount,
-                lastMessagePreview,
-                lastMessageSentAt);
+                lastUserMessagePreview,
+                lastUserMessageSentAt);
     }
 }

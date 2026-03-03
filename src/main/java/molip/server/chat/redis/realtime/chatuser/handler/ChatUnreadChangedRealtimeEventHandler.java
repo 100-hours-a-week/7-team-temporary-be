@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import molip.server.auth.store.redis.RedisDeviceStore;
 import molip.server.chat.redis.realtime.chatuser.ChatUserRealtimeEnvelope;
 import molip.server.socket.dto.response.SocketUnreadChangedResponse;
@@ -11,6 +12,7 @@ import molip.server.socket.service.SocketUserChannelBroadcaster;
 import molip.server.socket.store.RedisSocketSessionStore;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ChatUnreadChangedRealtimeEventHandler implements ChatUserRealtimeEventHandler {
@@ -35,6 +37,11 @@ public class ChatUnreadChangedRealtimeEventHandler implements ChatUserRealtimeEv
                             envelope.payloadJson(), SocketUnreadChangedResponse.class);
 
             Set<String> deviceIds = deviceStore.listDevices(envelope.userId());
+            log.info(
+                    "broadcast user event: eventType={}, userId={}, deviceCount={}",
+                    EVENT_TYPE,
+                    envelope.userId(),
+                    deviceIds.size());
 
             for (String deviceId : deviceIds) {
                 String sessionId = socketSessionStore.findSessionId(envelope.userId(), deviceId);
@@ -42,6 +49,12 @@ public class ChatUnreadChangedRealtimeEventHandler implements ChatUserRealtimeEv
                     continue;
                 }
 
+                log.info(
+                        "send unreadChanged to session: userId={}, deviceId={}, sessionId={}, roomId={}",
+                        envelope.userId(),
+                        deviceId,
+                        sessionId,
+                        payload.roomId());
                 socketUserChannelBroadcaster.sendUnreadChanged(sessionId, payload);
             }
         } catch (JsonProcessingException ignored) {

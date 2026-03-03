@@ -330,9 +330,10 @@ public interface ChatApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> leaveChatRoom(Long roomId, Long participantId);
+    ResponseEntity<Void> leaveChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long participantId);
 
-    @Operation(summary = "마지막으로 본 채팅 메시지 수정")
+    @Operation(summary = "마지막으로 본 채팅 메시지 수정(REST fallback)")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "마지막으로 본 메시지 수정 성공"),

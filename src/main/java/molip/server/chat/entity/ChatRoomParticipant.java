@@ -37,13 +37,19 @@ public class ChatRoomParticipant extends BaseEntity {
 
     private LocalDateTime leftAt;
 
-    public ChatRoomParticipant(Users user, ChatRoom chatRoom, boolean cameraEnabled) {
+    public ChatRoomParticipant(
+            Users user, ChatRoom chatRoom, Long lastSeenMessageId, boolean cameraEnabled) {
         this.user = user;
         this.chatRoom = chatRoom;
+        this.lastSeenMessageId = lastSeenMessageId;
         this.cameraEnabled = cameraEnabled;
     }
 
     public void updateLastSeenMessageId(Long lastSeenMessageId) {
         this.lastSeenMessageId = lastSeenMessageId;
+    }
+
+    public void leave() {
+        this.leftAt = LocalDateTime.now();
     }
 }

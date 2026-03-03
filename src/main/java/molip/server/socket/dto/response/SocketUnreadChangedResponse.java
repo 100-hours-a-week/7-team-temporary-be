@@ -7,8 +7,8 @@ public record SocketUnreadChangedResponse(
         Long userId,
         Long roomId,
         int unreadCount,
-        String lastMessagePreview,
-        OffsetDateTime lastMessageSentAt,
+        String lastUserMessagePreview,
+        OffsetDateTime lastUserMessageSentAt,
         int participantsCount) {
 
     public static SocketUnreadChangedResponse of(
@@ -16,16 +16,16 @@ public record SocketUnreadChangedResponse(
             Long userId,
             Long roomId,
             int unreadCount,
-            String lastMessagePreview,
-            OffsetDateTime lastMessageSentAt,
+            String lastUserMessagePreview,
+            OffsetDateTime lastUserMessageSentAt,
             int participantsCount) {
         return new SocketUnreadChangedResponse(
                 eventId,
                 userId,
                 roomId,
                 unreadCount,
-                lastMessagePreview,
-                lastMessageSentAt,
+                lastUserMessagePreview,
+                lastUserMessageSentAt,
                 participantsCount);
     }
 }
