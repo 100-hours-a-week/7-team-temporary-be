@@ -13,6 +13,7 @@ import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomCreateResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
+import molip.server.chat.dto.response.ChatRoomOwnerCheckResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.facade.ChatRoomCommandFacade;
@@ -96,6 +97,20 @@ public class ChatController implements ChatApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_DETAIL_SUCCESS, response));
+    }
+
+    @GetMapping("/chat-rooms/{roomId}/owner/{ownerId}")
+    @Override
+    public ResponseEntity<ServerResponse<ChatRoomOwnerCheckResponse>> checkOwner(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long roomId,
+            @PathVariable Long ownerId) {
+
+        ChatRoomOwnerCheckResponse response = chatRoomQueryFacade.checkOwner(roomId, ownerId);
+
+        String message = response.isOwner() ? "해당 사용자는 방장입니다." : "해당 사용자는 방장이 아닙니다.";
+
+        return ResponseEntity.ok(new ServerResponse<>("SUCCESS", message, response));
     }
 
     @GetMapping("/chat-rooms")
