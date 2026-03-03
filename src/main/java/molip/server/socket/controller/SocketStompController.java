@@ -6,9 +6,11 @@ import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
 import molip.server.socket.dto.request.SocketLastSeenUpdateRequest;
+import molip.server.socket.dto.request.SocketMessageSendRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.service.SocketHandshakeService;
+import molip.server.socket.service.SocketRoomMessageService;
 import molip.server.socket.session.SocketSessionSupport;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -22,6 +24,7 @@ public class SocketStompController {
 
     private final ChatRoomCommandFacade chatRoomCommandFacade;
     private final SocketHandshakeService socketHandshakeService;
+    private final SocketRoomMessageService socketRoomMessageService;
     private final SocketSessionSupport socketSessionSupport;
 
     @MessageMapping("/handshake/connect")
@@ -77,5 +80,27 @@ public class SocketStompController {
                                         request.participantId(),
                                         new UpdateLastReadMessageRequest(
                                                 request.lastSeenMessageId())));
+    }
+
+    @MessageMapping("/room/message")
+    @SendToUser(value = "/queue/room", broadcast = false)
+    public SocketEventResponse<?> sendMessage(
+            SocketMessageSendRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        return socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .<SocketEventResponse<?>>map(
+                        sessionContext ->
+                                socketRoomMessageService.sendMessage(
+                                        sessionContext.userId(), request))
+                .orElseGet(
+                        () ->
+                                SocketEventResponse.of(
+                                        "message.sendRejected",
+                                        molip.server.socket.dto.response
+                                                .SocketMessageSendRejectedResponse.of(
+                                                request == null ? null : request.idempotencyKey(),
+                                                "MESSAGE_SEND_FORBIDDEN",
+                                                "인증 완료 후에만 메시지를 전송할 수 있습니다.",
+                                                false)));
     }
 }
