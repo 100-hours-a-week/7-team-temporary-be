@@ -3,26 +3,20 @@ package molip.server.chat.redis.realtime.chatroom;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
-import molip.server.chat.dto.response.ChatMessageCreatedResponse;
-import molip.server.chat.dto.response.ChatParticipantJoinedResponse;
-import molip.server.socket.dto.response.SocketEventResponse;
+import molip.server.chat.redis.realtime.chatroom.handler.ChatRoomRealtimeEventHandler;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class ChatRoomRealtimeSubscriber implements MessageListener {
 
-    private static final String PARTICIPANT_JOINED_EVENT = "participant.joined";
-    private static final String MESSAGE_CREATED_EVENT = "message.created";
-    private static final String LAST_SEEN_UPDATED_EVENT = "lastSeenUpdated";
-
     private final ObjectMapper objectMapper;
-    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final List<ChatRoomRealtimeEventHandler> handlers;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
@@ -31,37 +25,15 @@ public class ChatRoomRealtimeSubscriber implements MessageListener {
             ChatRoomRealtimeEnvelope envelope =
                     objectMapper.readValue(body, ChatRoomRealtimeEnvelope.class);
 
-            if (PARTICIPANT_JOINED_EVENT.equals(envelope.eventType())) {
-                ChatParticipantJoinedResponse payload =
-                        objectMapper.readValue(
-                                envelope.payloadJson(), ChatParticipantJoinedResponse.class);
-                broadcast(envelope.roomId(), PARTICIPANT_JOINED_EVENT, payload);
-                return;
-            }
-
-            if (MESSAGE_CREATED_EVENT.equals(envelope.eventType())) {
-                ChatMessageCreatedResponse payload =
-                        objectMapper.readValue(
-                                envelope.payloadJson(), ChatMessageCreatedResponse.class);
-
-                broadcast(envelope.roomId(), MESSAGE_CREATED_EVENT, payload);
-                return;
-            }
-
-            if (LAST_SEEN_UPDATED_EVENT.equals(envelope.eventType())) {
-                ChatLastSeenUpdatedResponse payload =
-                        objectMapper.readValue(
-                                envelope.payloadJson(), ChatLastSeenUpdatedResponse.class);
-
-                broadcast(envelope.roomId(), LAST_SEEN_UPDATED_EVENT, payload);
-            }
+            findHandler(envelope.eventType()).ifPresent(handler -> handler.handle(envelope));
         } catch (JsonProcessingException ignored) {
 
         }
     }
 
-    private void broadcast(Long roomId, String event, Object payload) {
-        simpMessagingTemplate.convertAndSend(
-                "/sub/room/" + roomId, SocketEventResponse.of(event, payload));
+    private Optional<ChatRoomRealtimeEventHandler> findHandler(String eventType) {
+        return handlers.stream()
+                .filter(handler -> handler.eventType().equals(eventType))
+                .findFirst();
     }
 }
