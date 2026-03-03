@@ -16,6 +16,7 @@ import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.event.ChatMessageSentEvent;
+import molip.server.chat.event.ChatMessageUpdatedEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
 import molip.server.chat.redis.idempotency.ChatMessageIdempotencyRecord;
 import molip.server.chat.redis.idempotency.RedisChatMessageIdempotencyStore;
@@ -138,6 +139,17 @@ public class ChatRoomCommandFacade {
                         request.lastSeenMessageId()));
     }
 
+    @Transactional
+    public void updateMessage(Long userId, Long roomId, Long messageId, String content) {
+        validateUpdateMessageRequest(userId, roomId, messageId, content);
+
+        validateSendMessageAccess(userId, roomId);
+
+        ChatMessage message = chatMessageService.updateMessage(userId, roomId, messageId, content);
+
+        eventPublisher.publishEvent(new ChatMessageUpdatedEvent(message));
+    }
+
     private ChatRoomParticipant getOwnedParticipant(Long userId, Long participantId) {
         if (userId == null || participantId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
@@ -164,6 +176,18 @@ public class ChatRoomCommandFacade {
                 || request.idempotencyKey().isBlank()
                 || request.messageType() == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_SEND);
+        }
+    }
+
+    private void validateUpdateMessageRequest(
+            Long userId, Long roomId, Long messageId, String content) {
+
+        if (userId == null
+                || roomId == null
+                || messageId == null
+                || content == null
+                || content.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_UPDATE);
         }
     }
 

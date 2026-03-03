@@ -1,12 +1,13 @@
-package molip.server.chat.dto.response;
+package molip.server.socket.dto.response;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import molip.server.chat.dto.response.MessageImageInfoResponse;
 import molip.server.common.enums.MessageType;
 import molip.server.common.enums.SenderType;
 import molip.server.common.response.ImageInfoResponse;
 
-public record ChatMessageCreatedResponse(
+public record SocketMessageUpdatedResponse(
         String eventId,
         Long messageId,
         Long roomId,
@@ -17,9 +18,9 @@ public record ChatMessageCreatedResponse(
         ImageInfoResponse senderProfile,
         String content,
         List<MessageImageInfoResponse> images,
-        OffsetDateTime sentAt) {
+        OffsetDateTime editedAt) {
 
-    public static ChatMessageCreatedResponse of(
+    public static SocketMessageUpdatedResponse of(
             String eventId,
             Long messageId,
             Long roomId,
@@ -30,9 +31,9 @@ public record ChatMessageCreatedResponse(
             ImageInfoResponse senderProfile,
             String content,
             List<MessageImageInfoResponse> images,
-            OffsetDateTime sentAt) {
+            OffsetDateTime editedAt) {
 
-        return new ChatMessageCreatedResponse(
+        return new SocketMessageUpdatedResponse(
                 eventId,
                 messageId,
                 roomId,
@@ -43,6 +44,6 @@ public record ChatMessageCreatedResponse(
                 senderProfile,
                 content,
                 images,
-                sentAt);
+                editedAt);
     }
 }
