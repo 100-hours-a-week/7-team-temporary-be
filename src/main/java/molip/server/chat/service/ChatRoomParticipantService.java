@@ -56,6 +56,11 @@ public class ChatRoomParticipantService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<ChatRoomParticipant> findById(Long participantId) {
+        return chatRoomParticipantRepository.findById(participantId);
+    }
+
+    @Transactional(readOnly = true)
     public Map<Long, Integer> countActiveParticipantsByChatRoomIds(List<Long> chatRoomIds) {
         if (chatRoomIds == null || chatRoomIds.isEmpty()) {
             return Collections.emptyMap();
@@ -77,6 +82,13 @@ public class ChatRoomParticipantService {
 
         return chatRoomParticipantRepository.findActiveParticipationsByUserIdAndChatRoomType(
                 userId, type, PageRequest.of(page - 1, size));
+    }
+
+    @Transactional
+    public void updateLastSeenMessageId(ChatRoomParticipant participant, Long lastSeenMessageId) {
+        validateUpdateLastSeenMessageId(participant, lastSeenMessageId);
+
+        participant.updateLastSeenMessageId(lastSeenMessageId);
     }
 
     private void validateCreateParticipant(Users user, ChatRoom chatRoom) {
@@ -105,6 +117,18 @@ public class ChatRoomParticipantService {
 
         if (page <= 0 || size <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+        }
+    }
+
+    private void validateUpdateLastSeenMessageId(
+            ChatRoomParticipant participant, Long lastSeenMessageId) {
+        if (participant == null || lastSeenMessageId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (participant.getLastSeenMessageId() != null
+                && lastSeenMessageId < participant.getLastSeenMessageId()) {
+            throw new BaseException(ErrorCode.CONFLICT_LAST_SEEN_DECREASE);
         }
     }
 }

@@ -333,7 +333,9 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<Void> updateLastSeenMessage(
-            Long participantId, UpdateLastReadMessageRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long participantId,
+            UpdateLastReadMessageRequest request);
 
     @Operation(summary = "메시지 전송(REST fallback)")
     @SecurityRequirement(name = "JWT")

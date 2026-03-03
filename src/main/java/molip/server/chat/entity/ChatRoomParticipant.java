@@ -42,4 +42,8 @@ public class ChatRoomParticipant extends BaseEntity {
         this.chatRoom = chatRoom;
         this.cameraEnabled = cameraEnabled;
     }
+
+    public void updateLastSeenMessageId(Long lastSeenMessageId) {
+        this.lastSeenMessageId = lastSeenMessageId;
+    }
 }
