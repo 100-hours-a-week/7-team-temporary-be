@@ -8,6 +8,10 @@ import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.repository.ChatMessageRepository;
 import molip.server.common.enums.MessageType;
 import molip.server.common.enums.SenderType;
+import molip.server.common.exception.BaseException;
+import molip.server.common.exception.ErrorCode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,5 +53,33 @@ public class ChatMessageService {
                         null);
 
         return chatMessageRepository.save(message);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ChatMessage> getMessages(Long chatRoomId, Long cursor, int size) {
+        validateGetMessages(chatRoomId, cursor, size);
+
+        if (cursor == null) {
+            return chatMessageRepository
+                    .findByChatRoomIdAndDeletedAtIsNullAndIsDeletedFalseOrderByIdDesc(
+                            chatRoomId, PageRequest.of(0, size));
+        } else {
+            return chatMessageRepository
+                    .findByChatRoomIdAndDeletedAtIsNullAndIsDeletedFalseAndIdLessThanOrderByIdDesc(
+                            chatRoomId, cursor, PageRequest.of(0, size));
+        }
+    }
+
+    private void validateGetMessages(Long chatRoomId, Long cursor, int size) {
+        if (chatRoomId == null || size <= 0) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+        }
+
+        if (cursor != null
+                && !chatMessageRepository
+                        .existsByIdAndChatRoomIdAndDeletedAtIsNullAndIsDeletedFalse(
+                                cursor, chatRoomId)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_CURSOR_RANGE);
+        }
     }
 }

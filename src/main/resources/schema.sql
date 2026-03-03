@@ -235,7 +235,7 @@ CREATE TABLE IF NOT EXISTS chat_room_participant (
   CONSTRAINT fk_chat_room_participant_room_id FOREIGN KEY (chat_room_id) REFERENCES chat_room(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS message (
+CREATE TABLE IF NOT EXISTS chat_message (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   chat_room_id BIGINT NOT NULL,
   message_type VARCHAR(20) NOT NULL,
@@ -260,7 +260,7 @@ CREATE TABLE IF NOT EXISTS message_image (
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_message_image_message_deleted (message_id, deleted_at),
-  CONSTRAINT fk_message_image_message_id FOREIGN KEY (message_id) REFERENCES message(id),
+  CONSTRAINT fk_message_image_message_id FOREIGN KEY (message_id) REFERENCES chat_message(id),
   CONSTRAINT fk_message_image_image_id FOREIGN KEY (image_id) REFERENCES image(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
