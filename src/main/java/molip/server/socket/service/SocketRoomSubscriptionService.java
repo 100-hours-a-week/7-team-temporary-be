@@ -24,6 +24,7 @@ public class SocketRoomSubscriptionService {
     private static final String SUBSCRIBED_ROOM_EVENT = "subscribed.room";
 
     private final ChatRoomParticipantService chatRoomParticipantService;
+    private final SocketHandshakeChannelBroadcaster socketHandshakeChannelBroadcaster;
     private final SocketSessionSupport socketSessionSupport;
 
     public SocketEventResponse<?> subscribeRoom(
@@ -31,14 +32,19 @@ public class SocketRoomSubscriptionService {
             SocketSessionContext sessionContext,
             SimpMessageHeaderAccessor headerAccessor) {
 
-        SocketEventResponse<?> invalidRequestResponse =
+        RoomSubscriptionValidationResult validationResult =
                 validateSubscribeRoomRequest(request, sessionContext);
 
-        if (invalidRequestResponse != null) {
-            return invalidRequestResponse;
+        if (!validationResult.isSuccess()) {
+            return error(validationResult.code(), validationResult.message(), false);
         }
 
         socketSessionSupport.subscribeRoom(headerAccessor, request.roomId());
+        socketHandshakeChannelBroadcaster.sendResyncRequired(
+                headerAccessor.getSessionId(),
+                "room",
+                request.roomId(),
+                validationResult.participant().getLastSeenMessageId());
 
         return SocketEventResponse.of(
                 SUBSCRIBED_ROOM_EVENT,
@@ -66,28 +72,32 @@ public class SocketRoomSubscriptionService {
         return error("ROOM_SUBSCRIBE_INVALID_STATE", "인증 완료 후에만 방 채널을 구독할 수 있습니다.", false);
     }
 
-    private SocketEventResponse<?> validateSubscribeRoomRequest(
+    private RoomSubscriptionValidationResult validateSubscribeRoomRequest(
             SocketRoomSubscribeRequest request, SocketSessionContext sessionContext) {
         if (request == null || request.roomId() == null || request.participantId() == null) {
-            return error("ROOM_SUBSCRIBE_INVALID_STATE", "구독 요청 정보가 올바르지 않습니다.", false);
+            return RoomSubscriptionValidationResult.failure(
+                    "ROOM_SUBSCRIBE_INVALID_STATE", "구독 요청 정보가 올바르지 않습니다.");
         }
 
         ChatRoomParticipant participant = getParticipant(request.participantId());
 
         if (participant == null) {
-            return error("ROOM_SUBSCRIBE_NOT_FOUND", "참가자 정보를 찾을 수 없습니다.", false);
+            return RoomSubscriptionValidationResult.failure(
+                    "ROOM_SUBSCRIBE_NOT_FOUND", "참가자 정보를 찾을 수 없습니다.");
         }
 
         if (!participant.getChatRoom().getId().equals(request.roomId())) {
-            return error("ROOM_SUBSCRIBE_NOT_FOUND", "채팅방 정보를 찾을 수 없습니다.", false);
+            return RoomSubscriptionValidationResult.failure(
+                    "ROOM_SUBSCRIBE_NOT_FOUND", "채팅방 정보를 찾을 수 없습니다.");
         }
 
         if (!participant.getUser().getId().equals(sessionContext.userId())
                 || participant.getLeftAt() != null) {
-            return error("ROOM_SUBSCRIBE_FORBIDDEN", "해당 방 채널을 구독할 권한이 없습니다.", false);
+            return RoomSubscriptionValidationResult.failure(
+                    "ROOM_SUBSCRIBE_FORBIDDEN", "해당 방 채널을 구독할 권한이 없습니다.");
         }
 
-        return null;
+        return RoomSubscriptionValidationResult.success(participant);
     }
 
     private Long validateUnsubscribeRoomRequest(
@@ -122,5 +132,21 @@ public class SocketRoomSubscriptionService {
             String code, String message, boolean retryable) {
         return SocketEventResponse.of(
                 SOCKET_ERROR_EVENT, SocketErrorResponse.of(code, message, retryable));
+    }
+
+    private record RoomSubscriptionValidationResult(
+            ChatRoomParticipant participant, String code, String message) {
+
+        private static RoomSubscriptionValidationResult success(ChatRoomParticipant participant) {
+            return new RoomSubscriptionValidationResult(participant, null, null);
+        }
+
+        private static RoomSubscriptionValidationResult failure(String code, String message) {
+            return new RoomSubscriptionValidationResult(null, code, message);
+        }
+
+        private boolean isSuccess() {
+            return participant != null;
+        }
     }
 }

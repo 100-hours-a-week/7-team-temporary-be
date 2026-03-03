@@ -7,6 +7,7 @@ import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
 import molip.server.socket.dto.request.SocketLastSeenUpdateRequest;
 import molip.server.socket.dto.request.SocketMessageSendRequest;
+import molip.server.socket.dto.request.SocketPongRequest;
 import molip.server.socket.dto.request.SocketRoomSubscribeRequest;
 import molip.server.socket.dto.request.SocketRoomUnsubscribeRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
@@ -56,6 +57,13 @@ public class SocketStompController {
                 .ifPresent(
                         sessionContext ->
                                 socketHandshakeService.disconnect(sessionId, sessionContext));
+    }
+
+    @MessageMapping("/handshake/pong")
+    public void pong(SocketPongRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresent(sessionContext -> socketHandshakeService.pong(request, headerAccessor));
     }
 
     @MessageMapping("/user/subscribe")

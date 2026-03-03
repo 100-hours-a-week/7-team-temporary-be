@@ -1,5 +1,6 @@
 package molip.server.socket.session;
 
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,6 +14,7 @@ public class SocketSessionSupport {
 
     private static final String SOCKET_SESSION_CONTEXT_KEY = "socketSessionContext";
     private static final String SUBSCRIBED_ROOM_IDS_KEY = "subscribedRoomIds";
+    private static final String LAST_PONG_AT_KEY = "lastPongAt";
 
     public void setSessionContext(
             SimpMessageHeaderAccessor headerAccessor, SocketSessionContext sessionContext) {
@@ -44,6 +46,25 @@ public class SocketSessionSupport {
         Set<Long> subscribedRoomIds = getOrCreateSubscribedRoomIds(headerAccessor);
 
         return subscribedRoomIds.remove(roomId);
+    }
+
+    public void updateLastPongAt(
+            SimpMessageHeaderAccessor headerAccessor, OffsetDateTime lastPongAt) {
+        Map<String, Object> sessionAttributes = getOrCreateSessionAttributes(headerAccessor);
+
+        sessionAttributes.put(LAST_PONG_AT_KEY, lastPongAt);
+    }
+
+    public Optional<OffsetDateTime> getLastPongAt(SimpMessageHeaderAccessor headerAccessor) {
+        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
+
+        if (sessionAttributes == null) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(sessionAttributes.get(LAST_PONG_AT_KEY))
+                .filter(OffsetDateTime.class::isInstance)
+                .map(OffsetDateTime.class::cast);
     }
 
     private Map<String, Object> getOrCreateSessionAttributes(
