@@ -92,6 +92,13 @@ public class ChatRoomCommandFacade {
                 chatMessageService.createUserMessage(
                         chatRoom, finalMessageType, request.content(), userId);
 
+        chatRoomParticipantService
+                .getActiveParticipant(roomId, userId)
+                .ifPresent(
+                        participant ->
+                                chatRoomParticipantService.updateLastSeenMessageId(
+                                        participant, message.getId()));
+
         messageImageService.createMessageImages(message, images);
 
         ChatMessageSendResponse response =
