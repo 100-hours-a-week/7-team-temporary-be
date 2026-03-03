@@ -125,6 +125,7 @@ public enum ErrorCode {
     CONFLICT_ALREADY_LEFT(HttpStatus.CONFLICT, "CONFLICT", "이미 퇴장한 사용자입니다."),
     CONFLICT_MESSAGE_NOT_IN_ROOM(HttpStatus.CONFLICT, "CONFLICT", "해당 채팅방에 존재하지 않는 메시지입니다."),
     CONFLICT_LAST_SEEN_DECREASE(HttpStatus.CONFLICT, "CONFLICT", "lastSeenMessageId는 감소시킬 수 없습니다."),
+    OWNER_NOT_FOUND(HttpStatus.NOT_FOUND, "OWNER_NOT_FOUND", "해당 방장을 찾을 수 없습니다."),
 
     // Schedule
     CONFLICT_TIME_OVERLAP(HttpStatus.CONFLICT, "CONFLICT", "해당 시간대에 이미 일정이 존재합니다."),

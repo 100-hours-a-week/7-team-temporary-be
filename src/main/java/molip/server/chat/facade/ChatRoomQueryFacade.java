@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
 import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
+import molip.server.chat.dto.response.ChatRoomOwnerCheckResponse;
 import molip.server.chat.dto.response.ChatRoomOwnerResponse;
 import molip.server.chat.dto.response.ChatRoomParticipantResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
@@ -32,6 +33,7 @@ import molip.server.image.service.ImageService;
 import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserImageService;
+import molip.server.user.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +48,7 @@ public class ChatRoomQueryFacade {
     private final ChatMessageService chatMessageService;
     private final MessageImageService messageImageService;
     private final UserImageService userImageService;
+    private final UserService userService;
     private final ImageService imageService;
 
     public ChatRoomDetailResponse getChatRoomDetail(Long roomId) {
@@ -167,6 +170,16 @@ public class ChatRoomQueryFacade {
         Long nextCursor = hasNext && !messages.isEmpty() ? messages.getLast().getId() : null;
 
         return new CursorResponse<>(content, nextCursor, hasNext, size);
+    }
+
+    public ChatRoomOwnerCheckResponse checkOwner(Long roomId, Long ownerId) {
+        ChatRoom chatRoom = chatRoomService.getChatRoom(roomId);
+
+        if (!userService.existsUser(ownerId)) {
+            throw new BaseException(ErrorCode.OWNER_NOT_FOUND);
+        }
+
+        return ChatRoomOwnerCheckResponse.from(chatRoom.getOwnerId().equals(ownerId));
     }
 
     public ChatMyRoomItemResponse buildMyChatRoomItem(

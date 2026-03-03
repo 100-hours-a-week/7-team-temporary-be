@@ -19,6 +19,7 @@ import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.dto.response.ChatRoomCreateResponse;
 import molip.server.chat.dto.response.ChatRoomDetailResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
+import molip.server.chat.dto.response.ChatRoomOwnerCheckResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.response.CursorResponse;
@@ -136,6 +137,30 @@ public interface ChatApi {
     })
     ResponseEntity<ServerResponse<ChatRoomDetailResponse>> getChatRoomDetail(
             @AuthenticationPrincipal UserDetails userDetails, Long roomId);
+
+    @Operation(summary = "방장 여부 조회")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content =
+                        @Content(
+                                schema =
+                                        @Schema(
+                                                implementation =
+                                                        ChatRoomOwnerCheckResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "방장 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ChatRoomOwnerCheckResponse>> checkOwner(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long ownerId);
 
     @Operation(summary = "제목으로 채팅방 검색")
     @SecurityRequirement(name = "JWT")

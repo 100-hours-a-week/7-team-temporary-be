@@ -17,6 +17,8 @@ public interface UserRepository extends JpaRepository<Users, Long> {
 
     Optional<Users> findByIdAndDeletedAtIsNull(Long id);
 
+    boolean existsByIdAndDeletedAtIsNull(Long id);
+
     @Query(
             "select u from Users u "
                     + "where u.deletedAt is null and u.nickname like concat(:nickname, '%')")
