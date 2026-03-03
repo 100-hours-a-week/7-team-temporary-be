@@ -104,6 +104,11 @@ public class SocketHandshakeService {
         socketSessionSupport.updateLastPongAt(headerAccessor, lastPongAt);
     }
 
+    public void requireReconnect(String sessionId) {
+        socketHandshakeChannelBroadcaster.sendReconnectRequired(
+                sessionId, "TOKEN_EXPIRED", "세션이 만료되었거나 유효하지 않습니다. 토큰 갱신 후 재연결이 필요합니다.", 1000L);
+    }
+
     public SocketEventResponse<?> subscribeUser(
             SocketUserSubscribeRequest request, SocketSessionContext sessionContext) {
         OffsetDateTime subscribedAt = resolveSubscribedAt(request);
