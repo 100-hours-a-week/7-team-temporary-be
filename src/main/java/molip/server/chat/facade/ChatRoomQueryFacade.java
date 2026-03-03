@@ -129,7 +129,7 @@ public class ChatRoomQueryFacade {
                                     ChatRoom chatRoom = participation.getChatRoom();
                                     ChatMessage latestMessage =
                                             chatMessageService
-                                                    .getLatestMessage(chatRoom.getId())
+                                                    .getLatestNonSystemMessage(chatRoom.getId())
                                                     .orElse(null);
                                     int participantsCount =
                                             participantsCountMap.getOrDefault(chatRoom.getId(), 0);

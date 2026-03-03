@@ -29,15 +29,23 @@ public class ChatMessageService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<ChatMessage> getLatestNonSystemMessage(Long chatRoomId) {
+        return chatMessageRepository
+                .findTopByChatRoomIdAndDeletedAtIsNullAndIsDeletedFalseAndMessageTypeNotOrderBySentAtDescIdDesc(
+                        chatRoomId, MessageType.SYSTEM);
+    }
+
+    @Transactional(readOnly = true)
     public int countUnreadMessages(Long chatRoomId, Long lastSeenMessageId) {
         if (lastSeenMessageId == null) {
-            return chatMessageRepository.countByChatRoomIdAndDeletedAtIsNullAndIsDeletedFalse(
-                    chatRoomId);
+            return chatMessageRepository
+                    .countByChatRoomIdAndDeletedAtIsNullAndIsDeletedFalseAndMessageTypeNot(
+                            chatRoomId, MessageType.SYSTEM);
         }
 
         return chatMessageRepository
-                .countByChatRoomIdAndDeletedAtIsNullAndIsDeletedFalseAndIdGreaterThan(
-                        chatRoomId, lastSeenMessageId);
+                .countByChatRoomIdAndDeletedAtIsNullAndIsDeletedFalseAndIdGreaterThanAndMessageTypeNot(
+                        chatRoomId, lastSeenMessageId, MessageType.SYSTEM);
     }
 
     @Transactional

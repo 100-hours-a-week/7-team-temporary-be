@@ -60,6 +60,8 @@ public class ChatRoomParticipantLeftEventHandler {
                 chatRoomParticipantService.getActiveParticipants(event.chatRoom().getId());
 
         int participantsCount = activeParticipants.size();
+        ChatMessage latestVisibleMessage =
+                chatMessageService.getLatestNonSystemMessage(event.chatRoom().getId()).orElse(null);
 
         List<SocketUnreadChangedResponse> unreadChanges =
                 activeParticipants.stream()
@@ -68,7 +70,7 @@ public class ChatRoomParticipantLeftEventHandler {
                                         buildUnreadChanged(
                                                 event.chatRoom().getId(),
                                                 participant,
-                                                systemMessage,
+                                                latestVisibleMessage,
                                                 participantsCount))
                         .toList();
         ChatMessageCreatedResponse messageCreated =

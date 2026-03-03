@@ -66,6 +66,8 @@ public class ChatRoomParticipantEnteredEventHandler {
         List<ChatRoomParticipant> activeParticipants =
                 chatRoomParticipantService.getActiveParticipants(event.chatRoom().getId());
         int participantsCount = activeParticipants.size();
+        ChatMessage latestVisibleMessage =
+                chatMessageService.getLatestNonSystemMessage(event.chatRoom().getId()).orElse(null);
 
         ChatMessageCreatedResponse messageCreated =
                 ChatMessageCreatedResponse.of(
@@ -89,7 +91,7 @@ public class ChatRoomParticipantEnteredEventHandler {
                                         buildUnreadChanged(
                                                 event.chatRoom().getId(),
                                                 participant,
-                                                systemMessage,
+                                                latestVisibleMessage,
                                                 participantsCount))
                         .toList();
 
