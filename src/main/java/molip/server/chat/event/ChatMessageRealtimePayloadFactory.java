@@ -18,6 +18,7 @@ import molip.server.common.response.ImageInfoResponse;
 import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
+import molip.server.socket.dto.response.SocketMessageDeletedResponse;
 import molip.server.socket.dto.response.SocketMessageUpdatedResponse;
 import molip.server.user.entity.UserImage;
 import molip.server.user.service.UserImageService;
@@ -68,6 +69,26 @@ public class ChatMessageRealtimePayloadFactory {
                 message.getContent(),
                 toMessageImageResponsesFromEntities(messageImages),
                 toKst(resolveEditedAt(message)));
+    }
+
+    public SocketMessageDeletedResponse buildMessageDeleted(ChatMessage message) {
+        List<MessageImage> messageImages =
+                messageImageService
+                        .getMessageImagesByMessageIds(List.of(message.getId()))
+                        .getOrDefault(message.getId(), Collections.emptyList());
+
+        return SocketMessageDeletedResponse.of(
+                UUID.randomUUID().toString(),
+                message.getId(),
+                message.getChatRoom().getId(),
+                message.getMessageType(),
+                message.getSenderType(),
+                message.getSenderId(),
+                resolveSenderNickname(message),
+                resolveSenderProfile(message),
+                message.getContent(),
+                toMessageImageResponsesFromEntities(messageImages),
+                toKst(resolveDeletedAt(message)));
     }
 
     private String resolveSenderNickname(ChatMessage message) {
@@ -140,6 +161,14 @@ public class ChatMessageRealtimePayloadFactory {
     private LocalDateTime resolveEditedAt(ChatMessage message) {
         if (message.getUpdatedAt() != null) {
             return message.getUpdatedAt();
+        }
+
+        return LocalDateTime.now();
+    }
+
+    private LocalDateTime resolveDeletedAt(ChatMessage message) {
+        if (message.getDeletedAt() != null) {
+            return message.getDeletedAt();
         }
 
         return LocalDateTime.now();

@@ -125,6 +125,45 @@ class ChatMessageServiceTest {
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MESSAGE_NOT_FOUND);
     }
 
+    @Test
+    void 본인의_메시지는_성공적으로_삭제된다() {
+        // given
+        Long userId = 1L;
+        Long roomId = 10L;
+        Long messageId = 100L;
+        ChatMessage message = createMessage(roomId, messageId, userId, MessageType.TEXT, "기존 내용");
+
+        given(chatMessageRepository.findById(messageId)).willReturn(Optional.of(message));
+
+        // when
+        ChatMessage deleted = chatMessageService.deleteMessage(userId, roomId, messageId);
+
+        // then
+        assertThat(deleted.isDeleted()).isTrue();
+        assertThat(deleted.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    void 이미_삭제된_메시지를_삭제하면_예외를_반환한다() {
+        // given
+        Long userId = 1L;
+        Long roomId = 10L;
+        Long messageId = 100L;
+        ChatMessage message = createMessage(roomId, messageId, userId, MessageType.TEXT, "기존 내용");
+        ReflectionTestUtils.setField(message, "isDeleted", true);
+
+        given(chatMessageRepository.findById(messageId)).willReturn(Optional.of(message));
+
+        // when
+        BaseException exception =
+                assertThrows(
+                        BaseException.class,
+                        () -> chatMessageService.deleteMessage(userId, roomId, messageId));
+
+        // then
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CONFLICT_MESSAGE_ALREADY_DELETED);
+    }
+
     private ChatMessage createMessage(
             Long roomId, Long messageId, Long senderId, MessageType messageType, String content) {
         ChatRoom chatRoom = new ChatRoom(99L, "제목", "설명", 10);
