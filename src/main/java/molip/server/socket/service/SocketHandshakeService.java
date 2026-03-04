@@ -71,9 +71,16 @@ public class SocketHandshakeService {
 
         String existingSessionId = socketSessionStore.findSessionId(userId, request.deviceId());
         SocketEventResponse<?> duplicateSessionResponse =
-                validateDuplicateSession(existingSessionId, sessionId);
+                handleDuplicateSession(existingSessionId, sessionId);
 
         if (duplicateSessionResponse != null) {
+            socketHandshakeChannelBroadcaster.sendDisconnect(
+                    existingSessionId, "DUPLICATE_SESSION", "새로운 세션 연결을 위해 기존 세션을 종료합니다.");
+
+            socketSessionStore.delete(existingSessionId, userId, request.deviceId());
+
+            socketHandshakeChannelBroadcaster.sendSessionReleased(userId, existingSessionId, true);
+
             return duplicateSessionResponse;
         }
 
@@ -172,7 +179,7 @@ public class SocketHandshakeService {
         return null;
     }
 
-    private SocketEventResponse<?> validateDuplicateSession(
+    private SocketEventResponse<?> handleDuplicateSession(
             String existingSessionId, String currentSessionId) {
         if (existingSessionId != null && !existingSessionId.equals(currentSessionId)) {
             return error("CONNECT_DUPLICATE_SESSION", "이미 연결된 세션이 존재합니다.", false);
