@@ -42,6 +42,7 @@ public class ReportController implements ReportApi {
     }
 
     @GetMapping("/reports/{reportId}/messages")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<CursorResponse<ReportMessageItemResponse>>>
             getReportMessages(
@@ -52,6 +53,7 @@ public class ReportController implements ReportApi {
     }
 
     @PostMapping("/reports/{reportId}/message")
+    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ReportMessageCreateResponse>> createReportMessage(
             @PathVariable Long reportId, @RequestBody ReportMessageCreateRequest request) {
@@ -61,6 +63,7 @@ public class ReportController implements ReportApi {
     @GetMapping(
             value = "/reports/{reportId}/message/{messageId}",
             produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Deprecated
     @Override
     public ResponseEntity<SseEmitter> streamReportMessage(
             @PathVariable Long reportId, @PathVariable Long messageId) {
@@ -68,6 +71,7 @@ public class ReportController implements ReportApi {
     }
 
     @DeleteMapping("/reports/{reportId}/message/{messageId}")
+    @Deprecated
     @Override
     public ResponseEntity<Void> cancelReportMessage(
             @PathVariable Long reportId, @PathVariable Long messageId) {
