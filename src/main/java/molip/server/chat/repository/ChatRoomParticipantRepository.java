@@ -5,6 +5,7 @@ import java.util.Optional;
 import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.repository.projection.ChatRoomParticipantCountProjection;
 import molip.server.common.enums.ChatRoomType;
+import molip.server.common.enums.MessageType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -45,12 +46,22 @@ public interface ChatRoomParticipantRepository extends JpaRepository<ChatRoomPar
                     """
                     select p
                     from ChatRoomParticipant p
+                    left join ChatMessage m
+                      on m.chatRoom = p.chatRoom
+                     and m.deletedAt is null
+                     and m.isDeleted = false
+                     and m.messageType <> :systemMessageType
                     where p.user.id = :userId
                       and p.chatRoom.type = :type
                       and p.deletedAt is null
                       and p.leftAt is null
                       and p.chatRoom.deletedAt is null
-                    order by p.createdAt desc
+                    group by p
+                    order by
+                      case when max(m.sentAt) is null then 1 else 0 end asc,
+                      max(m.sentAt) desc,
+                      max(m.id) desc,
+                      p.createdAt desc
                     """,
             countQuery =
                     """
@@ -63,5 +74,8 @@ public interface ChatRoomParticipantRepository extends JpaRepository<ChatRoomPar
                       and p.chatRoom.deletedAt is null
                     """)
     Page<ChatRoomParticipant> findActiveParticipationsByUserIdAndChatRoomType(
-            @Param("userId") Long userId, @Param("type") ChatRoomType type, Pageable pageable);
+            @Param("userId") Long userId,
+            @Param("type") ChatRoomType type,
+            @Param("systemMessageType") MessageType systemMessageType,
+            Pageable pageable);
 }

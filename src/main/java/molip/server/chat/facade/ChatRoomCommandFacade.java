@@ -26,12 +26,17 @@ import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.chat.service.MessageImageService;
+import molip.server.common.enums.ImageType;
 import molip.server.common.enums.MessageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.common.response.ImageInfoResponse;
+import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
+import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;
+import molip.server.user.service.UserImageService;
 import molip.server.user.service.UserService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -46,6 +51,7 @@ public class ChatRoomCommandFacade {
     private final ChatMessageService chatMessageService;
     private final MessageImageService messageImageService;
     private final UserService userService;
+    private final UserImageService userImageService;
     private final ImageService imageService;
     private final RedisChatMessageIdempotencyStore redisChatMessageIdempotencyStore;
     private final ChatRoomRealtimePublisher chatRoomRealtimePublisher;
@@ -103,11 +109,15 @@ public class ChatRoomCommandFacade {
 
         messageImageService.createMessageImages(message, images);
 
+        Users user = userService.getUser(userId);
+
         ChatMessageSendResponse response =
                 ChatMessageSendResponse.of(
                         message.getId(),
                         idempotencyKey,
                         "SUCCEEDED",
+                        user.getNickname(),
+                        getProfileImage(userId),
                         message.getSentAt().atOffset(ZoneOffset.of("+09:00")));
 
         redisChatMessageIdempotencyStore.markSucceeded(
@@ -232,17 +242,20 @@ public class ChatRoomCommandFacade {
                                         record.messageId(),
                                         idempotencyKey,
                                         "SUCCEEDED",
+                                        null,
+                                        null,
                                         record.sentAt()));
                 case PROCESSING ->
                         ChatMessageSendCommandResult.processing(
                                 ChatMessageSendResponse.of(
-                                        null, idempotencyKey, "PROCESSING", null));
+                                        null, idempotencyKey, "PROCESSING", null, null, null));
             };
         }
 
         if (!redisChatMessageIdempotencyStore.reserve(userId, roomId, idempotencyKey)) {
             return ChatMessageSendCommandResult.processing(
-                    ChatMessageSendResponse.of(null, idempotencyKey, "PROCESSING", null));
+                    ChatMessageSendResponse.of(
+                            null, idempotencyKey, "PROCESSING", null, null, null));
         }
 
         return null;
@@ -306,5 +319,21 @@ public class ChatRoomCommandFacade {
             }
             default -> throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_SEND);
         };
+    }
+
+    private ImageInfoResponse getProfileImage(Long userId) {
+        return userImageService
+                .getLatestUserImage(userId)
+                .map(UserImage::getImage)
+                .map(
+                        image ->
+                                imageService.issueGetUrlWithoutValidation(
+                                        ImageType.USERS, image.getUploadKey()))
+                .map(this::toImageInfoResponse)
+                .orElse(null);
+    }
+
+    private ImageInfoResponse toImageInfoResponse(ImageGetUrlResponse response) {
+        return ImageInfoResponse.of(response.url(), response.expiresAt(), response.imageKey());
     }
 }
