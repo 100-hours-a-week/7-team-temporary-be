@@ -26,13 +26,13 @@ public class ReportDailyStat extends BaseEntity {
     @JoinColumn(name = "report_id", nullable = false)
     private Report report;
 
-    private LocalDate statDate;
+    private LocalDate reportDate;
 
     private int achievementRate;
 
-    public ReportDailyStat(Report report, LocalDate statDate, int achievementRate) {
+    public ReportDailyStat(Report report, LocalDate reportDate, int achievementRate) {
         this.report = report;
-        this.statDate = statDate;
+        this.reportDate = reportDate;
         this.achievementRate = achievementRate;
     }
 }

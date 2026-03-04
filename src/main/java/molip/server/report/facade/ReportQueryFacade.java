@@ -80,7 +80,8 @@ public class ReportQueryFacade {
     }
 
     private ReportDailyStatResponse toDailyStatResponse(ReportDailyStat stat) {
-        return ReportDailyStatResponse.of(stat.getStatDate().toString(), stat.getAchievementRate());
+        return ReportDailyStatResponse.of(
+                stat.getReportDate().toString(), stat.getAchievementRate());
     }
 
     private Report generateWeeklyReport(Long userId, LocalDate startDate, LocalDate endDate) {

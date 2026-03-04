@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReportDailyStatRepository extends JpaRepository<ReportDailyStat, Long> {
 
-    List<ReportDailyStat> findByReportIdOrderByStatDateAsc(Long reportId);
+    List<ReportDailyStat> findByReportIdOrderByReportDateAsc(Long reportId);
 
     void deleteByReportId(Long reportId);
 }

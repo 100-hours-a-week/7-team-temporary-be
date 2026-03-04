@@ -17,7 +17,7 @@ public class ReportDailyStatService {
 
     @Transactional(readOnly = true)
     public List<ReportDailyStat> getDailyStats(Long reportId) {
-        return reportDailyStatRepository.findByReportIdOrderByStatDateAsc(reportId);
+        return reportDailyStatRepository.findByReportIdOrderByReportDateAsc(reportId);
     }
 
     @Transactional
