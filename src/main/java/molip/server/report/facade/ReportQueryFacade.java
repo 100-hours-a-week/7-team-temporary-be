@@ -3,6 +3,7 @@ package molip.server.report.facade;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -10,15 +11,20 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.common.response.CursorResponse;
 import molip.server.report.dto.response.ReportDailyStatResponse;
+import molip.server.report.dto.response.ReportMessageItemResponse;
 import molip.server.report.dto.response.ReportResponse;
 import molip.server.report.entity.Report;
+import molip.server.report.entity.ReportChatMessage;
 import molip.server.report.entity.ReportDailyStat;
+import molip.server.report.service.ReportChatMessageService;
 import molip.server.report.service.ReportDailyStatService;
 import molip.server.report.service.ReportService;
 import molip.server.schedule.service.ScheduleService;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserService;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -29,6 +35,7 @@ public class ReportQueryFacade {
 
     private final ReportService reportService;
     private final ReportDailyStatService reportDailyStatService;
+    private final ReportChatMessageService reportChatMessageService;
     private final UserService userService;
     private final ScheduleService scheduleService;
 
@@ -50,6 +57,31 @@ public class ReportQueryFacade {
                         .toList();
 
         return ReportResponse.of(report, dailyStats);
+    }
+
+    public CursorResponse<ReportMessageItemResponse> getReportMessages(
+            Long userId, Long reportId, Long cursor, int size) {
+        Report report = reportService.getReport(userId, reportId);
+
+        validateReportAvailability(report.getEndDate());
+
+        Page<ReportChatMessage> messagePage =
+                reportChatMessageService.getMessages(reportId, cursor, size);
+
+        List<ReportChatMessage> messages = messagePage.getContent();
+
+        List<ReportMessageItemResponse> content =
+                messages.stream()
+                        .map(
+                                message ->
+                                        ReportMessageItemResponse.of(
+                                                message, toKst(message.getSentAt())))
+                        .toList();
+
+        boolean hasNext = messagePage.hasNext();
+        Long nextCursor = hasNext && !messages.isEmpty() ? messages.getLast().getId() : null;
+
+        return new CursorResponse<>(content, nextCursor, hasNext, size);
     }
 
     private LocalDate parseStartDate(String startDateText) {
@@ -103,5 +135,13 @@ public class ReportQueryFacade {
         reportDailyStatService.replaceDailyStats(report, dailyStats);
 
         return report;
+    }
+
+    private OffsetDateTime toKst(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+
+        return OffsetDateTime.of(dateTime, KOREA_ZONE_ID.getRules().getOffset(dateTime));
     }
 }

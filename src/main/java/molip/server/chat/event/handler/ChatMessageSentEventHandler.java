@@ -1,7 +1,5 @@
 package molip.server.chat.event.handler;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
@@ -52,9 +50,6 @@ public class ChatMessageSentEventHandler {
 
         List<SocketUnreadChangedResponse> unreadChanges =
                 activeParticipants.stream()
-                        .filter(
-                                participant ->
-                                        !participant.getUser().getId().equals(event.senderUserId()))
                         .map(
                                 participant ->
                                         buildUnreadChanged(
@@ -92,9 +87,5 @@ public class ChatMessageSentEventHandler {
                 row.lastUserMessagePreview(),
                 row.lastUserMessageSentAt(),
                 row.participantsCount());
-    }
-
-    private OffsetDateTime toKst(LocalDateTime dateTime) {
-        return OffsetDateTime.of(dateTime, KOREA_ZONE_ID.getRules().getOffset(dateTime));
     }
 }
