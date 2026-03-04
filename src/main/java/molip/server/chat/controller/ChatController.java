@@ -233,7 +233,6 @@ public class ChatController implements ChatApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
-    @Deprecated
     @PatchMapping("/chat-rooms/{roomId}/messages/{messageId}")
     @Override
     public ResponseEntity<Void> updateMessage(
@@ -241,6 +240,10 @@ public class ChatController implements ChatApi {
             @PathVariable Long roomId,
             @PathVariable Long messageId,
             @RequestBody ChatMessageUpdateRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        chatRoomCommandFacade.updateMessage(userId, roomId, messageId, request.content());
+
+        return ResponseEntity.noContent().build();
     }
 }
