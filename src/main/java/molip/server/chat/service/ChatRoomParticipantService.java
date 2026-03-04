@@ -12,6 +12,7 @@ import molip.server.chat.event.ChatRoomParticipantLeftEvent;
 import molip.server.chat.repository.ChatRoomParticipantRepository;
 import molip.server.chat.repository.projection.ChatRoomParticipantCountProjection;
 import molip.server.common.enums.ChatRoomType;
+import molip.server.common.enums.MessageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.user.entity.Users;
@@ -86,7 +87,7 @@ public class ChatRoomParticipantService {
         validateGetMyActiveParticipations(userId, type, page, size);
 
         return chatRoomParticipantRepository.findActiveParticipationsByUserIdAndChatRoomType(
-                userId, type, PageRequest.of(page - 1, size));
+                userId, type, MessageType.SYSTEM, PageRequest.of(page - 1, size));
     }
 
     @Transactional
