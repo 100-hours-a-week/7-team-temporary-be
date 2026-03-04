@@ -70,6 +70,16 @@ public class ImageService {
                 .toList();
     }
 
+    public List<Image> getPendingImagesByUploadKeys(List<String> imageKeys) {
+        if (imageKeys == null || imageKeys.isEmpty()) {
+            return List.of();
+        }
+
+        return imageRepository.findByUploadKeyInAndDeletedAtIsNull(imageKeys).stream()
+                .filter(image -> image.getUploadStatus() == UploadStatus.PENDING)
+                .toList();
+    }
+
     private String resolveObjectKey(ImageType type, String imageKey) {
         return type.folder() + "/" + imageKey;
     }
