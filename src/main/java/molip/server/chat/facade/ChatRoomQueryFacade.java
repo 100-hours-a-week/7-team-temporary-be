@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ChatRoomQueryFacade {
 
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final ChatRoomService chatRoomService;
@@ -256,7 +257,15 @@ public class ChatRoomQueryFacade {
                                 imageService.issueGetUrlWithoutValidation(
                                         ImageType.USERS, image.getUploadKey()))
                 .map(this::toImageInfoResponse)
-                .orElse(null);
+                .orElseGet(this::getDefaultProfileImage);
+    }
+
+    private ImageInfoResponse getDefaultProfileImage() {
+        ImageGetUrlResponse response =
+                imageService.issueGetUrlWithoutValidation(
+                        ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
+
+        return ImageInfoResponse.of(response.url(), response.expiresAt(), response.imageKey());
     }
 
     private ImageInfoResponse toImageInfoResponse(ImageGetUrlResponse response) {
