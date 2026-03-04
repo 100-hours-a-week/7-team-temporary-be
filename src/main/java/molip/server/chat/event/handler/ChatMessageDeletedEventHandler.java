@@ -7,9 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import molip.server.chat.dto.response.ChatMyRoomItemResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.event.ChatMessageDeletedCommittedEvent;
+import molip.server.chat.event.ChatMessageDeletedEvent;
 import molip.server.chat.event.ChatMessageRealtimePayloadFactory;
-import molip.server.chat.event.ChatMessageUpdatedCommittedEvent;
-import molip.server.chat.event.ChatMessageUpdatedEvent;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
@@ -22,7 +22,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ChatMessageUpdatedEventHandler {
+public class ChatMessageDeletedEventHandler {
 
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatMessageService chatMessageService;
@@ -31,9 +31,9 @@ public class ChatMessageUpdatedEventHandler {
     private final ApplicationEventPublisher eventPublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    public void handle(ChatMessageUpdatedEvent event) {
+    public void handle(ChatMessageDeletedEvent event) {
         log.info(
-                "handle chat message updated event: roomId={}, messageId={}",
+                "handle chat message deleted event: roomId={}, messageId={}",
                 event.message().getChatRoom().getId(),
                 event.message().getId());
 
@@ -60,9 +60,9 @@ public class ChatMessageUpdatedEventHandler {
                         .toList();
 
         eventPublisher.publishEvent(
-                new ChatMessageUpdatedCommittedEvent(
+                new ChatMessageDeletedCommittedEvent(
                         event.message().getChatRoom().getId(),
-                        chatMessageRealtimePayloadFactory.buildMessageUpdated(event.message()),
+                        chatMessageRealtimePayloadFactory.buildMessageDeleted(event.message()),
                         unreadChanges));
     }
 
@@ -79,7 +79,7 @@ public class ChatMessageUpdatedEventHandler {
         Long userId = participant.getUser().getId();
 
         log.info(
-                "publish unreadChanged for message update: roomId={}, targetUserId={}, unreadCount={}",
+                "publish unreadChanged for message delete: roomId={}, targetUserId={}, unreadCount={}",
                 roomId,
                 userId,
                 row.unreadCount());
