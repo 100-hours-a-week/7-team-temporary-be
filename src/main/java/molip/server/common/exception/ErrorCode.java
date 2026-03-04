@@ -89,8 +89,12 @@ public enum ErrorCode {
     // Report
     INVALID_REQUEST_DATE_REQUIRED(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "날짜가 누락되었습니다. 확인 부탁드립니다."),
+    INVALID_REQUEST_REPORT_START_DATE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "리포트 시작일은 일요일(YYYY-MM-DD)이어야 합니다."),
     REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "해당 기간의 리포트를 찾을 수 없습니다."),
     FORBIDDEN_REPORT_ACCESS(HttpStatus.FORBIDDEN, "FORBIDDEN", "해당 리포트에 접근할 권한이 없습니다."),
+    FORBIDDEN_REPORT_NOT_AVAILABLE_YET(
+            HttpStatus.FORBIDDEN, "FORBIDDEN", "아직 조회 가능한 주간 리포트가 아닙니다."),
     REPORT_NOT_FOUND_GENERIC(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "리포트를 찾을 수 없습니다."),
     INVALID_REQUEST_INPUT_MESSAGE_REQUIRED(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "inputMessage 값이 필요합니다."),

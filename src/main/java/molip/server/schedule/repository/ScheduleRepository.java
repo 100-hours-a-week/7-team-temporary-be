@@ -54,6 +54,22 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     boolean existsByParentScheduleIdAndDeletedAtIsNull(Long parentScheduleId);
 
     @Query(
+            "select s.status as status, count(s) as count "
+                    + "from Schedule s "
+                    + "join s.dayPlan dp "
+                    + "join dp.user u "
+                    + "where u.id = :userId "
+                    + "and dp.planDate = :planDate "
+                    + "and s.deletedAt is null "
+                    + "and s.assignmentStatus = AssignmentStatus.ASSIGNED "
+                    + "and s.status in (:statuses) "
+                    + "group by s.status")
+    List<ScheduleStatusCount> countAssignedByStatus(
+            @Param("userId") Long userId,
+            @Param("planDate") LocalDate planDate,
+            @Param("statuses") List<ScheduleStatus> statuses);
+
+    @Query(
             value =
                     "select s from Schedule s "
                             + "left join fetch s.parentSchedule "
