@@ -81,7 +81,7 @@ public interface ReportApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<CursorResponse<ReportMessageItemResponse>>> getReportMessages(
-            Long reportId, Long cursor, int size);
+            @AuthenticationPrincipal UserDetails userDetails, Long reportId, Long cursor, int size);
 
     @Operation(summary = "AI 응답 생성을 위한 메시지 전송")
     @SecurityRequirement(name = "JWT")
