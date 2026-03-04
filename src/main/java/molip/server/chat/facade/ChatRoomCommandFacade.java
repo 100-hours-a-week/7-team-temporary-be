@@ -268,7 +268,7 @@ public class ChatRoomCommandFacade {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_SEND);
         }
 
-        List<Image> images = imageService.getActiveImagesByUploadKeys(imageKeys);
+        List<Image> images = imageService.getPendingImagesByUploadKeys(imageKeys);
 
         Map<String, Image> imageMap =
                 images.stream().collect(Collectors.toMap(Image::getUploadKey, image -> image));
