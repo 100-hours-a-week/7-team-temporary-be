@@ -98,6 +98,9 @@ ai:
     base-url: ${AI_PLANNER_BASE_URL}
     path: ${AI_PLANNER_PATH}
     timeout-ms: ${AI_PLANNER_TIMEOUT_MS}
+  chatbot:
+    base-url: ${AI_CHATBOT_BASE_URL}
+    respond-path: ${AI_CHATBOT_RESPOND_PATH}
 
 
 fcm:

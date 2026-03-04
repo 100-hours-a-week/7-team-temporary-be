@@ -1,6 +1,7 @@
 package molip.server.report.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.MessageType;
 import molip.server.common.enums.SenderType;
@@ -48,6 +49,17 @@ public class ReportChatMessageService {
                 cursor, reportId)) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReportChatMessage> getPromptMessages(Long reportId) {
+        if (reportId == null) {
+            throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
+        }
+
+        return reportChatMessageRepository
+                .findByReportIdAndDeletedAtIsNullAndIsDeletedFalseAndContentIsNotNullOrderByIdAsc(
+                        reportId);
     }
 
     @Transactional

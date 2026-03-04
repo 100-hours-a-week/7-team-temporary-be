@@ -1,5 +1,6 @@
 package molip.server.report.repository;
 
+import java.util.List;
 import molip.server.common.enums.SenderType;
 import molip.server.report.entity.ReportChatMessage;
 import org.springframework.data.domain.Page;
@@ -19,4 +20,8 @@ public interface ReportChatMessageRepository extends JpaRepository<ReportChatMes
 
     boolean existsByReportIdAndSenderTypeAndContentIsNullAndDeletedAtIsNullAndIsDeletedFalse(
             Long reportId, SenderType senderType);
+
+    List<ReportChatMessage>
+            findByReportIdAndDeletedAtIsNullAndIsDeletedFalseAndContentIsNotNullOrderByIdAsc(
+                    Long reportId);
 }
