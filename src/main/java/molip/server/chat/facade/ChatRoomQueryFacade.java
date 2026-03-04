@@ -23,6 +23,7 @@ import molip.server.chat.service.ChatRoomService;
 import molip.server.chat.service.MessageImageService;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.enums.ImageType;
+import molip.server.common.enums.SenderType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.common.response.CursorResponse;
@@ -230,6 +231,8 @@ public class ChatRoomQueryFacade {
                 message.getMessageType(),
                 message.getSenderType(),
                 message.getSenderId(),
+                getSenderNickname(message),
+                getSenderProfileImage(message),
                 message.getContent(),
                 images,
                 toKst(message.getSentAt()));
@@ -273,5 +276,22 @@ public class ChatRoomQueryFacade {
 
     private OffsetDateTime toKst(java.time.LocalDateTime dateTime) {
         return OffsetDateTime.of(dateTime, KOREA_ZONE_ID.getRules().getOffset(dateTime));
+    }
+
+    private String getSenderNickname(ChatMessage message) {
+        if (message.getSenderType() != molip.server.common.enums.SenderType.USER
+                || message.getSenderId() == null) {
+            return null;
+        }
+
+        return userService.getUser(message.getSenderId()).getNickname();
+    }
+
+    private ImageInfoResponse getSenderProfileImage(ChatMessage message) {
+        if (message.getSenderType() != SenderType.USER || message.getSenderId() == null) {
+            return null;
+        }
+
+        return getProfileImage(message.getSenderId());
     }
 }
