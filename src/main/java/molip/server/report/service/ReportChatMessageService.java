@@ -1,8 +1,12 @@
 package molip.server.report.service;
 
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.enums.MessageType;
+import molip.server.common.enums.SenderType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.report.entity.Report;
 import molip.server.report.entity.ReportChatMessage;
 import molip.server.report.repository.ReportChatMessageRepository;
 import org.springframework.data.domain.Page;
@@ -44,5 +48,67 @@ public class ReportChatMessageService {
                 cursor, reportId)) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
+    }
+
+    @Transactional
+    public ReportChatMessage createUserMessage(Report report, String inputMessage) {
+        validateCreateUserMessage(report, inputMessage);
+
+        ReportChatMessage message =
+                new ReportChatMessage(
+                        report,
+                        SenderType.USER,
+                        MessageType.TEXT,
+                        normalizeContent(inputMessage),
+                        false,
+                        LocalDateTime.now());
+
+        return reportChatMessageRepository.save(message);
+    }
+
+    @Transactional
+    public ReportChatMessage createAiStreamMessage(Report report) {
+        validateCreateAiStreamMessage(report);
+
+        ReportChatMessage message =
+                new ReportChatMessage(
+                        report, SenderType.AI, MessageType.TEXT, null, false, LocalDateTime.now());
+
+        return reportChatMessageRepository.save(message);
+    }
+
+    @Transactional(readOnly = true)
+    public void validateNoActiveAiResponse(Long reportId) {
+        if (reportId == null) {
+            throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
+        }
+
+        if (reportChatMessageRepository
+                .existsByReportIdAndSenderTypeAndContentIsNullAndDeletedAtIsNullAndIsDeletedFalse(
+                        reportId, SenderType.AI)) {
+            throw new BaseException(ErrorCode.CONFLICT_REPORT_RESPONSE_RUNNING);
+        }
+    }
+
+    private void validateCreateUserMessage(Report report, String inputMessage) {
+        if (report == null) {
+            throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
+        }
+
+        if (inputMessage == null || inputMessage.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_INPUT_MESSAGE_REQUIRED);
+        }
+    }
+
+    private void validateCreateAiStreamMessage(Report report) {
+        if (report == null) {
+            throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
+        }
+    }
+
+    private String normalizeContent(String inputMessage) {
+        String normalized = inputMessage.trim();
+
+        return normalized.isEmpty() ? null : normalized;
     }
 }

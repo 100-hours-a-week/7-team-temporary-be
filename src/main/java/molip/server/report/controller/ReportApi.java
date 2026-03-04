@@ -121,7 +121,9 @@ public interface ReportApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ReportMessageCreateResponse>> createReportMessage(
-            Long reportId, ReportMessageCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long reportId,
+            ReportMessageCreateRequest request);
 
     @Operation(summary = "리포트 메시지 스트림 구독")
     @SecurityRequirement(name = "JWT")

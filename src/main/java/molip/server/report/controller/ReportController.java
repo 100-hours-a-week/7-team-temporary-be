@@ -8,6 +8,7 @@ import molip.server.report.dto.request.ReportMessageCreateRequest;
 import molip.server.report.dto.response.ReportMessageCreateResponse;
 import molip.server.report.dto.response.ReportMessageItemResponse;
 import molip.server.report.dto.response.ReportResponse;
+import molip.server.report.facade.ReportCommandFacade;
 import molip.server.report.facade.ReportQueryFacade;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,6 +28,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RequiredArgsConstructor
 public class ReportController implements ReportApi {
 
+    private final ReportCommandFacade reportCommandFacade;
     private final ReportQueryFacade reportQueryFacade;
 
     @GetMapping("/reports")
@@ -59,11 +61,18 @@ public class ReportController implements ReportApi {
     }
 
     @PostMapping("/reports/{reportId}/message")
-    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ReportMessageCreateResponse>> createReportMessage(
-            @PathVariable Long reportId, @RequestBody ReportMessageCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long reportId,
+            @RequestBody ReportMessageCreateRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ReportMessageCreateResponse response =
+                reportCommandFacade.createReportMessage(userId, reportId, request.inputMessage());
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.REPORT_MESSAGE_CREATED, response));
     }
 
     @GetMapping(
