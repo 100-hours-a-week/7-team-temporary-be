@@ -42,14 +42,20 @@ public class ReportController implements ReportApi {
     }
 
     @GetMapping("/reports/{reportId}/messages")
-    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<CursorResponse<ReportMessageItemResponse>>>
             getReportMessages(
+                    @AuthenticationPrincipal UserDetails userDetails,
                     @PathVariable Long reportId,
                     @RequestParam(required = false) Long cursor,
-                    @RequestParam(required = false, defaultValue = "20") int size) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+                    @RequestParam(required = false, defaultValue = "5") int size) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        CursorResponse<ReportMessageItemResponse> response =
+                reportQueryFacade.getReportMessages(userId, reportId, cursor, size);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.REPORT_MESSAGE_LIST_SUCCESS, response));
     }
 
     @PostMapping("/reports/{reportId}/message")

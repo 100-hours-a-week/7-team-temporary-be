@@ -34,6 +34,24 @@ public class ReportService {
         return report;
     }
 
+    @Transactional(readOnly = true)
+    public Report getReport(Long userId, Long reportId) {
+        if (reportId == null) {
+            throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
+        }
+
+        Report report =
+                reportRepository
+                        .findById(reportId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC));
+
+        if (!report.getUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REPORT_ACCESS);
+        }
+
+        return report;
+    }
+
     @Transactional
     public Report getOrCreateReport(Users user, LocalDate startDate, LocalDate endDate) {
         Report report = findByUserIdAndPeriod(user.getId(), startDate, endDate);
