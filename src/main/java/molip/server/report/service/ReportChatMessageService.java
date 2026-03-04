@@ -63,6 +63,20 @@ public class ReportChatMessageService {
     }
 
     @Transactional
+    public void completeAiStreamMessage(Long messageId, String content) {
+        ReportChatMessage message = getActiveMessage(messageId);
+
+        message.updateContent(content == null ? "" : content);
+    }
+
+    @Transactional
+    public void deleteAiStreamMessage(Long messageId) {
+        ReportChatMessage message = getActiveMessage(messageId);
+
+        message.deleteMessage();
+    }
+
+    @Transactional
     public ReportChatMessage createUserMessage(Report report, String inputMessage) {
         validateCreateUserMessage(report, inputMessage);
 
@@ -116,6 +130,16 @@ public class ReportChatMessageService {
         if (report == null) {
             throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
         }
+    }
+
+    private ReportChatMessage getActiveMessage(Long messageId) {
+        if (messageId == null) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        return reportChatMessageRepository
+                .findByIdAndDeletedAtIsNullAndIsDeletedFalse(messageId)
+                .orElseThrow(() -> new BaseException(ErrorCode.MESSAGE_NOT_FOUND));
     }
 
     private String normalizeContent(String inputMessage) {

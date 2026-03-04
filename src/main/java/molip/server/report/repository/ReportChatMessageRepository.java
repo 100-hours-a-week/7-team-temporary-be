@@ -24,4 +24,6 @@ public interface ReportChatMessageRepository extends JpaRepository<ReportChatMes
     List<ReportChatMessage>
             findByReportIdAndDeletedAtIsNullAndIsDeletedFalseAndContentIsNotNullOrderByIdAsc(
                     Long reportId);
+
+    java.util.Optional<ReportChatMessage> findByIdAndDeletedAtIsNullAndIsDeletedFalse(Long id);
 }

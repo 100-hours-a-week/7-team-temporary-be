@@ -63,4 +63,9 @@ public class ReportChatMessage extends BaseEntity {
     public void updateContent(String content) {
         this.content = content;
     }
+
+    public void deleteMessage() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
 }

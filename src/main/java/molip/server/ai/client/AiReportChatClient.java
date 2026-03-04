@@ -4,6 +4,7 @@ import molip.server.ai.dto.request.AiReportChatRespondRequest;
 import molip.server.ai.dto.response.AiReportChatRespondResponse;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -21,7 +22,7 @@ public class AiReportChatClient {
     private final String respondPath;
 
     public AiReportChatClient(
-            RestTemplate restTemplate,
+            @Qualifier("aiReportChatRespondRestTemplate") RestTemplate restTemplate,
             @Value("${ai.chatbot.base-url}") String baseUrl,
             @Value("${ai.chatbot.respond-path}") String respondPath) {
 

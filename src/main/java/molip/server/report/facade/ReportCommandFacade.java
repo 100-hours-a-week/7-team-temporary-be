@@ -13,8 +13,10 @@ import molip.server.common.exception.ErrorCode;
 import molip.server.report.dto.response.ReportMessageCreateResponse;
 import molip.server.report.entity.Report;
 import molip.server.report.entity.ReportChatMessage;
+import molip.server.report.event.ReportChatRespondRequestedEvent;
 import molip.server.report.service.ReportChatMessageService;
 import molip.server.report.service.ReportService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class ReportCommandFacade {
     private final AiReportChatClient aiReportChatClient;
     private final ReportService reportService;
     private final ReportChatMessageService reportChatMessageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ReportMessageCreateResponse createReportMessage(
@@ -44,6 +47,9 @@ public class ReportCommandFacade {
                 reportChatMessageService.createAiStreamMessage(report);
 
         requestAiRespond(userId, reportId, streamMessageEntity.getId());
+
+        eventPublisher.publishEvent(
+                new ReportChatRespondRequestedEvent(reportId, streamMessageEntity.getId()));
 
         return ReportMessageCreateResponse.of(
                 inputMessageEntity.getId(), streamMessageEntity.getId());

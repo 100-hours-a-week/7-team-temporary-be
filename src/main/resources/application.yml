@@ -101,6 +101,10 @@ ai:
   chatbot:
     base-url: ${AI_CHATBOT_BASE_URL}
     respond-path: ${AI_CHATBOT_RESPOND_PATH}
+    stream-path: ${AI_CHATBOT_STREAM_PATH}
+    connect-timeout-ms: ${AI_CHATBOT_CONNECT_TIMEOUT_MS:10000}
+    respond-timeout-ms: ${AI_CHATBOT_RESPOND_TIMEOUT_MS:300000}
+    stream-timeout-ms: ${AI_CHATBOT_STREAM_TIMEOUT_MS:300000}
 
 
 fcm:
