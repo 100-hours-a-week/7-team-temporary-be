@@ -1,5 +1,6 @@
 package molip.server.chat.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +37,15 @@ public class MessageImageService {
             return;
         }
 
+        List<MessageImage> messageImages = new ArrayList<>();
+
         for (int index = 0; index < images.size(); index++) {
-            messageImageRepository.save(new MessageImage(message, images.get(index), index + 1));
+            Image image = images.get(index);
+
+            image.markSuccess();
+            messageImages.add(new MessageImage(message, image, index + 1));
         }
+
+        messageImageRepository.saveAll(messageImages);
     }
 }
