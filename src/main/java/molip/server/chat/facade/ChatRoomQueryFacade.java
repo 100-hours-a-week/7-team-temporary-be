@@ -23,6 +23,7 @@ import molip.server.chat.service.ChatRoomService;
 import molip.server.chat.service.MessageImageService;
 import molip.server.common.enums.ChatRoomType;
 import molip.server.common.enums.ImageType;
+import molip.server.common.enums.MessageType;
 import molip.server.common.enums.SenderType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -194,7 +195,7 @@ public class ChatRoomQueryFacade {
                 chatRoom,
                 participantsCount,
                 unreadCount,
-                latestMessage != null ? latestMessage.getContent() : null,
+                resolveLastUserMessagePreview(latestMessage),
                 latestMessage != null ? toKst(latestMessage.getSentAt()) : null);
     }
 
@@ -276,6 +277,18 @@ public class ChatRoomQueryFacade {
 
     private OffsetDateTime toKst(java.time.LocalDateTime dateTime) {
         return OffsetDateTime.of(dateTime, KOREA_ZONE_ID.getRules().getOffset(dateTime));
+    }
+
+    private String resolveLastUserMessagePreview(ChatMessage latestMessage) {
+        if (latestMessage == null) {
+            return null;
+        }
+
+        if (latestMessage.getMessageType() == MessageType.IMAGE) {
+            return "이미지를 보냈습니다";
+        }
+
+        return latestMessage.getContent();
     }
 
     private String getSenderNickname(ChatMessage message) {
