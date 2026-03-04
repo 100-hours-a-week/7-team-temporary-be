@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import molip.server.chat.event.ChatMessageUpdatedCommittedEvent;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
+import molip.server.chat.redis.realtime.chatuser.ChatUserRealtimePublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -14,6 +15,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ChatMessageUpdatedCommittedEventHandler {
 
     private final ChatRoomRealtimePublisher chatRoomRealtimePublisher;
+    private final ChatUserRealtimePublisher chatUserRealtimePublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(ChatMessageUpdatedCommittedEvent event) {
@@ -21,5 +23,11 @@ public class ChatMessageUpdatedCommittedEventHandler {
 
         chatRoomRealtimePublisher.publish(
                 "message.updated", event.roomId(), event.messageUpdated());
+
+        event.unreadChanges()
+                .forEach(
+                        unreadChanged ->
+                                chatUserRealtimePublisher.publishUnreadChanged(
+                                        unreadChanged.userId(), unreadChanged));
     }
 }
