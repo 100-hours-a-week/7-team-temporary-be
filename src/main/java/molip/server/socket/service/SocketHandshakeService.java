@@ -96,6 +96,9 @@ public class SocketHandshakeService {
         socketHandshakeChannelBroadcaster.sendDisconnect(sessionId, "LOGOUT", "로그아웃으로 연결을 종료합니다.");
 
         socketSessionStore.delete(sessionId, sessionContext.userId(), sessionContext.deviceId());
+
+        socketHandshakeChannelBroadcaster.sendSessionReleased(
+                sessionContext.userId(), sessionId, true);
     }
 
     public void pong(SocketPongRequest request, SimpMessageHeaderAccessor headerAccessor) {
