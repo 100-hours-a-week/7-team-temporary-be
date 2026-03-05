@@ -13,7 +13,7 @@ public class AiPlannerConfig {
     @Value("${ai.planner.timeout-ms:300000}")
     private long timeoutMs;
 
-    @Bean
+    @Bean(name = "aiPlannerRestTemplate")
     public RestTemplate aiPlannerRestTemplate(RestTemplateBuilder restTemplateBuilder) {
 
         return restTemplateBuilder

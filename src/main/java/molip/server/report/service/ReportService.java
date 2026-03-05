@@ -24,7 +24,7 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public Report getReport(Long userId, LocalDate startDate, LocalDate endDate) {
+    public Report getReportWithUserId(Long userId, LocalDate startDate, LocalDate endDate) {
         Report report = findByUserIdAndPeriod(userId, startDate, endDate);
 
         if (report == null) {
@@ -35,7 +35,7 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public Report getReport(Long userId, Long reportId) {
+    public Report getReportWithUserId(Long userId, Long reportId) {
         if (reportId == null) {
             throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
         }
@@ -50,6 +50,17 @@ public class ReportService {
         }
 
         return report;
+    }
+
+    @Transactional(readOnly = true)
+    public Report getReportWithUserId(Long reportId) {
+        if (reportId == null) {
+            throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
+        }
+
+        return reportRepository
+                .findById(reportId)
+                .orElseThrow(() -> new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC));
     }
 
     @Transactional

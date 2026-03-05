@@ -61,7 +61,7 @@ public class ReportQueryFacade {
 
     public CursorResponse<ReportMessageItemResponse> getReportMessages(
             Long userId, Long reportId, Long cursor, int size) {
-        Report report = reportService.getReport(userId, reportId);
+        Report report = reportService.getReportWithUserId(userId, reportId);
 
         validateReportAvailability(report.getEndDate());
 
