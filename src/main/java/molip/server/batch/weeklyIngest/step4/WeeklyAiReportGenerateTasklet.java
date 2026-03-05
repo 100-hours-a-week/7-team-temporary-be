@@ -1,8 +1,10 @@
 package molip.server.batch.weeklyIngest.step4;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,10 @@ public class WeeklyAiReportGenerateTasklet implements Tasklet {
 
     private static final Logger log = LoggerFactory.getLogger(WeeklyAiReportGenerateTasklet.class);
     private static final ZoneId ZONE_ID = ZoneId.of("Asia/Seoul");
+    private static final String CONTEXT_STEP4_BASE_DATE = "step4BaseDate";
+    private static final String CONTEXT_STEP4_REQUESTED_AT = "step4RequestedAt";
+    private static final String CONTEXT_STEP4_TARGET_COUNT = "step4TargetCount";
+    private static final String CONTEXT_STEP4_TARGET_PAIRS = "step4TargetPairs";
 
     private final ReportRepository reportRepository;
     private final AiWeeklyReportClient aiWeeklyReportClient;
@@ -45,8 +51,15 @@ public class WeeklyAiReportGenerateTasklet implements Tasklet {
             log.info(
                     "Weekly AI report generate skipped. baseDate={}, reason=no targets",
                     periodStart);
+            saveStep4Context(chunkContext, periodStart, List.of());
             return RepeatStatus.FINISHED;
         }
+
+        log.info(
+                "Weekly AI report generate request prepared. baseDate={}, targetCount={}, sampleTarget={}",
+                periodStart,
+                targets.size(),
+                targets.getFirst());
 
         AiWeeklyReportGenerateResponse response =
                 aiWeeklyReportClient.requestGenerate(periodStart, targets);
@@ -54,6 +67,16 @@ public class WeeklyAiReportGenerateTasklet implements Tasklet {
         if (!response.success()) {
             throw new BaseException(ErrorCode.WEEKLY_REPORT_INTERNAL_SERVER_ERROR);
         }
+
+        if (response.count() != targets.size()) {
+            log.warn(
+                    "Weekly AI report generate acknowledged count mismatch. baseDate={}, requestedCount={}, acknowledgedCount={}",
+                    periodStart,
+                    targets.size(),
+                    response.count());
+        }
+
+        saveStep4Context(chunkContext, periodStart, targets);
 
         log.info(
                 "Weekly AI report generate succeeded. baseDate={}, targetCount={}, acknowledgedCount={}, message={}",
@@ -105,5 +128,42 @@ public class WeeklyAiReportGenerateTasklet implements Tasklet {
         }
 
         return deduplicated.values().stream().toList();
+    }
+
+    private void saveStep4Context(
+            ChunkContext chunkContext, LocalDate baseDate, List<UserReportTarget> targets) {
+        List<String> targetPairs = new ArrayList<>();
+
+        for (UserReportTarget target : targets) {
+            targetPairs.add(target.userId() + ":" + target.reportId());
+        }
+
+        chunkContext
+                .getStepContext()
+                .getStepExecution()
+                .getJobExecution()
+                .getExecutionContext()
+                .putString(CONTEXT_STEP4_BASE_DATE, baseDate.toString());
+
+        chunkContext
+                .getStepContext()
+                .getStepExecution()
+                .getJobExecution()
+                .getExecutionContext()
+                .putString(CONTEXT_STEP4_REQUESTED_AT, LocalDateTime.now(ZONE_ID).toString());
+
+        chunkContext
+                .getStepContext()
+                .getStepExecution()
+                .getJobExecution()
+                .getExecutionContext()
+                .putInt(CONTEXT_STEP4_TARGET_COUNT, targets.size());
+
+        chunkContext
+                .getStepContext()
+                .getStepExecution()
+                .getJobExecution()
+                .getExecutionContext()
+                .put(CONTEXT_STEP4_TARGET_PAIRS, targetPairs);
     }
 }
