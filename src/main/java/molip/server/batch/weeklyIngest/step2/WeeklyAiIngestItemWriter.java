@@ -1,13 +1,15 @@
 package molip.server.batch.weeklyIngest.step2;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,6 +41,8 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutionListener {
 
     private static final ZoneId ZONE_ID = ZoneId.of("Asia/Seoul");
+    private static final DateTimeFormatter TIME_TEXT_FORMATTER =
+            DateTimeFormatter.ofPattern("HH:mm");
 
     private static final String RECORD_TYPE = "USER_FINAL";
 
@@ -161,16 +165,15 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
         String placeholders = buildPlaceholders(dayPlanIds.size());
         String sql =
                 "select id from planner_records "
-                        + "where user_id = ? and record_type = ? and day_plan_id in ("
+                        + "where user_id = ? and day_plan_id in ("
                         + placeholders
                         + ")";
 
-        Object[] params = new Object[2 + dayPlanIds.size()];
+        Object[] params = new Object[1 + dayPlanIds.size()];
         params[0] = userId;
-        params[1] = RECORD_TYPE;
 
         for (int i = 0; i < dayPlanIds.size(); i++) {
-            params[i + 2] = dayPlanIds.get(i);
+            params[i + 1] = dayPlanIds.get(i);
         }
 
         return aiJdbcTemplate.query(sql, (rs, rowNum) -> rs.getLong(1), params);
@@ -238,12 +241,12 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
 
         LocalDateTime now = LocalDateTime.now(ZONE_ID);
 
-        Map<String, Object> values = new java.util.HashMap<>();
+        Map<String, Object> values = new HashMap<>();
         values.put("user_id", user.getId());
         values.put("day_plan_id", dayPlan.getId());
         values.put("record_type", RECORD_TYPE);
-        values.put("start_arrange", toSqlTime(findStartArrange(schedules)));
-        values.put("day_end_time", toSqlTime(user.getDayEndTime()));
+        values.put("start_arrange", toTimeText(findStartArrange(schedules)));
+        values.put("day_end_time", toTimeText(user.getDayEndTime()));
         values.put("focus_time_zone", user.getFocusTimeZone().name());
         values.put("user_age", calculateAge(user, dayPlan.getPlanDate()));
         values.put("user_gender", user.getGender().name());
@@ -283,8 +286,8 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                                         schedule.getType().name(),
                                         schedule.getAssignedBy().name(),
                                         schedule.getAssignmentStatus().name(),
-                                        toSqlTime(schedule.getStartAt()),
-                                        toSqlTime(schedule.getEndAt()),
+                                        toTimeText(schedule.getStartAt()),
+                                        toTimeText(schedule.getEndAt()),
                                         Timestamp.valueOf(now)
                                     };
                                 })
@@ -331,8 +334,8 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
         return value == null ? null : Timestamp.valueOf(value);
     }
 
-    private Time toSqlTime(java.time.LocalTime value) {
-        return value == null ? null : Time.valueOf(value);
+    private String toTimeText(LocalTime value) {
+        return value == null ? null : value.format(TIME_TEXT_FORMATTER);
     }
 
     private java.time.LocalTime findStartArrange(List<Schedule> schedules) {

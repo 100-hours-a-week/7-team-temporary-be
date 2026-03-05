@@ -1,6 +1,7 @@
 package molip.server.ai.config;
 
 import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
@@ -15,24 +16,27 @@ import org.springframework.transaction.PlatformTransactionManager;
 @ConditionalOnProperty(name = "ai.datasource.url")
 public class AiDataSourceConfig {
 
-    @Bean
+    @Bean(name = "aiDataSourceProperties")
     @ConfigurationProperties("ai.datasource")
     public DataSourceProperties aiDataSourceProperties() {
         return new DataSourceProperties();
     }
 
     @Bean(name = "aiDataSource")
-    public DataSource aiDataSource(@NonNull DataSourceProperties aiDataSourceProperties) {
+    public DataSource aiDataSource(
+            @NonNull @Qualifier("aiDataSourceProperties")
+                    DataSourceProperties aiDataSourceProperties) {
         return aiDataSourceProperties.initializeDataSourceBuilder().build();
     }
 
     @Bean(name = "aiJdbcTemplate")
-    public JdbcTemplate aiJdbcTemplate(DataSource aiDataSource) {
+    public JdbcTemplate aiJdbcTemplate(@Qualifier("aiDataSource") DataSource aiDataSource) {
         return new JdbcTemplate(aiDataSource);
     }
 
     @Bean(name = "aiTransactionManager")
-    public PlatformTransactionManager aiTransactionManager(DataSource aiDataSource) {
+    public PlatformTransactionManager aiTransactionManager(
+            @Qualifier("aiDataSource") DataSource aiDataSource) {
         return new DataSourceTransactionManager(aiDataSource);
     }
 }
