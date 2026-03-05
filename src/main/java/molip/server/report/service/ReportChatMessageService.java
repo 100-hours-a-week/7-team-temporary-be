@@ -118,6 +118,30 @@ public class ReportChatMessageService {
                 .orElse(null);
     }
 
+    @Transactional(readOnly = true)
+    public ReportChatMessage getLatestActiveAiStreamMessage(Long reportId) {
+        if (reportId == null) {
+            throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
+        }
+
+        return reportChatMessageRepository
+                .findTopByReportIdAndSenderTypeAndContentIsNullAndDeletedAtIsNullAndIsDeletedFalseOrderByIdDesc(
+                        reportId, SenderType.AI)
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public ReportChatMessage getLatestUserMessageBefore(Long reportId, Long streamMessageId) {
+        if (reportId == null || streamMessageId == null) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        return reportChatMessageRepository
+                .findTopByReportIdAndSenderTypeAndIdLessThanAndDeletedAtIsNullAndIsDeletedFalseOrderByIdDesc(
+                        reportId, SenderType.USER, streamMessageId)
+                .orElse(null);
+    }
+
     @Transactional
     public void completeAiStreamMessage(Long messageId, String content) {
         ReportChatMessage message = getActiveMessage(messageId);

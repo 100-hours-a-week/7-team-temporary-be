@@ -10,6 +10,7 @@ import molip.server.socket.dto.request.SocketReportMessageSendRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.dto.response.SocketReportMessageCancelAcceptedResponse;
 import molip.server.socket.dto.response.SocketReportMessageCancelRejectedResponse;
+import molip.server.socket.dto.response.SocketReportMessageDuplicateResponse;
 import molip.server.socket.dto.response.SocketReportMessageSendAcceptedResponse;
 import molip.server.socket.dto.response.SocketReportMessageSendRejectedResponse;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class SocketReportMessageService {
     private static final String EVENT_ACCEPTED = "report.message.sendAccepted";
     private static final String EVENT_REJECTED = "report.message.sendRejected";
     private static final String EVENT_FAILED = "report.message.sendFailed";
+    private static final String EVENT_DUPLICATE = "report.message.duplicate";
     private static final String EVENT_CANCEL_ACCEPTED = "report.message.cancelAccepted";
     private static final String EVENT_CANCEL_REJECTED = "report.message.cancelRejected";
     private static final String EVENT_CANCEL_FAILED = "report.message.cancelFailed";
@@ -51,7 +53,8 @@ public class SocketReportMessageService {
 
         } catch (BaseException exception) {
 
-            return handleBusinessError(request.reportId(), exception.getErrorCode());
+            return handleBusinessError(
+                    userId, request.reportId(), request.inputMessage(), exception.getErrorCode());
 
         } catch (Exception exception) {
 
@@ -99,8 +102,8 @@ public class SocketReportMessageService {
         }
     }
 
-    private SocketEventResponse<SocketReportMessageSendRejectedResponse> handleBusinessError(
-            Long reportId, ErrorCode errorCode) {
+    private SocketEventResponse<?> handleBusinessError(
+            Long userId, Long reportId, String inputMessage, ErrorCode errorCode) {
         return switch (errorCode) {
             case INVALID_REQUEST_INPUT_MESSAGE_REQUIRED ->
                     rejected(reportId, "REPORT_MESSAGE_INVALID_PAYLOAD", errorCode.getMessage());
@@ -112,10 +115,29 @@ public class SocketReportMessageService {
                     rejected(reportId, "REPORT_MESSAGE_NOT_FOUND", errorCode.getMessage());
 
             case CONFLICT_REPORT_RESPONSE_RUNNING ->
-                    rejected(reportId, "REPORT_MESSAGE_CONFLICT", errorCode.getMessage());
+                    resolveDuplicate(userId, reportId, inputMessage, errorCode);
 
             default -> failed(reportId, "REPORT_MESSAGE_INTERNAL_ERROR", errorCode.getMessage());
         };
+    }
+
+    private SocketEventResponse<?> resolveDuplicate(
+            Long userId, Long reportId, String inputMessage, ErrorCode errorCode) {
+        ReportMessageCreateResponse duplicate =
+                reportCommandFacade.resolveDuplicateByRunningMessage(
+                        userId, reportId, inputMessage);
+
+        if (duplicate == null) {
+            return rejected(reportId, "REPORT_MESSAGE_CONFLICT", errorCode.getMessage());
+        }
+
+        return SocketEventResponse.of(
+                EVENT_DUPLICATE,
+                SocketReportMessageDuplicateResponse.of(
+                        reportId,
+                        duplicate.inputMessageId(),
+                        duplicate.streamMessageId(),
+                        "SUCCEEDED"));
     }
 
     private SocketEventResponse<SocketReportMessageSendRejectedResponse> rejected(

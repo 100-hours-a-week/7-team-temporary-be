@@ -17,6 +17,14 @@ public interface ReportChatMessageRepository extends JpaRepository<ReportChatMes
     Optional<ReportChatMessage> findTopByReportIdAndSenderTypeAndIdLessThanOrderByIdDesc(
             Long reportId, SenderType senderType, Long streamMessageId);
 
+    Optional<ReportChatMessage>
+            findTopByReportIdAndSenderTypeAndContentIsNullAndDeletedAtIsNullAndIsDeletedFalseOrderByIdDesc(
+                    Long reportId, SenderType senderType);
+
+    Optional<ReportChatMessage>
+            findTopByReportIdAndSenderTypeAndIdLessThanAndDeletedAtIsNullAndIsDeletedFalseOrderByIdDesc(
+                    Long reportId, SenderType senderType, Long streamMessageId);
+
     boolean existsByIdAndReportIdAndDeletedAtIsNullAndIsDeletedFalse(Long messageId, Long reportId);
 
     Page<ReportChatMessage> findByReportIdAndDeletedAtIsNullAndIsDeletedFalseOrderByIdDesc(

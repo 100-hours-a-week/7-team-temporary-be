@@ -18,6 +18,7 @@ import molip.server.report.dto.response.ReportMessageCreateResponse;
 import molip.server.report.entity.Report;
 import molip.server.report.entity.ReportChatMessage;
 import molip.server.report.event.ReportChatRespondRequestedEvent;
+import molip.server.report.event.ReportMessageCreatedEvent;
 import molip.server.report.redis.RedisReportChatStreamStore;
 import molip.server.report.service.ReportChatMessageService;
 import molip.server.report.service.ReportService;
@@ -66,10 +67,55 @@ public class ReportCommandFacade {
         requestAiRespond(userId, reportId, streamMessageEntity.getId());
 
         eventPublisher.publishEvent(
+                new ReportMessageCreatedEvent(
+                        userId,
+                        reportId,
+                        inputMessageEntity.getId(),
+                        inputMessageEntity.getSenderType(),
+                        inputMessageEntity.getMessageType(),
+                        inputMessageEntity.getContent(),
+                        inputMessageEntity.getSentAt()));
+
+        eventPublisher.publishEvent(
                 new ReportChatRespondRequestedEvent(reportId, streamMessageEntity.getId()));
 
         return ReportMessageCreateResponse.of(
                 inputMessageEntity.getId(), streamMessageEntity.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public ReportMessageCreateResponse resolveDuplicateByRunningMessage(
+            Long userId, Long reportId, String inputMessage) {
+        Report report = reportService.getReportWithUserId(userId, reportId);
+
+        validateReportAvailability(report);
+
+        ReportChatMessage runningStreamMessage =
+                reportChatMessageService.getLatestActiveAiStreamMessage(reportId);
+
+        if (runningStreamMessage == null) {
+            return null;
+        }
+
+        ReportChatMessage latestUserMessage =
+                reportChatMessageService.getLatestUserMessageBefore(
+                        reportId, runningStreamMessage.getId());
+
+        if (latestUserMessage == null) {
+            return null;
+        }
+
+        String normalizedInput = normalizeContent(inputMessage);
+        String latestContent = normalizeContent(latestUserMessage.getContent());
+
+        if (normalizedInput == null
+                || latestContent == null
+                || !normalizedInput.equals(latestContent)) {
+            return null;
+        }
+
+        return ReportMessageCreateResponse.of(
+                latestUserMessage.getId(), runningStreamMessage.getId());
     }
 
     private void validateReportAvailability(Report report) {
@@ -79,6 +125,16 @@ public class ReportCommandFacade {
         if (now.isBefore(availableAt)) {
             throw new BaseException(ErrorCode.FORBIDDEN_REPORT_NOT_AVAILABLE_YET);
         }
+    }
+
+    private String normalizeContent(String content) {
+        if (content == null) {
+            return null;
+        }
+
+        String normalized = content.trim();
+
+        return normalized.isEmpty() ? null : normalized;
     }
 
     private void requestAiRespond(Long userId, Long reportId, Long streamMessageId) {
