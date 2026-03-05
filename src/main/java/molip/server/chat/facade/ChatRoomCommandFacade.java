@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.ChatMessageSendRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
+import molip.server.chat.dto.response.ChatDirectRoomEnterResponse;
 import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
 import molip.server.chat.dto.response.ChatMessageSendCommandResult;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
@@ -31,6 +32,7 @@ import molip.server.common.enums.MessageType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.common.response.ImageInfoResponse;
+import molip.server.friend.service.FriendService;
 import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
@@ -52,6 +54,7 @@ public class ChatRoomCommandFacade {
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatMessageService chatMessageService;
     private final MessageImageService messageImageService;
+    private final FriendService friendService;
     private final UserService userService;
     private final UserImageService userImageService;
     private final ImageService imageService;
@@ -73,6 +76,21 @@ public class ChatRoomCommandFacade {
                 new ChatRoomParticipantEnteredEvent(chatRoom, participant, user));
 
         return ChatRoomEnterResponse.from(participant.getId());
+    }
+
+    @Transactional
+    public ChatDirectRoomEnterResponse enterOrCreateDirectChatRoom(Long userId, Long friendId) {
+        validateDirectChatRequest(userId, friendId);
+        Users user = userService.getUser(userId);
+        Users friend = getFriendUser(friendId);
+
+        friendService.lockFriendRelationPair(userId, friendId);
+
+        ChatRoom directRoom = findOrCreateDirectRoom(userId, friendId);
+        ensureActiveDirectParticipant(user, directRoom);
+        ensureActiveDirectParticipant(friend, directRoom);
+
+        return ChatDirectRoomEnterResponse.of(directRoom.getId(), "JOINED");
     }
 
     @Transactional
@@ -219,6 +237,52 @@ public class ChatRoomCommandFacade {
         if (userId == null || roomId == null || messageId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MESSAGE_DELETE);
         }
+    }
+
+    private void validateDirectChatRequest(Long userId, Long friendId) {
+        if (userId == null || friendId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (userId.equals(friendId)) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_SELF_FRIEND);
+        }
+    }
+
+    private Users getFriendUser(Long friendId) {
+        try {
+            return userService.getUser(friendId);
+        } catch (BaseException exception) {
+            throw new BaseException(ErrorCode.USER_NOT_FOUND_TARGET);
+        }
+    }
+
+    private ChatRoom findOrCreateDirectRoom(Long userId, Long friendId) {
+        ChatRoom directRoom = chatRoomService.findDirectRoomByUserPair(userId, friendId);
+
+        if (directRoom != null) {
+            return directRoom;
+        }
+
+        return chatRoomService.createDirectChatRoom(userId, friendId);
+    }
+
+    private ChatRoomParticipant ensureActiveDirectParticipant(Users user, ChatRoom directRoom) {
+        ChatRoomParticipant participant =
+                chatRoomParticipantService
+                        .getActiveParticipant(directRoom.getId(), user.getId())
+                        .orElse(null);
+
+        if (participant == null) {
+            return chatRoomParticipantService.createParticipant(
+                    user, directRoom, getLatestMessageId(directRoom.getId()));
+        }
+
+        return participant;
+    }
+
+    private Long getLatestMessageId(Long roomId) {
+        return chatMessageService.getLatestMessage(roomId).map(ChatMessage::getId).orElse(null);
     }
 
     private ChatRoom validateSendMessageAccess(Long userId, Long roomId) {

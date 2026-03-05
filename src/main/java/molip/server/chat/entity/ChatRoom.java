@@ -34,9 +34,18 @@ public class ChatRoom extends BaseEntity {
     private int maxParticipants;
 
     public ChatRoom(Long ownerId, String title, String description, int maxParticipants) {
+        this(ownerId, title, ChatRoomType.OPEN_CHAT, description, maxParticipants);
+    }
+
+    public ChatRoom(
+            Long ownerId,
+            String title,
+            ChatRoomType type,
+            String description,
+            int maxParticipants) {
         this.ownerId = ownerId;
         this.title = title;
-        this.type = ChatRoomType.OPEN_CHAT;
+        this.type = type;
         this.description = description;
         this.maxParticipants = maxParticipants;
     }

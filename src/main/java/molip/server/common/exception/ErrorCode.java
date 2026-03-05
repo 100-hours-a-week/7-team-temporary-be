@@ -45,7 +45,7 @@ public enum ErrorCode {
     // Friend
     INVALID_REQUEST_SELF_FRIEND(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "자기 자신에게 친구 요청을 보낼 수 없습니다."),
-    USER_NOT_FOUND_TARGET(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "대상 사용자를 찾을 수 없습니다."),
+    USER_NOT_FOUND_TARGET(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "해당 친구 유저를 찾을 수 없습니다."),
     CONFLICT_ALREADY_REQUESTED(HttpStatus.CONFLICT, "CONFLICT", "이미 친구 요청을 보낸 상태입니다."),
     CONFLICT_RECEIVED_ALREADY(
             HttpStatus.CONFLICT, "CONFLICT", "상대가 이미 친구 요청을 보냈습니다. 받은 요청 목록에서 수락해주세요."),
@@ -138,6 +138,8 @@ public enum ErrorCode {
     FORBIDDEN_MESSAGE_UPDATE(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 메시지만 수정할 수 있습니다."),
     INVALID_REQUEST_MESSAGE_DELETE(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "필수 값이 누락되었거나 메시지 삭제 요청이 올바르지 않습니다."),
+    INVALID_REQUEST_DIRECT_CHAT_LEAVE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "개인 채팅방은 퇴장할 수 없습니다."),
     FORBIDDEN_MESSAGE_DELETE(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 메시지만 삭제할 수 있습니다."),
     CONFLICT_MESSAGE_ALREADY_DELETED(HttpStatus.CONFLICT, "CONFLICT", "이미 삭제된 메시지입니다."),
     CONFLICT_MESSAGE_REQUEST_PROCESSING(
