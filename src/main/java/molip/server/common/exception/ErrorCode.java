@@ -108,6 +108,8 @@ public enum ErrorCode {
             HttpStatus.SERVICE_UNAVAILABLE,
             "WEEKLY_REPORT_SERVICE_UNAVAILABLE",
             "현재 주간 레포트 생성 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    WEEKLY_REPORT_FETCH_BAD_REQUEST(
+            HttpStatus.BAD_REQUEST, "WEEKLY_REPORT_FETCH_BAD_REQUEST", "잘못된 요청 형식입니다."),
     INVALID_REQUEST_AI_USAGE_EXCEEDED(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "AI 사용 가능 횟수가 모두 소진되었습니다."),
 

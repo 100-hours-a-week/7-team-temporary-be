@@ -100,6 +100,7 @@ ai:
     timeout-ms: ${AI_PLANNER_TIMEOUT_MS}
   report:
     weekly-generate-path: ${AI_WEEKLY_REPORT_GENERATE_PATH}
+    weekly-fetch-path: ${AI_WEEKLY_REPORT_FETCH_PATH}
     timeout-ms: ${AI_WEEKLY_REPORT_TIMEOUT_MS}
   personalization:
     path: ${AI_PERSONALIZATION_INGEST_PATH}
@@ -119,6 +120,13 @@ notification:
   dispatch:
     fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
     batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}
+
+batch:
+  weekly:
+    report-fetch:
+      initial-delay-ms: ${BATCH_WEEKLY_REPORT_FETCH_INITIAL_DELAY_MS:30000}
+      poll-interval-ms: ${BATCH_WEEKLY_REPORT_FETCH_POLL_INTERVAL_MS:20000}
+      max-attempts: ${BATCH_WEEKLY_REPORT_FETCH_MAX_ATTEMPTS:15}
 
 
 migration:

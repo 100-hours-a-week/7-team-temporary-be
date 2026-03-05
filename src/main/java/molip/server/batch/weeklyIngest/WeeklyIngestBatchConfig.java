@@ -14,6 +14,7 @@ import molip.server.batch.weeklyIngest.step1.WeeklyScoreUserReader;
 import molip.server.batch.weeklyIngest.step2.WeeklyAiIngestItemWriter;
 import molip.server.batch.weeklyIngest.step3.WeeklyAiNotifyTasklet;
 import molip.server.batch.weeklyIngest.step4.WeeklyAiReportGenerateTasklet;
+import molip.server.batch.weeklyIngest.step5.WeeklyAiReportFetchTasklet;
 import molip.server.report.repository.ReportDailyStatRepository;
 import molip.server.report.repository.ReportRepository;
 import molip.server.schedule.repository.DayPlanRepository;
@@ -52,6 +53,7 @@ public class WeeklyIngestBatchConfig {
             Step weeklyAiIngestStep,
             Step weeklyAiNotifyStep,
             Step weeklyAiReportGenerateStep,
+            Step weeklyAiReportFetchStep,
             BatchTrackingService batchTrackingService) {
         return new JobBuilder("weeklyIngestJob", jobRepository)
                 .listener(weeklyIngestJobListener(batchTrackingService))
@@ -59,6 +61,7 @@ public class WeeklyIngestBatchConfig {
                 .next(weeklyAiIngestStep)
                 .next(weeklyAiNotifyStep)
                 .next(weeklyAiReportGenerateStep)
+                .next(weeklyAiReportFetchStep)
                 .build();
     }
 
@@ -142,7 +145,7 @@ public class WeeklyIngestBatchConfig {
             WeeklyAiNotifyTasklet weeklyAiNotifyTasklet) {
         return new StepBuilder("weeklyAiNotifyStep", jobRepository)
                 .listener(
-                        new molip.server.batch.service.BatchStepTrackingListener(
+                        new BatchStepTrackingListener(
                                 batchTrackingService, BatchTargetType.CHUNK, null))
                 .tasklet(weeklyAiNotifyTasklet, transactionManager)
                 .build();
@@ -159,6 +162,21 @@ public class WeeklyIngestBatchConfig {
                         new BatchStepTrackingListener(
                                 batchTrackingService, BatchTargetType.CHUNK, null))
                 .tasklet(weeklyAiReportGenerateTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step weeklyAiReportFetchStep(
+            JobRepository jobRepository,
+            PlatformTransactionManager transactionManager,
+            BatchTrackingService batchTrackingService,
+            WeeklyAiReportFetchTasklet weeklyAiReportFetchTasklet) {
+
+        return new StepBuilder("weeklyAiReportFetchStep", jobRepository)
+                .listener(
+                        new BatchStepTrackingListener(
+                                batchTrackingService, BatchTargetType.CHUNK, null))
+                .tasklet(weeklyAiReportFetchTasklet, transactionManager)
                 .build();
     }
 
