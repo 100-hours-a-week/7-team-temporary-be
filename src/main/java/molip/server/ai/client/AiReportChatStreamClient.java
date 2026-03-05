@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
+@Slf4j
 public class AiReportChatStreamClient {
 
     private final ObjectMapper objectMapper;
@@ -42,6 +44,11 @@ public class AiReportChatStreamClient {
     public void stream(
             Long reportId, Long streamMessageId, Consumer<AiReportChatStreamEvent> eventConsumer) {
         try {
+            log.info(
+                    "ai report stream subscribe request: reportId={}, streamMessageId={}",
+                    reportId,
+                    streamMessageId);
+
             restTemplate.execute(
                     baseUrl + streamPath,
                     HttpMethod.GET,
@@ -54,7 +61,18 @@ public class AiReportChatStreamClient {
                             "reportId", reportId,
                             "messageId", streamMessageId,
                             "streamMessageId", streamMessageId));
+
+            log.info(
+                    "ai report stream subscribe completed: reportId={}, streamMessageId={}",
+                    reportId,
+                    streamMessageId);
         } catch (Exception exception) {
+            log.error(
+                    "ai report stream subscribe failed: reportId={}, streamMessageId={}, message={}",
+                    reportId,
+                    streamMessageId,
+                    exception.getMessage(),
+                    exception);
             throw new BaseException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
@@ -103,6 +121,8 @@ public class AiReportChatStreamClient {
         if (eventType == null || dataBuilder.isEmpty()) {
             return;
         }
+
+        log.info("ai report stream raw event: eventType={}, data={}", eventType, dataBuilder);
 
         JsonNode data = objectMapper.readTree(dataBuilder.toString());
 

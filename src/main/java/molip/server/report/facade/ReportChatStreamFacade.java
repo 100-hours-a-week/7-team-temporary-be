@@ -162,12 +162,14 @@ public class ReportChatStreamFacade {
                                                 accumulator,
                                                 event));
 
-                    } catch (Exception ignored) {
+                    } catch (Exception exception) {
                         log.error(
-                                "report stream execution failed: reportId={}, streamMessageId={}, userId={}",
+                                "report stream execution failed: reportId={}, streamMessageId={}, userId={}, message={}",
                                 reportId,
                                 streamMessageId,
-                                userId);
+                                userId,
+                                exception.getMessage(),
+                                exception);
 
                         broadcastError(reportId, userId, streamMessageId);
                         redisReportChatStreamStore.updateStatus(
@@ -202,7 +204,7 @@ public class ReportChatStreamFacade {
             case EVENT_COMPLETE ->
                     handleComplete(reportId, userId, streamMessageId, accumulator, event.data());
 
-            case EVENT_ERROR -> handleError(reportId, userId, streamMessageId);
+            case EVENT_ERROR -> handleError(reportId, userId, streamMessageId, event.data());
 
             default -> {}
         }
@@ -333,12 +335,13 @@ public class ReportChatStreamFacade {
                 accumulator.content.length());
     }
 
-    private void handleError(Long reportId, Long userId, Long streamMessageId) {
+    private void handleError(Long reportId, Long userId, Long streamMessageId, JsonNode data) {
         log.warn(
-                "report stream event error: reportId={}, streamMessageId={}, userId={}",
+                "report stream event error: reportId={}, streamMessageId={}, userId={}, payload={}",
                 reportId,
                 streamMessageId,
-                userId);
+                userId,
+                data);
 
         broadcastError(reportId, userId, streamMessageId);
         redisReportChatStreamStore.updateStatus(reportId, streamMessageId, STATUS_FAILED);
