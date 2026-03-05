@@ -27,6 +27,8 @@ public interface ReportChatMessageRepository extends JpaRepository<ReportChatMes
 
     boolean existsByIdAndReportIdAndDeletedAtIsNullAndIsDeletedFalse(Long messageId, Long reportId);
 
+    boolean existsByReportIdAndDeletedAtIsNullAndIsDeletedFalse(Long reportId);
+
     Page<ReportChatMessage> findByReportIdAndDeletedAtIsNullAndIsDeletedFalseOrderByIdDesc(
             Long reportId, Pageable pageable);
 
