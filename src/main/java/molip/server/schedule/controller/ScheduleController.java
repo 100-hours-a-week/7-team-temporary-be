@@ -27,8 +27,6 @@ import molip.server.schedule.facade.AiPlannerFacade;
 import molip.server.schedule.facade.DayPlanQueryFacade;
 import molip.server.schedule.facade.ScheduleCommandFacade;
 import molip.server.schedule.facade.ScheduleQueryFacade;
-import molip.server.schedule.service.DayPlanService;
-import molip.server.schedule.service.ScheduleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -47,8 +45,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ScheduleController implements ScheduleApi {
 
-    private final ScheduleService scheduleService;
-    private final DayPlanService dayPlanService;
     private final DayPlanQueryFacade dayPlanQueryFacade;
     private final ScheduleQueryFacade scheduleQueryFacade;
     private final ScheduleCommandFacade scheduleCommandFacade;
@@ -63,11 +59,10 @@ public class ScheduleController implements ScheduleApi {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
-
         Schedule schedule =
-                scheduleService.createSchedule(
-                        dayPlan,
+                scheduleCommandFacade.createSchedule(
+                        userId,
+                        dayPlanId,
                         request.type(),
                         request.title(),
                         request.startAt(),
@@ -112,7 +107,8 @@ public class ScheduleController implements ScheduleApi {
         DayPlan dayPlan = dayPlanQueryFacade.getOrCreateDayPlan(userId, date);
 
         DayPlanSchedulePageResponse response =
-                scheduleQueryFacade.getTimeAssignedSchedulesByDate(dayPlan.getId(), page, size);
+                scheduleQueryFacade.getTimeAssignedSchedulesByDate(
+                        userId, dayPlan.getId(), page, size);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.DAY_SCHEDULE_LIST_SUCCESS, response));
@@ -143,7 +139,7 @@ public class ScheduleController implements ScheduleApi {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        scheduleService.updateSchedule(
+        scheduleCommandFacade.updateSchedule(
                 userId,
                 scheduleId,
                 request.type(),
@@ -164,7 +160,7 @@ public class ScheduleController implements ScheduleApi {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        scheduleService.deleteSchedule(userId, scheduleId);
+        scheduleCommandFacade.deleteSchedule(userId, scheduleId);
 
         return ResponseEntity.noContent().build();
     }
@@ -210,7 +206,7 @@ public class ScheduleController implements ScheduleApi {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        scheduleService.updateStatus(userId, scheduleId, request.status());
+        scheduleCommandFacade.updateStatus(userId, scheduleId, request.status());
 
         return ResponseEntity.noContent().build();
     }
@@ -224,7 +220,7 @@ public class ScheduleController implements ScheduleApi {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        scheduleService.assignScheduleToDayPlan(
+        scheduleCommandFacade.assignScheduleToDayPlan(
                 userId, scheduleId, request.targetDayPlanId(), request.startAt(), request.endAt());
 
         return ResponseEntity.noContent().build();
@@ -259,7 +255,8 @@ public class ScheduleController implements ScheduleApi {
         String today = LocalDate.now().toString();
         DayPlan dayPlan = dayPlanQueryFacade.getOrCreateDayPlan(userId, today);
 
-        ScheduleSummaryResponse response = scheduleQueryFacade.getCurrentSchedule(dayPlan.getId());
+        ScheduleSummaryResponse response =
+                scheduleQueryFacade.getCurrentSchedule(userId, dayPlan.getId());
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CURRENT_SCHEDULE_FETCH_SUCCESS, response));
@@ -287,7 +284,7 @@ public class ScheduleController implements ScheduleApi {
 
         Long userId = Long.valueOf(userDetails.getUsername());
 
-        scheduleService.updateAssignmentStatus(
+        scheduleCommandFacade.updateAssignmentStatus(
                 userId, targetScheduleId, request.excludedScheduleId());
 
         return ResponseEntity.noContent().build();

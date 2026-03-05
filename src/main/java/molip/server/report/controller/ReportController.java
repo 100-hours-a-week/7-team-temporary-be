@@ -7,10 +7,11 @@ import molip.server.common.response.ServerResponse;
 import molip.server.report.dto.request.ReportMessageCreateRequest;
 import molip.server.report.dto.response.ReportMessageCreateResponse;
 import molip.server.report.dto.response.ReportMessageItemResponse;
+import molip.server.report.dto.response.ReportMessageStreamResumeResponse;
 import molip.server.report.dto.response.ReportResponse;
+import molip.server.report.facade.ReportChatStreamFacade;
+import molip.server.report.facade.ReportCommandFacade;
 import molip.server.report.facade.ReportQueryFacade;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,13 +22,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequiredArgsConstructor
 public class ReportController implements ReportApi {
 
+    private final ReportCommandFacade reportCommandFacade;
     private final ReportQueryFacade reportQueryFacade;
+    private final ReportChatStreamFacade reportChatStreamFacade;
 
     @GetMapping("/reports")
     @Override
@@ -59,28 +61,45 @@ public class ReportController implements ReportApi {
     }
 
     @PostMapping("/reports/{reportId}/message")
-    @Deprecated
     @Override
     public ResponseEntity<ServerResponse<ReportMessageCreateResponse>> createReportMessage(
-            @PathVariable Long reportId, @RequestBody ReportMessageCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long reportId,
+            @RequestBody ReportMessageCreateRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ReportMessageCreateResponse response =
+                reportCommandFacade.createReportMessage(userId, reportId, request.inputMessage());
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.REPORT_MESSAGE_CREATED, response));
     }
 
-    @GetMapping(
-            value = "/reports/{reportId}/message/{messageId}",
-            produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @Deprecated
+    @GetMapping("/reports/{reportId}/message/{messageId}")
     @Override
-    public ResponseEntity<SseEmitter> streamReportMessage(
-            @PathVariable Long reportId, @PathVariable Long messageId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+    public ResponseEntity<ServerResponse<ReportMessageStreamResumeResponse>> streamReportMessage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long reportId,
+            @PathVariable("messageId") Long streamMessageId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ReportMessageStreamResumeResponse response =
+                reportChatStreamFacade.resumeStream(userId, reportId, streamMessageId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.REPORT_MESSAGE_STREAM_RESUME_SUCCESS, response));
     }
 
     @DeleteMapping("/reports/{reportId}/message/{messageId}")
-    @Deprecated
     @Override
     public ResponseEntity<Void> cancelReportMessage(
-            @PathVariable Long reportId, @PathVariable Long messageId) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long reportId,
+            @PathVariable("messageId") Long streamMessageId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reportCommandFacade.cancelReportMessage(userId, reportId, streamMessageId);
+
         return ResponseEntity.noContent().build();
     }
 }

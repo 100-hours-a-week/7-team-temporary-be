@@ -25,6 +25,7 @@ public enum SuccessCode {
     REPORT_WEEKLY_SUCCESS("SUCCESS", "주간 리포트를 성공적으로 조회했습니다."),
     REPORT_MESSAGE_LIST_SUCCESS("SUCCESS", "리포트 메시지 목록 조회 성공"),
     REPORT_MESSAGE_CREATED("SUCCESS", "메시지가 성공적으로 등록되었습니다."),
+    REPORT_MESSAGE_STREAM_RESUME_SUCCESS("SUCCESS", "리포트 메시지 스트림 재개 정보 조회 성공"),
 
     CHAT_ROOM_CREATED("SUCCESS", "채팅방이 생성되었습니다."),
     CHAT_ROOM_DETAIL_SUCCESS("SUCCESS", "채팅방 상세 내역을 성공적으로 조회했습니다."),

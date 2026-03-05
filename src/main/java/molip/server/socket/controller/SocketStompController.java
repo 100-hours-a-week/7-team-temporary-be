@@ -8,11 +8,14 @@ import molip.server.socket.dto.request.SocketDisconnectRequest;
 import molip.server.socket.dto.request.SocketLastSeenUpdateRequest;
 import molip.server.socket.dto.request.SocketMessageSendRequest;
 import molip.server.socket.dto.request.SocketPongRequest;
+import molip.server.socket.dto.request.SocketReportMessageCancelRequest;
+import molip.server.socket.dto.request.SocketReportMessageSendRequest;
 import molip.server.socket.dto.request.SocketRoomSubscribeRequest;
 import molip.server.socket.dto.request.SocketRoomUnsubscribeRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.service.SocketHandshakeService;
+import molip.server.socket.service.SocketReportMessageService;
 import molip.server.socket.service.SocketRoomMessageService;
 import molip.server.socket.service.SocketRoomSubscriptionService;
 import molip.server.socket.session.SocketSessionSupport;
@@ -30,6 +33,7 @@ public class SocketStompController {
     private final SocketHandshakeService socketHandshakeService;
     private final SocketRoomSubscriptionService socketRoomSubscriptionService;
     private final SocketRoomMessageService socketRoomMessageService;
+    private final SocketReportMessageService socketReportMessageService;
     private final SocketSessionSupport socketSessionSupport;
 
     @MessageMapping("/handshake/connect")
@@ -151,6 +155,38 @@ public class SocketStompController {
                 .<SocketEventResponse<?>>map(
                         sessionContext ->
                                 socketRoomMessageService.sendMessage(
+                                        sessionContext.userId(), request))
+                .orElseGet(() -> reconnectRequired(sessionId));
+    }
+
+    @MessageMapping("/report/message")
+    @SendToUser(value = "/queue/report", broadcast = false)
+    public SocketEventResponse<?> sendReportMessage(
+            SocketReportMessageSendRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+
+        return socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .<SocketEventResponse<?>>map(
+                        sessionContext ->
+                                socketReportMessageService.sendMessage(
+                                        sessionContext.userId(), request))
+                .orElseGet(() -> reconnectRequired(sessionId));
+    }
+
+    @MessageMapping("/report/message/cancel")
+    @SendToUser(value = "/queue/report", broadcast = false)
+    public SocketEventResponse<?> cancelReportMessage(
+            SocketReportMessageCancelRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+
+        return socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .<SocketEventResponse<?>>map(
+                        sessionContext ->
+                                socketReportMessageService.cancelMessage(
                                         sessionContext.userId(), request))
                 .orElseGet(() -> reconnectRequired(sessionId));
     }

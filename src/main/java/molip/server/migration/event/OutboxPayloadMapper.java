@@ -16,6 +16,7 @@ import molip.server.reflection.entity.DayReflectionImage;
 import molip.server.reflection.entity.ReflectionLike;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
+import molip.server.schedule.entity.ScheduleActionLog;
 import molip.server.schedule.entity.ScheduleHistory;
 import molip.server.terms.entity.TermsSign;
 import molip.server.user.entity.UserImage;
@@ -115,6 +116,20 @@ public final class OutboxPayloadMapper {
         payload.putAll(
                 auditPayload(
                         history.getCreatedAt(), history.getUpdatedAt(), history.getDeletedAt()));
+        return payload;
+    }
+
+    public static Map<String, Object> scheduleActionLog(ScheduleActionLog actionLog) {
+        Map<String, Object> payload = baseEntityPayload(actionLog.getId(), actionLog.getVersion());
+        payload.put("user_id", actionLog.getUserId());
+        payload.put("schedule_id", actionLog.getScheduleId());
+        payload.put("action_type", actionLog.getActionType().name());
+        payload.put("api_path", actionLog.getApiPath());
+        payload.putAll(
+                auditPayload(
+                        actionLog.getCreatedAt(),
+                        actionLog.getUpdatedAt(),
+                        actionLog.getDeletedAt()));
         return payload;
     }
 

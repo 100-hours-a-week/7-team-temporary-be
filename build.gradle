@@ -103,6 +103,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
+	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
@@ -157,6 +158,9 @@ dependencies {
 
     // Rate limiting
     implementation 'com.bucket4j:bucket4j-core:8.7.0'
+
+    // Batch
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
 
 }
 
