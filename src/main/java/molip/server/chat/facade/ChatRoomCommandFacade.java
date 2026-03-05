@@ -46,6 +46,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ChatRoomCommandFacade {
 
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
+
     private final ChatRoomService chatRoomService;
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatMessageService chatMessageService;
@@ -330,7 +332,15 @@ public class ChatRoomCommandFacade {
                                 imageService.issueGetUrlWithoutValidation(
                                         ImageType.USERS, image.getUploadKey()))
                 .map(this::toImageInfoResponse)
-                .orElse(null);
+                .orElseGet(this::getDefaultProfileImage);
+    }
+
+    private ImageInfoResponse getDefaultProfileImage() {
+        ImageGetUrlResponse response =
+                imageService.issueGetUrlWithoutValidation(
+                        ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
+
+        return ImageInfoResponse.of(response.url(), response.expiresAt(), response.imageKey());
     }
 
     private ImageInfoResponse toImageInfoResponse(ImageGetUrlResponse response) {
