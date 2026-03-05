@@ -1,6 +1,7 @@
 package molip.server.batch.weeklyIngest.step2;
 
 import java.sql.Timestamp;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -8,6 +9,7 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,8 +82,14 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                         .usingGeneratedKeyColumns("id");
 
         LocalDate runDate = resolveRunDate(stepExecution);
-        this.periodEnd = runDate.minusDays(1);
-        this.periodStart = periodEnd.minusDays(6);
+        // 기존: 실행일 기준 직전 7일
+        // this.periodEnd = runDate.minusDays(1);
+        // this.periodStart = periodEnd.minusDays(6);
+
+        // 변경: 실행 요일과 무관하게 마지막 완료 주간(일~토) 고정
+        LocalDate lastSunday = runDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+        this.periodEnd = lastSunday.minusDays(1);
+        this.periodStart = this.periodEnd.minusDays(6);
     }
 
     @Override

@@ -1,8 +1,10 @@
 package molip.server.batch.weeklyIngest.step3;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,15 +38,21 @@ public class WeeklyAiNotifyTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
         LocalDate runDate = resolveRunDate(chunkContext);
+        // 기존: AI ingest 기준일을 실행일(runDate)로 사용
+        // 변경: 다른 스텝과 동일하게 마지막 완료 주간의 시작일(일요일)로 고정
+        LocalDate lastSunday = runDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+        LocalDate periodStart = lastSunday.minusDays(7);
         List<Long> userIds = collectActiveUserIds();
 
         if (userIds.isEmpty()) {
-            log.info("Weekly AI notify skipped. targetDate={}, reason=no active users", runDate);
+            log.info(
+                    "Weekly AI notify skipped. targetDate={}, reason=no active users", periodStart);
             return RepeatStatus.FINISHED;
         }
 
         AiPersonalizationIngestResponse response =
-                aiPersonalizationClient.requestIngest(userIds, runDate);
+                // aiPersonalizationClient.requestIngest(userIds, runDate);
+                aiPersonalizationClient.requestIngest(userIds, periodStart);
 
         if (!response.success()) {
             throw new BaseException(ErrorCode.PERSONALIZATION_INGEST_INTERNAL_SERVER_ERROR);
@@ -52,7 +60,7 @@ public class WeeklyAiNotifyTasklet implements Tasklet {
 
         log.info(
                 "Weekly AI notify succeeded. targetDate={}, requestedUsers={}, acknowledgedUsers={}",
-                runDate,
+                periodStart,
                 userIds.size(),
                 response.userIds() == null ? 0 : response.userIds().size());
 
