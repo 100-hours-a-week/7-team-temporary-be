@@ -1,11 +1,9 @@
 package molip.server.batch.weeklyIngest.step4;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,13 +41,7 @@ public class WeeklyAiReportGenerateTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
         LocalDate runDate = resolveRunDate(chunkContext);
-        // 기존: 실행일 기준 직전 7일
-        // LocalDate periodEnd = runDate.minusDays(1);
-        // LocalDate periodStart = periodEnd.minusDays(6);
-
-        // 변경: 실행 요일과 무관하게 마지막 완료 주간(일~토) 고정
-        LocalDate lastSunday = runDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        LocalDate periodEnd = lastSunday.minusDays(1);
+        LocalDate periodEnd = runDate.minusDays(1);
         LocalDate periodStart = periodEnd.minusDays(6);
 
         List<Report> reports = reportRepository.findWeeklyTargets(periodStart, periodEnd);
