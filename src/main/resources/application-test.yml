@@ -52,6 +52,9 @@ ai:
     base-url: http://localhost
     path: /test/planner
     timeout-ms: 300000
+  report:
+    weekly-generate-path: weeklytest
+    timeout-ms: 300000
   personalization:
     path: testtest
   datasource:

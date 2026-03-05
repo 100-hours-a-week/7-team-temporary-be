@@ -7,11 +7,13 @@ import lombok.RequiredArgsConstructor;
 import molip.server.batch.entity.BatchJobRun;
 import molip.server.batch.enums.BatchRunStatus;
 import molip.server.batch.enums.BatchTargetType;
+import molip.server.batch.service.BatchStepTrackingListener;
 import molip.server.batch.service.BatchTrackingService;
 import molip.server.batch.weeklyIngest.step1.WeeklyScoreItemWriter;
 import molip.server.batch.weeklyIngest.step1.WeeklyScoreUserReader;
 import molip.server.batch.weeklyIngest.step2.WeeklyAiIngestItemWriter;
 import molip.server.batch.weeklyIngest.step3.WeeklyAiNotifyTasklet;
+import molip.server.batch.weeklyIngest.step4.WeeklyAiReportGenerateTasklet;
 import molip.server.report.repository.ReportDailyStatRepository;
 import molip.server.report.repository.ReportRepository;
 import molip.server.schedule.repository.DayPlanRepository;
@@ -49,12 +51,14 @@ public class WeeklyIngestBatchConfig {
             Step weeklyScoreStep,
             Step weeklyAiIngestStep,
             Step weeklyAiNotifyStep,
+            Step weeklyAiReportGenerateStep,
             BatchTrackingService batchTrackingService) {
         return new JobBuilder("weeklyIngestJob", jobRepository)
                 .listener(weeklyIngestJobListener(batchTrackingService))
                 .start(weeklyScoreStep)
                 .next(weeklyAiIngestStep)
                 .next(weeklyAiNotifyStep)
+                .next(weeklyAiReportGenerateStep)
                 .build();
     }
 
@@ -141,6 +145,20 @@ public class WeeklyIngestBatchConfig {
                         new molip.server.batch.service.BatchStepTrackingListener(
                                 batchTrackingService, BatchTargetType.CHUNK, null))
                 .tasklet(weeklyAiNotifyTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step weeklyAiReportGenerateStep(
+            JobRepository jobRepository,
+            PlatformTransactionManager transactionManager,
+            BatchTrackingService batchTrackingService,
+            WeeklyAiReportGenerateTasklet weeklyAiReportGenerateTasklet) {
+        return new StepBuilder("weeklyAiReportGenerateStep", jobRepository)
+                .listener(
+                        new BatchStepTrackingListener(
+                                batchTrackingService, BatchTargetType.CHUNK, null))
+                .tasklet(weeklyAiReportGenerateTasklet, transactionManager)
                 .build();
     }
 
