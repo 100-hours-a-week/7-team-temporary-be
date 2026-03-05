@@ -30,6 +30,7 @@ import molip.server.schedule.entity.ScheduleHistory;
 import molip.server.schedule.event.ScheduleHistoryRecordedEvent;
 import molip.server.schedule.event.ScheduleOutboxEvent;
 import molip.server.schedule.repository.ScheduleRepository;
+import molip.server.schedule.repository.ScheduleStatusCount;
 import molip.server.schedule.service.strategy.ScheduleCreator;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -286,6 +287,28 @@ public class ScheduleService {
 
         return scheduleRepository.findCurrentSchedule(
                 dayPlanId, currentTime, excludeStatuses, excludeAssignmentStatuses);
+    }
+
+    @Transactional(readOnly = true)
+    public int calculateAchievementRate(Long userId, LocalDate planDate) {
+        List<molip.server.schedule.repository.ScheduleStatusCount> rows =
+                scheduleRepository.countAssignedByStatus(
+                        userId, planDate, List.of(ScheduleStatus.DONE, ScheduleStatus.TODO));
+
+        Map<ScheduleStatus, Long> counts = new EnumMap<>(ScheduleStatus.class);
+
+        for (ScheduleStatusCount row : rows) {
+            counts.put(row.getStatus(), row.getCount() == null ? 0L : row.getCount());
+        }
+
+        long done = counts.getOrDefault(ScheduleStatus.DONE, 0L);
+        long total = done + counts.getOrDefault(ScheduleStatus.TODO, 0L);
+
+        if (total == 0) {
+            return 0;
+        }
+
+        return (int) Math.round((done * 100.0) / total);
     }
 
     @Transactional

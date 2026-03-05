@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<Users, Long> {
 
     Page<Users> findByDeletedAtIsNull(Pageable pageable);
 
+    boolean existsByIdAndDeletedAtIsNull(Long id);
+
     @Query(
             "select u from Users u "
                     + "where u.deletedAt is null and u.nickname like concat(:nickname, '%')")

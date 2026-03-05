@@ -14,6 +14,8 @@ import molip.server.report.dto.response.ReportMessageCreateResponse;
 import molip.server.report.dto.response.ReportMessageItemResponse;
 import molip.server.report.dto.response.ReportResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Tag(name = "Report", description = "리포트 API")
@@ -31,6 +33,10 @@ public interface ReportApi {
                 description = "날짜 누락",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
+                responseCode = "403",
+                description = "아직 공개되지 않은 리포트",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
                 responseCode = "401",
                 description = "유효하지 않은 토큰",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
@@ -43,7 +49,8 @@ public interface ReportApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ReportResponse>> getReportByStartDate(String startDate);
+    ResponseEntity<ServerResponse<ReportResponse>> getReportByStartDate(
+            @AuthenticationPrincipal UserDetails userDetails, String startDate);
 
     @Operation(summary = "리포트 메시지 목록 조회")
     @SecurityRequirement(name = "JWT")
@@ -74,7 +81,7 @@ public interface ReportApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<CursorResponse<ReportMessageItemResponse>>> getReportMessages(
-            Long reportId, Long cursor, int size);
+            @AuthenticationPrincipal UserDetails userDetails, Long reportId, Long cursor, int size);
 
     @Operation(summary = "AI 응답 생성을 위한 메시지 전송")
     @SecurityRequirement(name = "JWT")

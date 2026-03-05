@@ -116,8 +116,7 @@ dependencies {
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
 
-    // Database - p6spy
-    implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:2.0.0'
+
 
     // Aws
     implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.1.1'
@@ -137,6 +136,9 @@ dependencies {
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // WebSocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     // Monitoring (로이 추가)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

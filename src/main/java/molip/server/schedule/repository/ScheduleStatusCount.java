@@ -6,5 +6,5 @@ public interface ScheduleStatusCount {
 
     ScheduleStatus getStatus();
 
-    long getCount();
+    Long getCount();
 }

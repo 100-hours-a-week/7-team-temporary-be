@@ -137,7 +137,11 @@ public class ReflectionCommandFacade {
 
     @Transactional
     public void updateReflection(
-            Long userId, Long reflectionId, List<String> reflectionImageKeys, String content) {
+            Long userId,
+            Long reflectionId,
+            List<String> reflectionImageKeys,
+            String content,
+            Boolean isOpen) {
 
         List<String> imageKeys = reflectionImageKeys == null ? List.of() : reflectionImageKeys;
         validateUpdateReflection(userId, reflectionId);
@@ -147,6 +151,10 @@ public class ReflectionCommandFacade {
 
         if (content != null) {
             reflection.updateContent(content);
+        }
+
+        if (isOpen != null) {
+            reflection.updateOpen(isOpen);
         }
 
         List<DayReflectionImage> existing =

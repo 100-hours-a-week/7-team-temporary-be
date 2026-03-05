@@ -1,5 +1,8 @@
 package molip.server.friend.service;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -23,6 +26,17 @@ public class FriendService {
         return friendRepository.existsByUserIdAndFriendIdAndDeletedAtIsNull(userId, friendUserId)
                 || friendRepository.existsByUserIdAndFriendIdAndDeletedAtIsNull(
                         friendUserId, userId);
+    }
+
+    @Transactional
+    public void lockFriendRelationPair(Long userId, Long friendUserId) {
+        if (userId == null || friendUserId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (friendRepository.findFriendPairForUpdate(userId, friendUserId).isEmpty()) {
+            throw new BaseException(ErrorCode.REQUEST_NOT_FOUND_FRIEND);
+        }
     }
 
     @Transactional
@@ -64,6 +78,23 @@ public class FriendService {
         PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
 
         return friendRepository.findByUserIdAndDeletedAtIsNull(userId, pageRequest);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<Long> getFriendUserIds(Long userId, List<Long> searchedUserIds) {
+
+        if (searchedUserIds == null || searchedUserIds.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<Long> friendUserIds = new HashSet<>();
+
+        friendUserIds.addAll(friendRepository.findFriendIdsAcceptedByMe(userId, searchedUserIds));
+
+        friendUserIds.addAll(
+                friendRepository.findFriendIdsAcceptedByOthers(searchedUserIds, userId));
+
+        return friendUserIds;
     }
 
     private void validatePage(int page, int size) {

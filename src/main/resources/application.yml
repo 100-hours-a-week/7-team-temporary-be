@@ -46,6 +46,7 @@ spring:
       ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual}
   data:
     redis:
+      enabled: true
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
@@ -118,7 +119,7 @@ notification:
 
 
 migration:
-  enabled: ${MIGRATION_ENABLED:true}
+  enabled: ${MIGRATION_ENABLED:false}
   datasource:
     url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/testread}
     username: ${MIGRATION_DB_USERNAME}
@@ -138,11 +139,11 @@ app:
       password: ${WRITE_DB_PASSWORD}
 
 kafka:
-  enabled: ${KAFKA_ENABLED:true}
+  enabled: ${KAFKA_ENABLED:false}
   producer:
-    enabled: ${KAFKA_PRODUCER_ENABLED:true}
+    enabled: ${KAFKA_PRODUCER_ENABLED:false}
   consumer:
-    enabled: ${KAFKA_CONSUMER_ENABLED:true}
+    enabled: ${KAFKA_CONSUMER_ENABLED:false}
     dlq:
       max-attempts: ${KAFKA_CONSUMER_DLQ_MAX_ATTEMPTS:10}
       backoff-ms: ${KAFKA_CONSUMER_DLQ_BACKOFF_MS:0}

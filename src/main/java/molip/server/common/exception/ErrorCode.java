@@ -45,7 +45,7 @@ public enum ErrorCode {
     // Friend
     INVALID_REQUEST_SELF_FRIEND(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "자기 자신에게 친구 요청을 보낼 수 없습니다."),
-    USER_NOT_FOUND_TARGET(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "대상 사용자를 찾을 수 없습니다."),
+    USER_NOT_FOUND_TARGET(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "해당 친구 유저를 찾을 수 없습니다."),
     CONFLICT_ALREADY_REQUESTED(HttpStatus.CONFLICT, "CONFLICT", "이미 친구 요청을 보낸 상태입니다."),
     CONFLICT_RECEIVED_ALREADY(
             HttpStatus.CONFLICT, "CONFLICT", "상대가 이미 친구 요청을 보냈습니다. 받은 요청 목록에서 수락해주세요."),
@@ -105,8 +105,12 @@ public enum ErrorCode {
     // Report
     INVALID_REQUEST_DATE_REQUIRED(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "날짜가 누락되었습니다. 확인 부탁드립니다."),
+    INVALID_REQUEST_REPORT_START_DATE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "리포트 시작일은 일요일(YYYY-MM-DD)이어야 합니다."),
     REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "해당 기간의 리포트를 찾을 수 없습니다."),
     FORBIDDEN_REPORT_ACCESS(HttpStatus.FORBIDDEN, "FORBIDDEN", "해당 리포트에 접근할 권한이 없습니다."),
+    FORBIDDEN_REPORT_NOT_AVAILABLE_YET(
+            HttpStatus.FORBIDDEN, "FORBIDDEN", "아직 조회 가능한 주간 리포트가 아닙니다."),
     REPORT_NOT_FOUND_GENERIC(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "리포트를 찾을 수 없습니다."),
     INVALID_REQUEST_INPUT_MESSAGE_REQUIRED(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "inputMessage 값이 필요합니다."),
@@ -123,6 +127,7 @@ public enum ErrorCode {
     CONFLICT_ROOM_ALREADY_DELETED(HttpStatus.CONFLICT, "CONFLICT", "이미 삭제된 채팅방입니다."),
     FORBIDDEN_ROOM_UPDATE(HttpStatus.FORBIDDEN, "FORBIDDEN", "채팅방을 수정할 권한이 없습니다."),
     CONFLICT_ROOM_CAPACITY(HttpStatus.CONFLICT, "CONFLICT", "현재 참여자 수보다 최대 인원을 낮출 수 없습니다."),
+    CONFLICT_CHAT_ROOM_TITLE(HttpStatus.CONFLICT, "CONFLICT", "이미 같은 이름의 채팅방이 존재합니다."),
     INVALID_REQUEST_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "검색어가 필요합니다."),
     INVALID_REQUEST_CHAT_TYPE(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "채팅방 타입이 올바르지 않습니다."),
     CONFLICT_ALREADY_PARTICIPATED(HttpStatus.CONFLICT, "CONFLICT", "이미 채팅방에 참가 중입니다."),
@@ -140,6 +145,21 @@ public enum ErrorCode {
     CONFLICT_ALREADY_LEFT(HttpStatus.CONFLICT, "CONFLICT", "이미 퇴장한 사용자입니다."),
     CONFLICT_MESSAGE_NOT_IN_ROOM(HttpStatus.CONFLICT, "CONFLICT", "해당 채팅방에 존재하지 않는 메시지입니다."),
     CONFLICT_LAST_SEEN_DECREASE(HttpStatus.CONFLICT, "CONFLICT", "lastSeenMessageId는 감소시킬 수 없습니다."),
+    OWNER_NOT_FOUND(HttpStatus.NOT_FOUND, "OWNER_NOT_FOUND", "해당 방장을 찾을 수 없습니다."),
+    INVALID_REQUEST_MESSAGE_SEND(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "필수 값이 누락되었거나 메시지 형식이 올바르지 않습니다."),
+    FORBIDDEN_MESSAGE_SEND(HttpStatus.FORBIDDEN, "FORBIDDEN", "채팅방 참가자만 메시지를 전송할 수 있습니다."),
+    INVALID_REQUEST_MESSAGE_UPDATE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "필수 값이 누락되었거나 메시지 수정 형식이 올바르지 않습니다."),
+    FORBIDDEN_MESSAGE_UPDATE(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 메시지만 수정할 수 있습니다."),
+    INVALID_REQUEST_MESSAGE_DELETE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "필수 값이 누락되었거나 메시지 삭제 요청이 올바르지 않습니다."),
+    INVALID_REQUEST_DIRECT_CHAT_LEAVE(
+            HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "개인 채팅방은 퇴장할 수 없습니다."),
+    FORBIDDEN_MESSAGE_DELETE(HttpStatus.FORBIDDEN, "FORBIDDEN", "본인의 메시지만 삭제할 수 있습니다."),
+    CONFLICT_MESSAGE_ALREADY_DELETED(HttpStatus.CONFLICT, "CONFLICT", "이미 삭제된 메시지입니다."),
+    CONFLICT_MESSAGE_REQUEST_PROCESSING(
+            HttpStatus.CONFLICT, "CONFLICT", "동일한 요청이 현재 처리 중입니다. 잠시 후 다시 시도해주세요."),
 
     // Schedule
     CONFLICT_TIME_OVERLAP(HttpStatus.CONFLICT, "CONFLICT", "해당 시간대에 이미 일정이 존재합니다."),

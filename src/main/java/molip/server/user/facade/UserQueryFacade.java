@@ -1,6 +1,8 @@
 package molip.server.user.facade;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.enums.ImageType;
@@ -8,10 +10,13 @@ import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.common.response.ImageInfoResponse;
 import molip.server.common.response.PageResponse;
+import molip.server.friend.service.FriendRequestService;
+import molip.server.friend.service.FriendService;
 import molip.server.image.dto.response.ImageGetUrlResponse;
 import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
 import molip.server.user.dto.cache.UserCachePayload;
+import molip.server.user.dto.response.FriendRelationStatus;
 import molip.server.user.dto.response.UserProfileResponse;
 import molip.server.user.dto.response.UserSearchItemResponse;
 import molip.server.user.entity.UserImage;
@@ -27,10 +32,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class UserQueryFacade {
-    private static final String DEFAULT_PROFILE_IMAGE_KEY = "default_image.png";
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
 
     private final UserRepository userRepository;
     private final UserImageRepository userImageRepository;
+    private final FriendService friendService;
+    private final FriendRequestService friendRequestService;
     private final ImageService imageService;
     private final ReadConsistencyCacheService cacheService;
 
@@ -67,36 +74,70 @@ public class UserQueryFacade {
 
     @Transactional(readOnly = true)
     public PageResponse<UserSearchItemResponse> searchByNickname(
-            String nickname, int page, int size) {
+            Long userId, String nickname, int page, int size) {
         validateNickname(nickname);
         validatePage(page, size);
 
         PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
-        Page<Users> users = userRepository.findByNicknamePrefix(nickname, pageRequest);
+        Page<Users> searchedUsers = userRepository.findByNicknamePrefix(nickname, pageRequest);
+
+        List<Long> searchedUserIds = searchedUsers.getContent().stream().map(Users::getId).toList();
+
+        Set<Long> friendUserIds = friendService.getFriendUserIds(userId, searchedUserIds);
+
+        Set<Long> pendingUserIds =
+                friendRequestService.getPendingRelationUserIds(userId, searchedUserIds);
 
         return new PageResponse<>(
-                users.getContent().stream()
+                searchedUsers.getContent().stream()
                         .map(
                                 user ->
-                                        new UserSearchItemResponse(
+                                        UserSearchItemResponse.of(
                                                 user.getId(),
                                                 user.getNickname(),
-                                                resolveProfileImage(user.getId())))
+                                                user.getEmail(),
+                                                resolveProfileImage(user.getId()),
+                                                resolveRelationStatus(
+                                                        userId,
+                                                        user.getId(),
+                                                        friendUserIds,
+                                                        pendingUserIds)))
                         .toList(),
                 page,
                 size,
-                users.getTotalElements(),
-                users.getTotalPages());
+                searchedUsers.getTotalElements(),
+                searchedUsers.getTotalPages());
+    }
+
+    private FriendRelationStatus resolveRelationStatus(
+            Long userId, Long targetUserId, Set<Long> friendUserIds, Set<Long> pendingUserIds) {
+
+        if (userId.equals(targetUserId)) {
+            return FriendRelationStatus.SELF;
+        }
+
+        if (friendUserIds.contains(targetUserId)) {
+            return FriendRelationStatus.FRIEND;
+        }
+
+        if (pendingUserIds.contains(targetUserId)) {
+            return FriendRelationStatus.PENDING;
+        }
+
+        return FriendRelationStatus.NONE;
     }
 
     private ImageInfoResponse resolveProfileImage(Long userId) {
         Optional<UserImage> userImage = userImageRepository.findLatestByUserIdWithImage(userId);
+
         if (userImage.isEmpty()) {
             return resolveProfileImageFromCache(null);
         }
+
         Image image = userImage.get().getImage();
         ImageGetUrlResponse presigned =
                 imageService.issueGetUrl(ImageType.USERS, image.getUploadKey());
+
         return new ImageInfoResponse(presigned.url(), presigned.expiresAt(), presigned.imageKey());
     }
 
@@ -105,10 +146,13 @@ public class UserQueryFacade {
             ImageGetUrlResponse presigned =
                     imageService.issueGetUrlWithoutValidation(
                             ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
+
             return new ImageInfoResponse(
                     presigned.url(), presigned.expiresAt(), presigned.imageKey());
         }
+
         ImageGetUrlResponse presigned = imageService.issueGetUrl(ImageType.USERS, profileImageKey);
+
         return new ImageInfoResponse(presigned.url(), presigned.expiresAt(), presigned.imageKey());
     }
 

@@ -50,6 +50,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.PUT, "/token")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/ws", "/api/chat/ws")
+                                        .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.GET,
                                                 "/",
