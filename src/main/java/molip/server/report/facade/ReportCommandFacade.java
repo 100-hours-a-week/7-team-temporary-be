@@ -34,7 +34,7 @@ public class ReportCommandFacade {
     @Transactional
     public ReportMessageCreateResponse createReportMessage(
             Long userId, Long reportId, String inputMessage) {
-        Report report = reportService.getReport(userId, reportId);
+        Report report = reportService.getReportWithUserId(userId, reportId);
 
         validateReportAvailability(report);
 
