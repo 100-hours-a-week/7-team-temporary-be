@@ -380,3 +380,36 @@ CREATE TABLE IF NOT EXISTS migration_event_log (
   INDEX idx_migration_event_log_event_id (event_id),
   INDEX idx_migration_event_log_aggregate (aggregate_type, aggregate_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS batch_job_run (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  job_name VARCHAR(255) NOT NULL,
+  run_date DATE NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  started_at DATETIME(6) NULL,
+  finished_at DATETIME(6) NULL,
+  retry_count INT NOT NULL,
+  last_error VARCHAR(500) NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_batch_job_run_name_date (job_name, run_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS batch_step_run (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  job_run_id BIGINT NOT NULL,
+  step_name VARCHAR(100) NOT NULL,
+  target_type VARCHAR(20) NOT NULL,
+  target_id BIGINT NULL,
+  status VARCHAR(20) NOT NULL,
+  retry_count INT NOT NULL,
+  last_error VARCHAR(500) NULL,
+  started_at DATETIME(6) NULL,
+  finished_at DATETIME(6) NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_batch_step_run_job_step (job_run_id, step_name, target_type, target_id),
+  CONSTRAINT fk_batch_step_run_job_run_id FOREIGN KEY (job_run_id) REFERENCES batch_job_run(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
