@@ -20,6 +20,7 @@ import molip.server.batch.entity.BatchStepRun;
 import molip.server.batch.enums.BatchStepStatus;
 import molip.server.batch.enums.BatchTargetType;
 import molip.server.batch.service.BatchTrackingService;
+import molip.server.common.enums.AssignedBy;
 import molip.server.common.enums.AssignmentStatus;
 import molip.server.common.enums.ScheduleType;
 import molip.server.schedule.entity.DayPlan;
@@ -245,7 +246,7 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
         values.put("user_id", user.getId());
         values.put("day_plan_id", dayPlan.getId());
         values.put("record_type", RECORD_TYPE);
-        values.put("start_arrange", toTimeText(findStartArrange(schedules)));
+        values.put("start_arrange", toTimeText(resolveAiStartArrange(schedules)));
         values.put("day_end_time", toTimeText(user.getDayEndTime()));
         values.put("focus_time_zone", user.getFocusTimeZone().name());
         values.put("user_age", calculateAge(user, dayPlan.getPlanDate()));
@@ -343,6 +344,16 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                 .map(Schedule::getStartAt)
                 .filter(value -> value != null)
                 .min(java.time.LocalTime::compareTo)
+                .orElse(null);
+    }
+
+    private LocalTime resolveAiStartArrange(List<Schedule> schedules) {
+        return schedules.stream()
+                .filter(schedule -> schedule.getAssignedBy() == AssignedBy.AI)
+                .map(Schedule::getUpdatedAt)
+                .filter(value -> value != null)
+                .max(LocalDateTime::compareTo)
+                .map(LocalDateTime::toLocalTime)
                 .orElse(null);
     }
 
