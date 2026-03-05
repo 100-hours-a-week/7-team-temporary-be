@@ -11,9 +11,11 @@ import java.util.Optional;
 import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
+import molip.server.socket.dto.request.SocketReportMessageSendRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.service.SocketHandshakeService;
+import molip.server.socket.service.SocketReportMessageService;
 import molip.server.socket.service.SocketRoomMessageService;
 import molip.server.socket.service.SocketRoomSubscriptionService;
 import molip.server.socket.session.SocketSessionContext;
@@ -35,6 +37,7 @@ class SocketStompControllerTest {
     @Mock private SocketHandshakeService socketHandshakeService;
     @Mock private SocketRoomSubscriptionService socketRoomSubscriptionService;
     @Mock private SocketRoomMessageService socketRoomMessageService;
+    @Mock private SocketReportMessageService socketReportMessageService;
     @Mock private SocketSessionSupport socketSessionSupport;
 
     @BeforeEach
@@ -45,6 +48,7 @@ class SocketStompControllerTest {
                         socketHandshakeService,
                         socketRoomSubscriptionService,
                         socketRoomMessageService,
+                        socketReportMessageService,
                         socketSessionSupport);
     }
 
@@ -116,5 +120,31 @@ class SocketStompControllerTest {
         // then
         assertThat(response).isEqualTo(expected);
         verify(socketHandshakeService).subscribeUser(request, sessionContext);
+    }
+
+    @Test
+    @DisplayName("report.message.send는 인증 완료 세션이면 report message service에 위임한다")
+    void sendReportMessageDelegatesWhenAuthenticated() {
+        // given
+        SocketReportMessageSendRequest request = new SocketReportMessageSendRequest(20L, "질문");
+        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
+        headerAccessor.setSessionAttributes(new HashMap<>());
+        SocketSessionContext sessionContext =
+                SocketSessionContext.of(
+                        "Bearer valid-token", "device-uuid", 7L, OffsetDateTime.now());
+        SocketEventResponse<?> expected =
+                SocketEventResponse.of("report.message.sendAccepted", "ok");
+
+        given(socketSessionSupport.getSessionContext(headerAccessor))
+                .willReturn(Optional.of(sessionContext));
+        doReturn(expected).when(socketReportMessageService).sendMessage(7L, request);
+
+        // when
+        SocketEventResponse<?> response =
+                socketStompController.sendReportMessage(request, "session-uuid", headerAccessor);
+
+        // then
+        assertThat(response).isEqualTo(expected);
+        verify(socketReportMessageService).sendMessage(7L, request);
     }
 }
