@@ -163,6 +163,21 @@ CREATE TABLE IF NOT EXISTS schedule_history (
   CONSTRAINT fk_schedule_history_schedule_id FOREIGN KEY (schedule_id) REFERENCES schedule(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS schedule_action_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  schedule_id BIGINT NULL,
+  action_type VARCHAR(20) NOT NULL,
+  api_path VARCHAR(100) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_schedule_action_log_user_created (user_id, created_at),
+  INDEX idx_schedule_action_log_action_created (action_type, created_at),
+  INDEX idx_schedule_action_log_schedule_created (schedule_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS day_reflection (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,

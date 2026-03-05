@@ -7,9 +7,11 @@ import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import molip.server.batch.entity.BatchJobRun;
 import molip.server.batch.entity.BatchStepRun;
@@ -111,6 +113,8 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
 
         List<Long> dayPlanIds = dayPlans.stream().map(DayPlan::getId).toList();
 
+        purgeExistingRecords(user.getId(), dayPlanIds);
+
         List<Schedule> schedules =
                 scheduleRepository.findByDayPlanIdInAndDeletedAtIsNull(dayPlanIds);
         List<Long> scheduleIds = schedules.stream().map(Schedule::getId).toList();
@@ -135,6 +139,56 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
         if (!histories.isEmpty()) {
             batchInsertScheduleHistories(histories, recordIdByDayPlanId);
         }
+    }
+
+    private void purgeExistingRecords(Long userId, List<Long> dayPlanIds) {
+        if (userId == null || dayPlanIds == null || dayPlanIds.isEmpty()) {
+            return;
+        }
+
+        List<Long> recordIds = findExistingRecordIds(userId, dayPlanIds);
+
+        if (recordIds.isEmpty()) {
+            return;
+        }
+
+        deleteByRecordIds("delete from schedule_histories where record_id in ", recordIds);
+        deleteByRecordIds("delete from record_tasks where record_id in ", recordIds);
+        deleteByRecordIds("delete from planner_records where id in ", recordIds);
+    }
+
+    private List<Long> findExistingRecordIds(Long userId, List<Long> dayPlanIds) {
+        String placeholders = buildPlaceholders(dayPlanIds.size());
+        String sql =
+                "select id from planner_records "
+                        + "where user_id = ? and record_type = ? and day_plan_id in ("
+                        + placeholders
+                        + ")";
+
+        Object[] params = new Object[2 + dayPlanIds.size()];
+        params[0] = userId;
+        params[1] = RECORD_TYPE;
+
+        for (int i = 0; i < dayPlanIds.size(); i++) {
+            params[i + 2] = dayPlanIds.get(i);
+        }
+
+        return aiJdbcTemplate.query(sql, (rs, rowNum) -> rs.getLong(1), params);
+    }
+
+    private void deleteByRecordIds(String sqlPrefix, List<Long> recordIds) {
+        if (recordIds == null || recordIds.isEmpty()) {
+            return;
+        }
+
+        String placeholders = buildPlaceholders(recordIds.size());
+        String sql = sqlPrefix + "(" + placeholders + ")";
+
+        aiJdbcTemplate.update(sql, new ArrayList<>(recordIds).toArray());
+    }
+
+    private String buildPlaceholders(int size) {
+        return IntStream.range(0, size).mapToObj(index -> "?").collect(Collectors.joining(","));
     }
 
     private Map<Long, Long> createPlannerRecords(
