@@ -1,6 +1,8 @@
 package molip.server.report.facade;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +13,13 @@ import molip.server.ai.client.AiReportChatStreamClient.AiReportChatStreamEvent;
 import molip.server.auth.store.redis.RedisDeviceStore;
 import molip.server.common.enums.MessageType;
 import molip.server.common.enums.SenderType;
+import molip.server.common.exception.BaseException;
+import molip.server.common.exception.ErrorCode;
+import molip.server.report.dto.response.ReportMessageStreamResumeResponse;
 import molip.server.report.entity.Report;
+import molip.server.report.entity.ReportChatMessage;
+import molip.server.report.redis.RedisReportChatStreamStore;
+import molip.server.report.redis.ReportChatStreamState;
 import molip.server.report.service.ReportChatMessageService;
 import molip.server.report.service.ReportService;
 import molip.server.socket.dto.response.SocketReportStreamChunkResponse;
@@ -45,10 +53,12 @@ public class ReportChatStreamFacade {
 
     private static final String ERROR_CODE_INTERNAL = "CHAT_STREAM_INTERNAL_ERROR";
     private static final String INTERNAL_ERROR_MESSAGE = "응답 생성 중 오류가 발생했습니다.";
+    private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final AiReportChatStreamClient aiReportChatStreamClient;
     private final ReportService reportService;
     private final ReportChatMessageService reportChatMessageService;
+    private final RedisReportChatStreamStore redisReportChatStreamStore;
     private final RedisDeviceStore deviceStore;
     private final RedisSocketSessionStore socketSessionStore;
     private final SocketReportChannelBroadcaster socketReportChannelBroadcaster;
@@ -58,62 +68,118 @@ public class ReportChatStreamFacade {
 
     private final Map<Long, StreamAccumulator> activeStreams = new ConcurrentHashMap<>();
 
-    public void startStream(Long reportId, Long messageId) {
-        if (reportId == null || messageId == null) {
+    public ReportMessageStreamResumeResponse resumeStream(
+            Long userId, Long reportId, Long streamMessageId) {
+        Report report = reportService.getReportWithUserId(userId, reportId);
+
+        validateReportAvailability(report);
+
+        ReportChatMessage streamMessage =
+                reportChatMessageService.getStreamMessage(reportId, streamMessageId);
+
+        if (streamMessage.getDeletedAt() != null || streamMessage.isDeleted()) {
+            throw new BaseException(ErrorCode.CONFLICT_STREAM_ENDED);
+        }
+
+        Long inputMessageId =
+                reportChatMessageService.findInputMessageId(reportId, streamMessageId);
+
+        ReportChatStreamState state =
+                redisReportChatStreamStore
+                        .find(reportId, streamMessageId)
+                        .orElseGet(
+                                () -> {
+                                    redisReportChatStreamStore.initialize(
+                                            reportId, inputMessageId, streamMessageId);
+                                    return redisReportChatStreamStore
+                                            .find(reportId, streamMessageId)
+                                            .orElse(
+                                                    ReportChatStreamState.initial(
+                                                            inputMessageId, streamMessageId));
+                                });
+
+        String status = state.status() == null ? STATUS_GENERATING : state.status();
+        String content = state.content() == null ? "" : state.content();
+
+        if (STATUS_GENERATING.equals(status)) {
+            startStream(reportId, streamMessageId);
+        } else if (streamMessage.getContent() != null && !streamMessage.getContent().isBlank()) {
+            content = streamMessage.getContent();
+            status = STATUS_COMPLETED;
+        }
+        log.debug(
+                "report stream resume requested: reportId={}, streamMessageId={}",
+                reportId,
+                streamMessageId);
+
+        return ReportMessageStreamResumeResponse.of(
+                reportId, inputMessageId, streamMessageId, status, content);
+    }
+
+    public void startStream(Long reportId, Long streamMessageId) {
+        if (reportId == null || streamMessageId == null) {
             log.warn(
-                    "report stream skipped: reportId or messageId is null. reportId={}, messageId={}",
+                    "report stream skipped: reportId or streamMessageId is null. reportId={}, streamMessageId={}",
                     reportId,
-                    messageId);
+                    streamMessageId);
             return;
         }
 
         Report report = reportService.getReportWithUserId(reportId);
         Long userId = report.getUser().getId();
+
         log.info(
-                "report stream start requested: reportId={}, messageId={}, userId={}",
+                "report stream start requested: reportId={}, streamMessageId={}, userId={}",
                 reportId,
-                messageId,
+                streamMessageId,
                 userId);
 
         StreamAccumulator accumulator = new StreamAccumulator();
-        StreamAccumulator existing = activeStreams.putIfAbsent(messageId, accumulator);
+        StreamAccumulator existing = activeStreams.putIfAbsent(streamMessageId, accumulator);
 
         if (existing != null) {
             log.info(
-                    "report stream already active: reportId={}, messageId={}, userId={}",
+                    "report stream already active: reportId={}, streamMessageId={}, userId={}",
                     reportId,
-                    messageId,
+                    streamMessageId,
                     userId);
             return;
         }
+
+        redisReportChatStreamStore.updateStatus(reportId, streamMessageId, STATUS_GENERATING);
 
         aiReportChatStreamTaskExecutor.execute(
                 () -> {
                     try {
                         aiReportChatStreamClient.stream(
                                 reportId,
-                                messageId,
+                                streamMessageId,
                                 event ->
                                         handleStreamEvent(
-                                                reportId, userId, messageId, accumulator, event));
+                                                reportId,
+                                                userId,
+                                                streamMessageId,
+                                                accumulator,
+                                                event));
 
                     } catch (Exception ignored) {
                         log.error(
-                                "report stream execution failed: reportId={}, messageId={}, userId={}",
+                                "report stream execution failed: reportId={}, streamMessageId={}, userId={}",
                                 reportId,
-                                messageId,
+                                streamMessageId,
                                 userId);
 
-                        broadcastError(reportId, userId, messageId);
-                        reportChatMessageService.deleteAiStreamMessage(messageId);
+                        broadcastError(reportId, userId, streamMessageId);
+                        redisReportChatStreamStore.updateStatus(
+                                reportId, streamMessageId, STATUS_FAILED);
+                        reportChatMessageService.deleteAiStreamMessage(streamMessageId);
 
                     } finally {
-
-                        activeStreams.remove(messageId);
+                        activeStreams.remove(streamMessageId);
                         log.info(
-                                "report stream finished: reportId={}, messageId={}, userId={}",
+                                "report stream finished: reportId={}, streamMessageId={}, userId={}",
                                 reportId,
-                                messageId,
+                                streamMessageId,
                                 userId);
                     }
                 });
@@ -122,19 +188,21 @@ public class ReportChatStreamFacade {
     private void handleStreamEvent(
             Long reportId,
             Long userId,
-            Long messageId,
+            Long streamMessageId,
             StreamAccumulator accumulator,
             AiReportChatStreamEvent event) {
 
         switch (event.eventType()) {
-            case EVENT_START -> handleStart(reportId, userId, messageId, accumulator, event.data());
+            case EVENT_START ->
+                    handleStart(reportId, userId, streamMessageId, accumulator, event.data());
 
-            case EVENT_CHUNK -> handleChunk(reportId, userId, messageId, accumulator, event.data());
+            case EVENT_CHUNK ->
+                    handleChunk(reportId, userId, streamMessageId, accumulator, event.data());
 
             case EVENT_COMPLETE ->
-                    handleComplete(reportId, userId, messageId, accumulator, event.data());
+                    handleComplete(reportId, userId, streamMessageId, accumulator, event.data());
 
-            case EVENT_ERROR -> handleError(reportId, userId, messageId);
+            case EVENT_ERROR -> handleError(reportId, userId, streamMessageId);
 
             default -> {}
         }
@@ -143,14 +211,15 @@ public class ReportChatStreamFacade {
     private void handleStart(
             Long reportId,
             Long userId,
-            Long messageId,
+            Long streamMessageId,
             StreamAccumulator accumulator,
             JsonNode data) {
         accumulator.started = true;
+
         log.info(
-                "report stream event start: reportId={}, messageId={}, userId={}",
+                "report stream event start: reportId={}, streamMessageId={}, userId={}",
                 reportId,
-                messageId,
+                streamMessageId,
                 userId);
 
         broadcastToUser(
@@ -158,7 +227,7 @@ public class ReportChatStreamFacade {
                 SOCKET_EVENT_START,
                 SocketReportStreamStartResponse.of(
                         reportId,
-                        messageId,
+                        streamMessageId,
                         resolveSenderType(data),
                         resolveMessageType(data),
                         resolveStatus(data, STATUS_GENERATING)));
@@ -167,16 +236,16 @@ public class ReportChatStreamFacade {
     private void handleChunk(
             Long reportId,
             Long userId,
-            Long messageId,
+            Long streamMessageId,
             StreamAccumulator accumulator,
             JsonNode data) {
         long sequence = data.path("sequence").asLong(0L);
 
         if (sequence <= accumulator.lastSequence) {
             log.debug(
-                    "report stream chunk skipped by sequence guard: reportId={}, messageId={}, userId={}, sequence={}, lastSequence={}",
+                    "report stream chunk skipped by sequence guard: reportId={}, streamMessageId={}, userId={}, sequence={}, lastSequence={}",
                     reportId,
-                    messageId,
+                    streamMessageId,
                     userId,
                     sequence,
                     accumulator.lastSequence);
@@ -190,10 +259,13 @@ public class ReportChatStreamFacade {
         if (!delta.isEmpty()) {
             accumulator.content.append(delta);
         }
+
+        redisReportChatStreamStore.appendChunk(reportId, streamMessageId, sequence, delta);
+
         log.info(
-                "report stream event chunk: reportId={}, messageId={}, userId={}, sequence={}, deltaLength={}",
+                "report stream event chunk: reportId={}, streamMessageId={}, userId={}, sequence={}, deltaLength={}",
                 reportId,
-                messageId,
+                streamMessageId,
                 userId,
                 sequence,
                 delta.length());
@@ -203,7 +275,7 @@ public class ReportChatStreamFacade {
                 SOCKET_EVENT_CHUNK,
                 SocketReportStreamChunkResponse.of(
                         reportId,
-                        messageId,
+                        streamMessageId,
                         resolveSenderType(data),
                         resolveMessageType(data),
                         delta,
@@ -213,14 +285,15 @@ public class ReportChatStreamFacade {
     private void handleComplete(
             Long reportId,
             Long userId,
-            Long messageId,
+            Long streamMessageId,
             StreamAccumulator accumulator,
             JsonNode data) {
         String status = data.path("status").asText();
+
         log.info(
-                "report stream event complete: reportId={}, messageId={}, userId={}, status={}",
+                "report stream event complete: reportId={}, streamMessageId={}, userId={}, status={}",
                 reportId,
-                messageId,
+                streamMessageId,
                 userId,
                 status);
 
@@ -229,53 +302,62 @@ public class ReportChatStreamFacade {
                 SOCKET_EVENT_COMPLETE,
                 SocketReportStreamCompleteResponse.of(
                         reportId,
-                        messageId,
+                        streamMessageId,
                         resolveSenderType(data),
                         resolveMessageType(data),
                         status));
 
         if (!STATUS_COMPLETED.equals(status)) {
+            redisReportChatStreamStore.updateStatus(reportId, streamMessageId, status);
+
             log.info(
-                    "report stream complete without completed status. delete placeholder: reportId={}, messageId={}, userId={}, status={}",
+                    "report stream complete without completed status. delete placeholder: reportId={}, streamMessageId={}, userId={}, status={}",
                     reportId,
-                    messageId,
+                    streamMessageId,
                     userId,
                     status);
-            reportChatMessageService.deleteAiStreamMessage(messageId);
+
+            reportChatMessageService.deleteAiStreamMessage(streamMessageId);
             return;
         }
 
-        reportChatMessageService.completeAiStreamMessage(messageId, accumulator.content.toString());
+        reportChatMessageService.completeAiStreamMessage(
+                streamMessageId, accumulator.content.toString());
+        redisReportChatStreamStore.updateStatus(reportId, streamMessageId, STATUS_COMPLETED);
+
         log.info(
-                "report stream content persisted: reportId={}, messageId={}, userId={}, contentLength={}",
+                "report stream content persisted: reportId={}, streamMessageId={}, userId={}, contentLength={}",
                 reportId,
-                messageId,
+                streamMessageId,
                 userId,
                 accumulator.content.length());
     }
 
-    private void handleError(Long reportId, Long userId, Long messageId) {
+    private void handleError(Long reportId, Long userId, Long streamMessageId) {
         log.warn(
-                "report stream event error: reportId={}, messageId={}, userId={}",
+                "report stream event error: reportId={}, streamMessageId={}, userId={}",
                 reportId,
-                messageId,
+                streamMessageId,
                 userId);
-        broadcastError(reportId, userId, messageId);
-        reportChatMessageService.deleteAiStreamMessage(messageId);
+
+        broadcastError(reportId, userId, streamMessageId);
+        redisReportChatStreamStore.updateStatus(reportId, streamMessageId, STATUS_FAILED);
+        reportChatMessageService.deleteAiStreamMessage(streamMessageId);
     }
 
-    private void broadcastError(Long reportId, Long userId, Long messageId) {
+    private void broadcastError(Long reportId, Long userId, Long streamMessageId) {
         log.info(
-                "report stream broadcast error event: reportId={}, messageId={}, userId={}",
+                "report stream broadcast error event: reportId={}, streamMessageId={}, userId={}",
                 reportId,
-                messageId,
+                streamMessageId,
                 userId);
+
         broadcastToUser(
                 userId,
                 SOCKET_EVENT_ERROR,
                 SocketReportStreamErrorResponse.of(
                         reportId,
-                        messageId,
+                        streamMessageId,
                         STATUS_FAILED,
                         ERROR_CODE_INTERNAL,
                         INTERNAL_ERROR_MESSAGE));
@@ -283,6 +365,7 @@ public class ReportChatStreamFacade {
 
     private void broadcastToUser(Long userId, String event, Object payload) {
         Set<String> deviceIds = deviceStore.listDevices(userId);
+
         log.info(
                 "report stream broadcast begin: event={}, userId={}, deviceCount={}",
                 event,
@@ -339,6 +422,15 @@ public class ReportChatStreamFacade {
         }
 
         return status;
+    }
+
+    private void validateReportAvailability(Report report) {
+        LocalDateTime availableAt = report.getEndDate().plusDays(1).atStartOfDay();
+        LocalDateTime now = LocalDateTime.now(KOREA_ZONE_ID);
+
+        if (now.isBefore(availableAt)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REPORT_NOT_AVAILABLE_YET);
+        }
     }
 
     private static final class StreamAccumulator {

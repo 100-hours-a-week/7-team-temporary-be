@@ -15,6 +15,6 @@ public class ReportChatRespondRequestedEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(ReportChatRespondRequestedEvent event) {
-        reportChatStreamFacade.startStream(event.reportId(), event.messageId());
+        reportChatStreamFacade.startStream(event.reportId(), event.streamMessageId());
     }
 }

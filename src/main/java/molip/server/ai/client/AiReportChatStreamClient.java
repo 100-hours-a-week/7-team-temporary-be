@@ -39,7 +39,7 @@ public class AiReportChatStreamClient {
     }
 
     public void stream(
-            Long reportId, Long messageId, Consumer<AiReportChatStreamEvent> eventConsumer) {
+            Long reportId, Long streamMessageId, Consumer<AiReportChatStreamEvent> eventConsumer) {
         try {
             restTemplate.execute(
                     baseUrl + streamPath,
@@ -50,7 +50,7 @@ public class AiReportChatStreamClient {
                         return null;
                     },
                     reportId,
-                    messageId);
+                    streamMessageId);
         } catch (Exception exception) {
             throw new BaseException(ErrorCode.INTERNAL_SERVER_ERROR);
         }

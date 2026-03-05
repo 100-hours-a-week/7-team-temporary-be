@@ -62,6 +62,62 @@ public class ReportChatMessageService {
                         reportId);
     }
 
+    @Transactional(readOnly = true)
+    public void validateStreamOpen(Long reportId, Long messageId) {
+        if (reportId == null || messageId == null) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        ReportChatMessage message =
+                reportChatMessageRepository
+                        .findByIdAndDeletedAtIsNullAndIsDeletedFalse(messageId)
+                        .orElse(null);
+
+        if (message == null) {
+            if (reportChatMessageRepository.existsByIdAndReportId(messageId, reportId)) {
+                throw new BaseException(ErrorCode.CONFLICT_STREAM_ENDED);
+            }
+
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        if (!message.getReport().getId().equals(reportId)
+                || message.getSenderType() != SenderType.AI) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        if (message.getContent() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_STREAM_ENDED);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ReportChatMessage getStreamMessage(Long reportId, Long streamMessageId) {
+        if (reportId == null || streamMessageId == null) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        ReportChatMessage message =
+                reportChatMessageRepository
+                        .findByIdAndReportId(streamMessageId, reportId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.MESSAGE_NOT_FOUND));
+
+        if (message.getSenderType() != SenderType.AI) {
+            throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+        }
+
+        return message;
+    }
+
+    @Transactional(readOnly = true)
+    public Long findInputMessageId(Long reportId, Long streamMessageId) {
+        return reportChatMessageRepository
+                .findTopByReportIdAndSenderTypeAndIdLessThanOrderByIdDesc(
+                        reportId, SenderType.USER, streamMessageId)
+                .map(ReportChatMessage::getId)
+                .orElse(null);
+    }
+
     @Transactional
     public void completeAiStreamMessage(Long messageId, String content) {
         ReportChatMessage message = getActiveMessage(messageId);

@@ -14,6 +14,7 @@ import molip.server.report.dto.response.ReportMessageCreateResponse;
 import molip.server.report.entity.Report;
 import molip.server.report.entity.ReportChatMessage;
 import molip.server.report.event.ReportChatRespondRequestedEvent;
+import molip.server.report.redis.RedisReportChatStreamStore;
 import molip.server.report.service.ReportChatMessageService;
 import molip.server.report.service.ReportService;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,6 +30,7 @@ public class ReportCommandFacade {
     private final AiReportChatClient aiReportChatClient;
     private final ReportService reportService;
     private final ReportChatMessageService reportChatMessageService;
+    private final RedisReportChatStreamStore redisReportChatStreamStore;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -45,6 +47,9 @@ public class ReportCommandFacade {
 
         ReportChatMessage streamMessageEntity =
                 reportChatMessageService.createAiStreamMessage(report);
+
+        redisReportChatStreamStore.initialize(
+                reportId, inputMessageEntity.getId(), streamMessageEntity.getId());
 
         requestAiRespond(userId, reportId, streamMessageEntity.getId());
 
