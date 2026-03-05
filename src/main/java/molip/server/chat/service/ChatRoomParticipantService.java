@@ -62,6 +62,13 @@ public class ChatRoomParticipantService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<ChatRoomParticipant> getLatestParticipant(Long chatRoomId, Long userId) {
+        return chatRoomParticipantRepository
+                .findTopByChatRoomIdAndUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        chatRoomId, userId);
+    }
+
+    @Transactional(readOnly = true)
     public Optional<ChatRoomParticipant> findById(Long participantId) {
         return chatRoomParticipantRepository.findById(participantId);
     }
@@ -183,6 +190,10 @@ public class ChatRoomParticipantService {
 
         if (!participant.getUser().getId().equals(userId)) {
             throw new BaseException(ErrorCode.FORBIDDEN_PARTICIPANT_REMOVE);
+        }
+
+        if (participant.getChatRoom().getType() == ChatRoomType.DIRECT_CHAT) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_DIRECT_CHAT_LEAVE);
         }
 
         if (participant.getLeftAt() != null) {

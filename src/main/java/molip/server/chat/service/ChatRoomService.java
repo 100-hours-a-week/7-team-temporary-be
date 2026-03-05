@@ -6,6 +6,7 @@ import molip.server.chat.event.ChatRoomCreatedEvent;
 import molip.server.chat.event.ChatRoomDeletedEvent;
 import molip.server.chat.event.ChatRoomUpdatedEvent;
 import molip.server.chat.repository.ChatRoomRepository;
+import molip.server.common.enums.ChatRoomType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import org.springframework.context.ApplicationEventPublisher;
@@ -17,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ChatRoomService {
+
+    private static final String DIRECT_ROOM_TITLE_PREFIX = "DIRECT:";
+    private static final String DIRECT_ROOM_DESCRIPTION = "1:1 private chat room";
 
     private final ChatRoomRepository chatRoomRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -98,14 +102,44 @@ public class ChatRoomService {
     @Transactional(readOnly = true)
     public Page<ChatRoom> searchChatRooms(String title, int page, int size) {
         validateSearchChatRooms(page, size);
+        java.util.List<ChatRoomType> visibleTypes =
+                java.util.List.of(ChatRoomType.OPEN_CHAT, ChatRoomType.CAM_STUDY);
 
         if (title == null || title.isBlank()) {
-            return chatRoomRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(
-                    PageRequest.of(page - 1, size));
+            return chatRoomRepository.findByTypeInAndDeletedAtIsNullOrderByCreatedAtDesc(
+                    visibleTypes, PageRequest.of(page - 1, size));
         }
 
-        return chatRoomRepository.findByTitleContainingAndDeletedAtIsNullOrderByCreatedAtDesc(
-                title.trim(), PageRequest.of(page - 1, size));
+        return chatRoomRepository
+                .findByTitleContainingAndTypeInAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        title.trim(), visibleTypes, PageRequest.of(page - 1, size));
+    }
+
+    @Transactional(readOnly = true)
+    public ChatRoom findDirectRoomByUserPair(Long userId, Long friendId) {
+        validateDirectRoomUserPair(userId, friendId);
+
+        return chatRoomRepository
+                .findDirectRoomByUserPair(userId, friendId, ChatRoomType.DIRECT_CHAT)
+                .orElse(null);
+    }
+
+    @Transactional
+    public ChatRoom createDirectChatRoom(Long ownerId, Long friendId) {
+        validateDirectRoomUserPair(ownerId, friendId);
+
+        Long min = Math.min(ownerId, friendId);
+        Long max = Math.max(ownerId, friendId);
+
+        ChatRoom directRoom =
+                new ChatRoom(
+                        ownerId,
+                        DIRECT_ROOM_TITLE_PREFIX + min + ":" + max,
+                        ChatRoomType.DIRECT_CHAT,
+                        DIRECT_ROOM_DESCRIPTION,
+                        2);
+
+        return chatRoomRepository.save(directRoom);
     }
 
     private void validateCreateChatRoom(
@@ -156,6 +190,12 @@ public class ChatRoomService {
     private void validateSearchChatRooms(int page, int size) {
         if (page <= 0 || size <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
+        }
+    }
+
+    private void validateDirectRoomUserPair(Long userId, Long friendId) {
+        if (userId == null || friendId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
         }
     }
 

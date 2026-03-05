@@ -13,6 +13,7 @@ import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
+import molip.server.chat.dto.response.ChatDirectRoomEnterResponse;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
 import molip.server.chat.dto.response.ChatMyRoomItemResponse;
@@ -237,6 +238,38 @@ public interface ChatApi {
     })
     ResponseEntity<ServerResponse<ChatRoomEnterResponse>> enterChatRoom(
             @AuthenticationPrincipal UserDetails userDetails, Long roomId);
+
+    @Operation(summary = "개인 채팅방 생성/입장")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "입장 성공",
+                content =
+                        @Content(
+                                schema =
+                                        @Schema(
+                                                implementation =
+                                                        ChatDirectRoomEnterResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "친구 사용자 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<ServerResponse<ChatDirectRoomEnterResponse>> enterOrCreateDirectChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, Long friendId);
 
     @Operation(summary = "메시지 목록 조회")
     @SecurityRequirement(name = "JWT")
