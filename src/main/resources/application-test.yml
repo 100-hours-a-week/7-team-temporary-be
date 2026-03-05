@@ -52,6 +52,17 @@ ai:
     base-url: http://localhost
     path: /test/planner
     timeout-ms: 300000
+  report:
+    weekly-generate-path: weeklytest
+    weekly-fetch-path: weeklyfetchtest
+    timeout-ms: 300000
+  personalization:
+    path: testtest
+  datasource:
+    url: jdbc:h2:mem:molip-ai-test;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
 
 
 fcm:
@@ -63,6 +74,13 @@ notification:
   dispatch:
     fixed-delay-ms: 60000
     batch-size: 100
+
+batch:
+  weekly:
+    report-fetch:
+      initial-delay-ms: 0
+      poll-interval-ms: 0
+      max-attempts: 1
 
 
 springdoc:

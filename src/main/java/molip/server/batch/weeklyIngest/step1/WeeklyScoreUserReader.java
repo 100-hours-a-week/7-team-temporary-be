@@ -1,4 +1,4 @@
-package molip.server.batch.weekly.service;
+package molip.server.batch.weeklyIngest.step1;
 
 import java.util.Map;
 import molip.server.user.entity.Users;

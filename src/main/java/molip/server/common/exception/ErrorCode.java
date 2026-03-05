@@ -76,6 +76,40 @@ public enum ErrorCode {
             HttpStatus.SERVICE_UNAVAILABLE,
             "PLANNER_SERVICE_UNAVAILABLE",
             "현재 배치 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    PERSONALIZATION_INGEST_BAD_REQUEST(
+            HttpStatus.BAD_REQUEST, "PERSONALIZATION_INGEST_BAD_REQUEST", "요청 형식이 올바르지 않습니다."),
+    PERSONALIZATION_INGEST_CONFLICT(
+            HttpStatus.CONFLICT, "PERSONALIZATION_INGEST_CONFLICT", "요청 데이터가 서로 충돌합니다."),
+    PERSONALIZATION_INGEST_VALIDATION_ERROR(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "PERSONALIZATION_INGEST_VALIDATION_ERROR",
+            "입력 값 검증에 실패했습니다."),
+    PERSONALIZATION_INGEST_INTERNAL_SERVER_ERROR(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "PERSONALIZATION_INGEST_INTERNAL_SERVER_ERROR",
+            "서버 처리 중 오류가 발생했습니다."),
+    PERSONALIZATION_INGEST_SERVICE_UNAVAILABLE(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "PERSONALIZATION_INGEST_SERVICE_UNAVAILABLE",
+            "현재 개인화 저장 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    WEEKLY_REPORT_BAD_REQUEST(
+            HttpStatus.BAD_REQUEST, "WEEKLY_REPORT_BAD_REQUEST", "요청 형식이 올바르지 않습니다."),
+    WEEKLY_REPORT_DATA_NOT_FOUND(
+            HttpStatus.NOT_FOUND, "WEEKLY_REPORT_DATA_NOT_FOUND", "주간 레포트 생성을 위한 데이터가 존재하지 않습니다."),
+    WEEKLY_REPORT_CONFLICT(
+            HttpStatus.CONFLICT, "WEEKLY_REPORT_CONFLICT", "동일한 reportId로 이미 레포트가 생성되어 있습니다."),
+    WEEKLY_REPORT_VALIDATION_ERROR(
+            HttpStatus.UNPROCESSABLE_ENTITY, "WEEKLY_REPORT_VALIDATION_ERROR", "입력 값 검증에 실패했습니다."),
+    WEEKLY_REPORT_INTERNAL_SERVER_ERROR(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "WEEKLY_REPORT_INTERNAL_SERVER_ERROR",
+            "서버 처리 중 오류가 발생했습니다."),
+    WEEKLY_REPORT_SERVICE_UNAVAILABLE(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "WEEKLY_REPORT_SERVICE_UNAVAILABLE",
+            "현재 주간 레포트 생성 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    WEEKLY_REPORT_FETCH_BAD_REQUEST(
+            HttpStatus.BAD_REQUEST, "WEEKLY_REPORT_FETCH_BAD_REQUEST", "잘못된 요청 형식입니다."),
     INVALID_REQUEST_AI_USAGE_EXCEEDED(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "AI 사용 가능 횟수가 모두 소진되었습니다."),
 

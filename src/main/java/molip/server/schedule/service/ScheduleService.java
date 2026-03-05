@@ -21,15 +21,14 @@ import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
-import molip.server.migration.event.AggregateType;
-import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.migration.event.ChangeType;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.event.ScheduleReminderResetEvent;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.entity.ScheduleHistory;
 import molip.server.schedule.event.ScheduleHistoryRecordedEvent;
+import molip.server.schedule.event.ScheduleOutboxEvent;
 import molip.server.schedule.repository.ScheduleRepository;
 import molip.server.schedule.repository.ScheduleStatusCount;
 import molip.server.schedule.service.strategy.ScheduleCreator;
@@ -47,20 +46,17 @@ public class ScheduleService {
     private final DayPlanService dayPlanService;
     private final Map<ScheduleType, ScheduleCreator> creatorMap;
     private final ApplicationEventPublisher eventPublisher;
-    private final OutboxEventService outboxEventService;
 
     public ScheduleService(
             ScheduleRepository scheduleRepository,
             DayPlanService dayPlanService,
             List<ScheduleCreator> creators,
-            ApplicationEventPublisher eventPublisher,
-            OutboxEventService outboxEventService) {
+            ApplicationEventPublisher eventPublisher) {
 
         this.scheduleRepository = scheduleRepository;
         this.dayPlanService = dayPlanService;
         this.creatorMap = new EnumMap<>(ScheduleType.class);
         this.eventPublisher = eventPublisher;
-        this.outboxEventService = outboxEventService;
 
         for (ScheduleCreator creator : creators) {
             this.creatorMap.put(creator.supports(), creator);
@@ -567,18 +563,15 @@ public class ScheduleService {
     }
 
     private void recordScheduleCreated(Schedule schedule) {
-        outboxEventService.recordCreated(
-                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
+        eventPublisher.publishEvent(new ScheduleOutboxEvent(schedule, ChangeType.CREATED));
     }
 
     private void recordScheduleUpdated(Schedule schedule) {
-        outboxEventService.recordUpdated(
-                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
+        eventPublisher.publishEvent(new ScheduleOutboxEvent(schedule, ChangeType.UPDATED));
     }
 
     private void recordScheduleDeleted(Schedule schedule) {
-        outboxEventService.recordDeleted(
-                AggregateType.SCHEDULE, schedule.getId(), OutboxPayloadMapper.schedule(schedule));
+        eventPublisher.publishEvent(new ScheduleOutboxEvent(schedule, ChangeType.DELETED));
     }
 
     private void recordSchedulesCreated(List<Schedule> schedules) {

@@ -1,16 +1,24 @@
-package molip.server.batch.weekly;
+package molip.server.batch.weeklyIngest;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import lombok.RequiredArgsConstructor;
 import molip.server.batch.entity.BatchJobRun;
 import molip.server.batch.enums.BatchRunStatus;
 import molip.server.batch.enums.BatchTargetType;
+import molip.server.batch.service.BatchStepTrackingListener;
 import molip.server.batch.service.BatchTrackingService;
-import molip.server.batch.weekly.service.WeeklyScoreItemWriter;
-import molip.server.batch.weekly.service.WeeklyScoreUserReader;
+import molip.server.batch.weeklyIngest.step1.WeeklyScoreItemWriter;
+import molip.server.batch.weeklyIngest.step1.WeeklyScoreUserReader;
+import molip.server.batch.weeklyIngest.step2.WeeklyAiIngestItemWriter;
+import molip.server.batch.weeklyIngest.step3.WeeklyAiNotifyTasklet;
+import molip.server.batch.weeklyIngest.step4.WeeklyAiReportGenerateTasklet;
+import molip.server.batch.weeklyIngest.step5.WeeklyAiReportFetchTasklet;
 import molip.server.report.repository.ReportDailyStatRepository;
 import molip.server.report.repository.ReportRepository;
+import molip.server.schedule.repository.DayPlanRepository;
+import molip.server.schedule.repository.ScheduleHistoryRepository;
 import molip.server.schedule.repository.ScheduleRepository;
 import molip.server.user.entity.Users;
 import molip.server.user.repository.UserRepository;
@@ -25,9 +33,10 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.ItemWriter;
-import org.springframework.batch.infrastructure.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
@@ -43,12 +52,16 @@ public class WeeklyIngestBatchConfig {
             Step weeklyScoreStep,
             Step weeklyAiIngestStep,
             Step weeklyAiNotifyStep,
+            Step weeklyAiReportGenerateStep,
+            Step weeklyAiReportFetchStep,
             BatchTrackingService batchTrackingService) {
         return new JobBuilder("weeklyIngestJob", jobRepository)
                 .listener(weeklyIngestJobListener(batchTrackingService))
                 .start(weeklyScoreStep)
                 .next(weeklyAiIngestStep)
                 .next(weeklyAiNotifyStep)
+                .next(weeklyAiReportGenerateStep)
+                .next(weeklyAiReportFetchStep)
                 .build();
     }
 
@@ -57,12 +70,13 @@ public class WeeklyIngestBatchConfig {
         return new JobExecutionListener() {
             @Override
             public void beforeJob(JobExecution jobExecution) {
-                LocalDate runDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
+                LocalDate runDate = resolveRunDate(jobExecution);
                 BatchJobRun jobRun =
                         batchTrackingService.createJobRun(
                                 jobExecution.getJobInstance().getJobName(), runDate);
                 batchTrackingService.markJobStarted(jobRun.getId());
                 jobExecution.getExecutionContext().putLong("batchJobRunId", jobRun.getId());
+                jobExecution.getExecutionContext().putString("batchRunDate", runDate.toString());
             }
 
             @Override
@@ -77,6 +91,20 @@ public class WeeklyIngestBatchConfig {
                                 ? null
                                 : jobExecution.getAllFailureExceptions().getFirst().getMessage();
                 batchTrackingService.markJobFinished(jobRunId, status, lastError);
+            }
+
+            private LocalDate resolveRunDate(JobExecution jobExecution) {
+                String runDateParam = jobExecution.getJobParameters().getString("runDate");
+                if (runDateParam == null || runDateParam.isBlank()) {
+                    return LocalDate.now(ZoneId.of("Asia/Seoul"));
+                }
+
+                try {
+                    return LocalDate.parse(runDateParam);
+                } catch (DateTimeParseException e) {
+                    log.warn("Invalid runDate parameter: {}. Fallback to now.", runDateParam);
+                    return LocalDate.now(ZoneId.of("Asia/Seoul"));
+                }
             }
         };
     }
@@ -99,17 +127,13 @@ public class WeeklyIngestBatchConfig {
     public Step weeklyAiIngestStep(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            BatchTrackingService batchTrackingService) {
+            WeeklyScoreUserReader weeklyAiIngestUserReader,
+            ItemWriter<Users> weeklyAiIngestItemWriter) {
         return new StepBuilder("weeklyAiIngestStep", jobRepository)
-                .listener(
-                        new molip.server.batch.service.BatchStepTrackingListener(
-                                batchTrackingService, BatchTargetType.USER, null))
-                .tasklet(
-                        (contribution, chunkContext) -> {
-                            log.info("Weekly AI ingest step placeholder executed.");
-                            return RepeatStatus.FINISHED;
-                        },
-                        transactionManager)
+                .<Users, Users>chunk(1000)
+                .transactionManager(transactionManager)
+                .reader(weeklyAiIngestUserReader)
+                .writer(weeklyAiIngestItemWriter)
                 .build();
     }
 
@@ -117,22 +141,52 @@ public class WeeklyIngestBatchConfig {
     public Step weeklyAiNotifyStep(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            BatchTrackingService batchTrackingService) {
+            BatchTrackingService batchTrackingService,
+            WeeklyAiNotifyTasklet weeklyAiNotifyTasklet) {
         return new StepBuilder("weeklyAiNotifyStep", jobRepository)
                 .listener(
-                        new molip.server.batch.service.BatchStepTrackingListener(
+                        new BatchStepTrackingListener(
                                 batchTrackingService, BatchTargetType.CHUNK, null))
-                .tasklet(
-                        (contribution, chunkContext) -> {
-                            log.info("Weekly AI notify step placeholder executed.");
-                            return RepeatStatus.FINISHED;
-                        },
-                        transactionManager)
+                .tasklet(weeklyAiNotifyTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step weeklyAiReportGenerateStep(
+            JobRepository jobRepository,
+            PlatformTransactionManager transactionManager,
+            BatchTrackingService batchTrackingService,
+            WeeklyAiReportGenerateTasklet weeklyAiReportGenerateTasklet) {
+        return new StepBuilder("weeklyAiReportGenerateStep", jobRepository)
+                .listener(
+                        new BatchStepTrackingListener(
+                                batchTrackingService, BatchTargetType.CHUNK, null))
+                .tasklet(weeklyAiReportGenerateTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step weeklyAiReportFetchStep(
+            JobRepository jobRepository,
+            PlatformTransactionManager transactionManager,
+            BatchTrackingService batchTrackingService,
+            WeeklyAiReportFetchTasklet weeklyAiReportFetchTasklet) {
+
+        return new StepBuilder("weeklyAiReportFetchStep", jobRepository)
+                .listener(
+                        new BatchStepTrackingListener(
+                                batchTrackingService, BatchTargetType.CHUNK, null))
+                .tasklet(weeklyAiReportFetchTasklet, transactionManager)
                 .build();
     }
 
     @Bean
     public WeeklyScoreUserReader weeklyScoreUserReader(UserRepository userRepository) {
+        return new WeeklyScoreUserReader(userRepository);
+    }
+
+    @Bean
+    public WeeklyScoreUserReader weeklyAiIngestUserReader(UserRepository userRepository) {
         return new WeeklyScoreUserReader(userRepository);
     }
 
@@ -147,5 +201,20 @@ public class WeeklyIngestBatchConfig {
                 scheduleRepository,
                 reportRepository,
                 reportDailyStatRepository);
+    }
+
+    @Bean
+    public WeeklyAiIngestItemWriter weeklyAiIngestItemWriter(
+            BatchTrackingService batchTrackingService,
+            DayPlanRepository dayPlanRepository,
+            ScheduleRepository scheduleRepository,
+            ScheduleHistoryRepository scheduleHistoryRepository,
+            @Qualifier("aiJdbcTemplate") JdbcTemplate aiJdbcTemplate) {
+        return new WeeklyAiIngestItemWriter(
+                batchTrackingService,
+                dayPlanRepository,
+                scheduleRepository,
+                scheduleHistoryRepository,
+                aiJdbcTemplate);
     }
 }

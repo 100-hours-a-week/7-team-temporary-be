@@ -1,7 +1,8 @@
-package molip.server.batch.weekly.service;
+package molip.server.batch.weeklyIngest.step1;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import lombok.RequiredArgsConstructor;
 import molip.server.batch.entity.BatchJobRun;
 import molip.server.batch.entity.BatchStepRun;
@@ -38,7 +39,7 @@ public class WeeklyScoreItemWriter implements ItemWriter<Users>, StepExecutionLi
                 stepExecution.getJobExecution().getExecutionContext().getLong("batchJobRunId");
         this.jobRun = trackingService.getJobRun(jobRunId);
 
-        LocalDate runDate = LocalDate.now(ZONE_ID);
+        LocalDate runDate = resolveRunDate(stepExecution);
         this.periodEnd = runDate.minusDays(1);
         this.periodStart = periodEnd.minusDays(6);
     }
@@ -67,7 +68,24 @@ public class WeeklyScoreItemWriter implements ItemWriter<Users>, StepExecutionLi
             } catch (Exception e) {
                 trackingService.markStepFinished(
                         stepRun.getId(), BatchStepStatus.FAILED, e.getMessage());
+                throw new IllegalStateException(
+                        "Weekly score calculation failed for user " + user.getId(), e);
             }
+        }
+    }
+
+    private LocalDate resolveRunDate(StepExecution stepExecution) {
+        String runDateText =
+                stepExecution.getJobExecution().getExecutionContext().getString("batchRunDate");
+
+        if (runDateText == null || runDateText.isBlank()) {
+            return LocalDate.now(ZONE_ID);
+        }
+
+        try {
+            return LocalDate.parse(runDateText);
+        } catch (DateTimeParseException e) {
+            return LocalDate.now(ZONE_ID);
         }
     }
 }
