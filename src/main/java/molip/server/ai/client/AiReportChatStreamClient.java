@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -49,8 +50,10 @@ public class AiReportChatStreamClient {
                         consumeStream(response, eventConsumer);
                         return null;
                     },
-                    reportId,
-                    streamMessageId);
+                    Map.of(
+                            "reportId", reportId,
+                            "messageId", streamMessageId,
+                            "streamMessageId", streamMessageId));
         } catch (Exception exception) {
             throw new BaseException(ErrorCode.INTERNAL_SERVER_ERROR);
         }

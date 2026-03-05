@@ -1,5 +1,6 @@
 package molip.server.ai.client;
 
+import java.util.Map;
 import molip.server.ai.dto.request.AiReportChatRespondRequest;
 import molip.server.ai.dto.response.AiReportChatRespondResponse;
 import molip.server.common.exception.BaseException;
@@ -43,7 +44,7 @@ public class AiReportChatClient {
                             HttpMethod.POST,
                             new HttpEntity<>(request),
                             AiReportChatRespondResponse.class,
-                            reportId);
+                            Map.of("reportId", reportId));
 
             AiReportChatRespondResponse body = response.getBody();
 
@@ -73,8 +74,10 @@ public class AiReportChatClient {
                     HttpMethod.DELETE,
                     null,
                     Void.class,
-                    reportId,
-                    streamMessageId);
+                    Map.of(
+                            "reportId", reportId,
+                            "messageId", streamMessageId,
+                            "streamMessageId", streamMessageId));
         } catch (HttpStatusCodeException exception) {
             if (exception.getStatusCode().value() == 404) {
                 throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
