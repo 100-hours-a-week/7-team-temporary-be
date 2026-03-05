@@ -163,6 +163,7 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
 
     private List<Long> findExistingRecordIds(Long userId, List<Long> dayPlanIds) {
         String placeholders = buildPlaceholders(dayPlanIds.size());
+
         String sql =
                 "select id from planner_records "
                         + "where user_id = ? and day_plan_id in ("
