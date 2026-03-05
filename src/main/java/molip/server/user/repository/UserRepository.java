@@ -17,9 +17,9 @@ public interface UserRepository extends JpaRepository<Users, Long> {
 
     Optional<Users> findByIdAndDeletedAtIsNull(Long id);
 
-    Page<Users> findByDeletedAtIsNull(Pageable pageable);
-
     boolean existsByIdAndDeletedAtIsNull(Long id);
+
+    Page<Users> findByDeletedAtIsNull(Pageable pageable);
 
     @Query(
             "select u from Users u "
