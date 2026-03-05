@@ -1,6 +1,7 @@
 package molip.server.auth.jwt;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -69,6 +70,21 @@ public class JwtUtil {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
         } catch (JwtException e) {
             return null;
+        }
+    }
+
+    public JwtValidationStatus getTokenStatus(String token) {
+        if (token == null || token.isBlank()) {
+            return JwtValidationStatus.INVALID;
+        }
+
+        try {
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            return JwtValidationStatus.VALID;
+        } catch (ExpiredJwtException e) {
+            return JwtValidationStatus.EXPIRED;
+        } catch (JwtException e) {
+            return JwtValidationStatus.INVALID;
         }
     }
 

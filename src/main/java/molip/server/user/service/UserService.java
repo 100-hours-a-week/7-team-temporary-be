@@ -113,6 +113,15 @@ public class UserService {
                 .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
+    public boolean existsUser(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+
+        return userRepository.existsByIdAndDeletedAtIsNull(userId);
+    }
+
     @Transactional
     public void modifyPassword(Long userId, String passwowrd) {
         validatePassword(passwowrd);

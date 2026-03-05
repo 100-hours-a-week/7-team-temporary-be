@@ -57,7 +57,7 @@ public final class WeeklyScoreService {
 
         Map<ScheduleStatus, Long> counts = new EnumMap<>(ScheduleStatus.class);
         for (ScheduleStatusCount row : rows) {
-            counts.put(row.getStatus(), row.getCount());
+            counts.put(row.getStatus(), row.getCount() == null ? 0L : row.getCount());
         }
 
         long done = counts.getOrDefault(ScheduleStatus.DONE, 0L);

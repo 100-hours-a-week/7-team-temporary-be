@@ -1,6 +1,5 @@
 package molip.server.report.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -23,14 +22,12 @@ public class ReportDailyStat extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "report_id", nullable = false)
     private Report report;
 
-    @Column(name = "report_date", nullable = false)
     private LocalDate reportDate;
 
-    @Column(name = "achievement_rate", nullable = false)
     private int achievementRate;
 
     public ReportDailyStat(Report report, LocalDate reportDate, int achievementRate) {

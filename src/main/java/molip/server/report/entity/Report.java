@@ -1,6 +1,5 @@
 package molip.server.report.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -24,20 +23,16 @@ public class Report extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @Column(name = "ai_report_response_limit", nullable = false)
     private int aiReportResponseLimit;
 
-    @Column(name = "ai_report_response_used", nullable = false)
     private int aiReportResponseUsed;
 
     public Report(
@@ -46,6 +41,7 @@ public class Report extends BaseEntity {
             LocalDate endDate,
             int aiReportResponseLimit,
             int aiReportResponseUsed) {
+
         this.user = user;
         this.startDate = startDate;
         this.endDate = endDate;

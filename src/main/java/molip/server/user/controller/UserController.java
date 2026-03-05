@@ -116,11 +116,15 @@ public class UserController implements UserApi {
     @GetMapping("/users/nickname")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<UserSearchItemResponse>>> searchByNickname(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam String nickname,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
         PageResponse<UserSearchItemResponse> response =
-                userQueryFacade.searchByNickname(nickname, page, size);
+                userQueryFacade.searchByNickname(userId, nickname, page, size);
+
         return ResponseEntity.ok(ServerResponse.success(SuccessCode.USER_SEARCH_SUCCESS, response));
     }
 

@@ -11,10 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AuthResponse;
 import molip.server.auth.jwt.JwtUtil;
-import molip.server.auth.store.DeviceStore;
-import molip.server.auth.store.RefreshTokenStore;
-import molip.server.auth.store.TokenBlacklistStore;
-import molip.server.auth.store.TokenVersionStore;
+import molip.server.auth.store.redis.RedisDeviceStore;
+import molip.server.auth.store.redis.RedisRefreshTokenStore;
+import molip.server.auth.store.redis.RedisTokenBlacklistStore;
+import molip.server.auth.store.redis.RedisTokenVersionStore;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.user.entity.Users;
@@ -35,10 +35,10 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final TokenBlacklistStore tokenBlacklistStore;
-    private final TokenVersionStore tokenVersionStore;
-    private final RefreshTokenStore refreshTokenStore;
-    private final DeviceStore deviceStore;
+    private final RedisTokenBlacklistStore tokenBlacklistStore;
+    private final RedisTokenVersionStore tokenVersionStore;
+    private final RedisRefreshTokenStore refreshTokenStore;
+    private final RedisDeviceStore deviceStore;
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request, String deviceId) {

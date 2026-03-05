@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class FriendQueryFacade {
-    private static final String DEFAULT_PROFILE_IMAGE_KEY = "default_image.png";
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
 
     private final FriendService friendService;
     private final UserService userService;
@@ -49,11 +49,9 @@ public class FriendQueryFacade {
     }
 
     private ImageInfoResponse resolveProfileImage(Long userId) {
-
         UserImage userImage = userImageService.getLatestUserImage(userId).orElse(null);
 
         if (userImage == null) {
-
             ImageGetUrlResponse defaultImage =
                     imageService.issueGetUrlWithoutValidation(
                             ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
