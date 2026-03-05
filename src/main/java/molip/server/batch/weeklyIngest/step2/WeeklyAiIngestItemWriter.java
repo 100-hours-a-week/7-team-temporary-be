@@ -1,7 +1,6 @@
 package molip.server.batch.weeklyIngest.step2;
 
 import java.sql.Timestamp;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -9,7 +8,6 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +22,6 @@ import molip.server.batch.enums.BatchTargetType;
 import molip.server.batch.service.BatchTrackingService;
 import molip.server.common.enums.AssignedBy;
 import molip.server.common.enums.AssignmentStatus;
-import molip.server.common.enums.ScheduleType;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.entity.ScheduleHistory;
@@ -82,14 +79,8 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                         .usingGeneratedKeyColumns("id");
 
         LocalDate runDate = resolveRunDate(stepExecution);
-        // 기존: 실행일 기준 직전 7일
-        // this.periodEnd = runDate.minusDays(1);
-        // this.periodStart = periodEnd.minusDays(6);
-
-        // 변경: 실행 요일과 무관하게 마지막 완료 주간(일~토) 고정
-        LocalDate lastSunday = runDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        this.periodEnd = lastSunday.minusDays(1);
-        this.periodStart = this.periodEnd.minusDays(6);
+        this.periodEnd = runDate.minusDays(1);
+        this.periodStart = periodEnd.minusDays(6);
     }
 
     @Override
@@ -216,11 +207,6 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
             Users user, DayPlan dayPlan, Map<Long, List<Schedule>> schedulesByDayPlan) {
         List<Schedule> schedules = schedulesByDayPlan.getOrDefault(dayPlan.getId(), List.of());
 
-        int totalTasks =
-                (int)
-                        schedules.stream()
-                                .filter(schedule -> schedule.getType() == ScheduleType.FLEX)
-                                .count();
         int assignedCount =
                 (int)
                         schedules.stream()
@@ -237,16 +223,9 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                                                 schedule.getAssignmentStatus()
                                                         == AssignmentStatus.EXCLUDED)
                                 .count();
+        int totalTasks = assignedCount + excludedCount;
 
-        double fillRate =
-                calculateFillRate(
-                        user,
-                        schedules.stream()
-                                .filter(
-                                        schedule ->
-                                                schedule.getAssignmentStatus()
-                                                        == AssignmentStatus.ASSIGNED)
-                                .toList());
+        double fillRate = calculateFillRate(assignedCount, totalTasks);
 
         LocalDateTime now = LocalDateTime.now(ZONE_ID);
 
@@ -372,30 +351,11 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
         return Period.between(user.getBirth(), referenceDate).getYears();
     }
 
-    private double calculateFillRate(Users user, List<Schedule> assignedSchedules) {
-        if (user.getDayEndTime() == null) {
+    private double calculateFillRate(int assignedCount, int totalTasks) {
+        if (totalTasks <= 0) {
             return 0.0;
         }
-        int availableMinutes =
-                user.getDayEndTime().getHour() * 60 + user.getDayEndTime().getMinute();
-        if (availableMinutes <= 0) {
-            return 0.0;
-        }
-        int totalMinutes =
-                assignedSchedules.stream()
-                        .filter(
-                                schedule ->
-                                        schedule.getStartAt() != null
-                                                && schedule.getEndAt() != null)
-                        .mapToInt(
-                                schedule ->
-                                        (int)
-                                                java.time.Duration.between(
-                                                                schedule.getStartAt(),
-                                                                schedule.getEndAt())
-                                                        .toMinutes())
-                        .sum();
-        double rate = (double) totalMinutes / availableMinutes;
+        double rate = (double) assignedCount / totalTasks;
         return Math.round(rate * 10000.0) / 10000.0;
     }
 

@@ -22,10 +22,7 @@ public class WeeklyIngestBatchScheduler {
     private final Job weeklyIngestJob;
 
     // @Scheduled(initialDelay = 300000, fixedDelay = 300000)
-    // 운영 기본 정책
-    // @Scheduled(cron = "0 0 06 ? * SUN", zone = "Asia/Seoul")
-    // 프론트 테스트용 임시 정책 (목요일 21:00 KST)
-    @Scheduled(cron = "0 0 21 ? * THU", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 06 ? * SUN", zone = "Asia/Seoul")
     public void runWeeklyIngestJob() {
         try {
             LocalDate runDate = LocalDate.now(ZoneId.of("Asia/Seoul"));

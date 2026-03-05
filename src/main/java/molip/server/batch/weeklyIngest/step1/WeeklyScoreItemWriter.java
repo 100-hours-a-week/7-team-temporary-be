@@ -1,10 +1,8 @@
 package molip.server.batch.weeklyIngest.step1;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAdjusters;
 import lombok.RequiredArgsConstructor;
 import molip.server.batch.entity.BatchJobRun;
 import molip.server.batch.entity.BatchStepRun;
@@ -42,14 +40,8 @@ public class WeeklyScoreItemWriter implements ItemWriter<Users>, StepExecutionLi
         this.jobRun = trackingService.getJobRun(jobRunId);
 
         LocalDate runDate = resolveRunDate(stepExecution);
-        // 기존: 실행일 기준 직전 7일
-        // this.periodEnd = runDate.minusDays(1);
-        // this.periodStart = periodEnd.minusDays(6);
-
-        // 변경: 실행 요일과 무관하게 마지막 완료 주간(일~토) 고정
-        LocalDate lastSunday = runDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        this.periodEnd = lastSunday.minusDays(1);
-        this.periodStart = this.periodEnd.minusDays(6);
+        this.periodEnd = runDate.minusDays(1);
+        this.periodStart = periodEnd.minusDays(6);
     }
 
     @Override
