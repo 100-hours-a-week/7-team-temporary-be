@@ -11,6 +11,7 @@ import molip.server.batch.service.BatchTrackingService;
 import molip.server.batch.weeklyIngest.step1.WeeklyScoreItemWriter;
 import molip.server.batch.weeklyIngest.step1.WeeklyScoreUserReader;
 import molip.server.batch.weeklyIngest.step2.WeeklyAiIngestItemWriter;
+import molip.server.batch.weeklyIngest.step3.WeeklyAiNotifyTasklet;
 import molip.server.report.repository.ReportDailyStatRepository;
 import molip.server.report.repository.ReportRepository;
 import molip.server.schedule.repository.DayPlanRepository;
@@ -29,7 +30,6 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.ItemWriter;
-import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -134,17 +134,13 @@ public class WeeklyIngestBatchConfig {
     public Step weeklyAiNotifyStep(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            BatchTrackingService batchTrackingService) {
+            BatchTrackingService batchTrackingService,
+            WeeklyAiNotifyTasklet weeklyAiNotifyTasklet) {
         return new StepBuilder("weeklyAiNotifyStep", jobRepository)
                 .listener(
                         new molip.server.batch.service.BatchStepTrackingListener(
                                 batchTrackingService, BatchTargetType.CHUNK, null))
-                .tasklet(
-                        (contribution, chunkContext) -> {
-                            log.info("Weekly AI notify step placeholder executed.");
-                            return RepeatStatus.FINISHED;
-                        },
-                        transactionManager)
+                .tasklet(weeklyAiNotifyTasklet, transactionManager)
                 .build();
     }
 

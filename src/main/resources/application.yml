@@ -97,6 +97,8 @@ ai:
     base-url: ${AI_PLANNER_BASE_URL}
     path: ${AI_PLANNER_PATH}
     timeout-ms: ${AI_PLANNER_TIMEOUT_MS}
+  personalization:
+    path: ${AI_PERSONALIZATION_INGEST_PATH:/ai/v1/personalizations/ingest}
   datasource:
     url: ${AI_DB_URL}
     username: ${AI_DB_USERNAME}
@@ -160,4 +162,3 @@ kafka:
   topics:
     domain-events: ${KAFKA_DOMAIN_EVENTS_TOPIC:domain.events.v1}
     dlq: ${KAFKA_DOMAIN_EVENTS_DLQ_TOPIC:domain.events.v1.DLQ}
-

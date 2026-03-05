@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS chat_room_participant (
   CONSTRAINT fk_chat_room_participant_room_id FOREIGN KEY (chat_room_id) REFERENCES chat_room(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS message (
+CREATE TABLE IF NOT EXISTS chat_message (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   chat_room_id BIGINT NOT NULL,
   message_type VARCHAR(20) NOT NULL,

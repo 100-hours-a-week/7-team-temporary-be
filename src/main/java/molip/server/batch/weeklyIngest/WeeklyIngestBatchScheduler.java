@@ -21,7 +21,8 @@ public class WeeklyIngestBatchScheduler {
     private final JobOperator jobOperator;
     private final Job weeklyIngestJob;
 
-    @Scheduled(cron = "0 0 22 ? * SUN", zone = "Asia/Seoul")
+    // @Scheduled(cron = "0 0 22 ? * SUN", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
     public void runWeeklyIngestJob() {
         try {
             LocalDate runDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
