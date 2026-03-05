@@ -3,11 +3,15 @@ package molip.server.report.facade;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import molip.server.ai.client.AiReportChatClient;
 import molip.server.ai.dto.request.AiReportChatMessageRequest;
 import molip.server.ai.dto.request.AiReportChatRespondRequest;
 import molip.server.ai.dto.response.AiReportChatRespondResponse;
+import molip.server.auth.store.redis.RedisDeviceStore;
+import molip.server.common.enums.MessageType;
+import molip.server.common.enums.SenderType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.report.dto.response.ReportMessageCreateResponse;
@@ -17,6 +21,9 @@ import molip.server.report.event.ReportChatRespondRequestedEvent;
 import molip.server.report.redis.RedisReportChatStreamStore;
 import molip.server.report.service.ReportChatMessageService;
 import molip.server.report.service.ReportService;
+import molip.server.socket.dto.response.SocketReportStreamCompleteResponse;
+import molip.server.socket.service.SocketReportChannelBroadcaster;
+import molip.server.socket.store.RedisSocketSessionStore;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +33,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReportCommandFacade {
 
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
+    private static final String SOCKET_EVENT_COMPLETE = "report.stream.complete";
+    private static final String STATUS_CANCELED = "CANCELED";
 
     private final AiReportChatClient aiReportChatClient;
     private final ReportService reportService;
     private final ReportChatMessageService reportChatMessageService;
     private final RedisReportChatStreamStore redisReportChatStreamStore;
+    private final RedisDeviceStore deviceStore;
+    private final RedisSocketSessionStore socketSessionStore;
+    private final SocketReportChannelBroadcaster socketReportChannelBroadcaster;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -87,6 +99,57 @@ public class ReportCommandFacade {
 
         if (!streamMessageId.equals(response.data().messageId())) {
             throw new BaseException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public void cancelReportMessage(Long userId, Long reportId, Long streamMessageId) {
+        if (userId == null || reportId == null || streamMessageId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+
+        Report report = reportService.getReportWithUserId(userId, reportId);
+
+        validateReportAvailability(report);
+
+        ReportChatMessage streamMessage =
+                reportChatMessageService.getStreamMessage(reportId, streamMessageId);
+
+        if (streamMessage.getDeletedAt() != null || streamMessage.isDeleted()) {
+            throw new BaseException(ErrorCode.CONFLICT_RESPONSE_ALREADY_ENDED);
+        }
+
+        if (streamMessage.getContent() != null) {
+            throw new BaseException(ErrorCode.CONFLICT_RESPONSE_ALREADY_ENDED);
+        }
+
+        aiReportChatClient.requestCancel(reportId, streamMessageId);
+
+        reportChatMessageService.deleteAiStreamMessageIfExists(streamMessageId);
+        redisReportChatStreamStore.updateStatus(reportId, streamMessageId, STATUS_CANCELED);
+
+        broadcastCancelComplete(userId, reportId, streamMessageId);
+    }
+
+    private void broadcastCancelComplete(Long userId, Long reportId, Long streamMessageId) {
+        Set<String> deviceIds = deviceStore.listDevices(userId);
+
+        for (String deviceId : deviceIds) {
+            String sessionId = socketSessionStore.findSessionId(userId, deviceId);
+
+            if (sessionId == null || sessionId.isBlank()) {
+                continue;
+            }
+
+            socketReportChannelBroadcaster.sendToSession(
+                    sessionId,
+                    SOCKET_EVENT_COMPLETE,
+                    SocketReportStreamCompleteResponse.of(
+                            reportId,
+                            streamMessageId,
+                            SenderType.AI,
+                            MessageType.TEXT,
+                            STATUS_CANCELED));
         }
     }
 }

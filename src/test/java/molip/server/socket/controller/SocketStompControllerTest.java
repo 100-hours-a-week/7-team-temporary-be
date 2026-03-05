@@ -11,6 +11,7 @@ import java.util.Optional;
 import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
+import molip.server.socket.dto.request.SocketReportMessageCancelRequest;
 import molip.server.socket.dto.request.SocketReportMessageSendRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
@@ -146,5 +147,28 @@ class SocketStompControllerTest {
         // then
         assertThat(response).isEqualTo(expected);
         verify(socketReportMessageService).sendMessage(7L, request);
+    }
+
+    @Test
+    @DisplayName("report.message.cancel은 인증 완료 세션이면 report message service에 위임한다")
+    void cancelReportMessageDelegatesWhenAuthenticated() {
+        SocketReportMessageCancelRequest request = new SocketReportMessageCancelRequest(20L, 101L);
+        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
+        headerAccessor.setSessionAttributes(new HashMap<>());
+        SocketSessionContext sessionContext =
+                SocketSessionContext.of(
+                        "Bearer valid-token", "device-uuid", 7L, OffsetDateTime.now());
+        SocketEventResponse<?> expected =
+                SocketEventResponse.of("report.message.cancelAccepted", "ok");
+
+        given(socketSessionSupport.getSessionContext(headerAccessor))
+                .willReturn(Optional.of(sessionContext));
+        doReturn(expected).when(socketReportMessageService).cancelMessage(7L, request);
+
+        SocketEventResponse<?> response =
+                socketStompController.cancelReportMessage(request, "session-uuid", headerAccessor);
+
+        assertThat(response).isEqualTo(expected);
+        verify(socketReportMessageService).cancelMessage(7L, request);
     }
 }

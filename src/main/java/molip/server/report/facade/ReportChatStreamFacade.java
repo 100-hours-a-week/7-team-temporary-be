@@ -172,7 +172,7 @@ public class ReportChatStreamFacade {
                         broadcastError(reportId, userId, streamMessageId);
                         redisReportChatStreamStore.updateStatus(
                                 reportId, streamMessageId, STATUS_FAILED);
-                        reportChatMessageService.deleteAiStreamMessage(streamMessageId);
+                        reportChatMessageService.deleteAiStreamMessageIfExists(streamMessageId);
 
                     } finally {
                         activeStreams.remove(streamMessageId);
@@ -317,7 +317,7 @@ public class ReportChatStreamFacade {
                     userId,
                     status);
 
-            reportChatMessageService.deleteAiStreamMessage(streamMessageId);
+            reportChatMessageService.deleteAiStreamMessageIfExists(streamMessageId);
             return;
         }
 
@@ -342,7 +342,7 @@ public class ReportChatStreamFacade {
 
         broadcastError(reportId, userId, streamMessageId);
         redisReportChatStreamStore.updateStatus(reportId, streamMessageId, STATUS_FAILED);
-        reportChatMessageService.deleteAiStreamMessage(streamMessageId);
+        reportChatMessageService.deleteAiStreamMessageIfExists(streamMessageId);
     }
 
     private void broadcastError(Long reportId, Long userId, Long streamMessageId) {

@@ -91,10 +91,15 @@ public class ReportController implements ReportApi {
     }
 
     @DeleteMapping("/reports/{reportId}/message/{messageId}")
-    @Deprecated
     @Override
     public ResponseEntity<Void> cancelReportMessage(
-            @PathVariable Long reportId, @PathVariable("messageId") Long streamMessageId) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long reportId,
+            @PathVariable("messageId") Long streamMessageId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reportCommandFacade.cancelReportMessage(userId, reportId, streamMessageId);
+
         return ResponseEntity.noContent().build();
     }
 }

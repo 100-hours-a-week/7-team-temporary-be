@@ -165,7 +165,9 @@ public interface ReportApi {
     ResponseEntity<ServerResponse<ReportMessageStreamResumeResponse>> streamReportMessage(
             @AuthenticationPrincipal UserDetails userDetails, Long reportId, Long streamMessageId);
 
-    @Operation(summary = "응답 생성 취소")
+    @Operation(
+            summary = "응답 생성 취소",
+            description = "path의 messageId는 streamMessageId(= AI 응답 세션 ID)입니다.")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "취소 성공"),
@@ -190,5 +192,6 @@ public interface ReportApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> cancelReportMessage(Long reportId, Long streamMessageId);
+    ResponseEntity<Void> cancelReportMessage(
+            @AuthenticationPrincipal UserDetails userDetails, Long reportId, Long streamMessageId);
 }

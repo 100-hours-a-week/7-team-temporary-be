@@ -55,6 +55,7 @@ ai:
   chatbot:
     base-url: http://localhost
     respond-path: respond-test
+    cancel-path: cancel-test
     stream-path: stream-test
     connect-timeout-ms: 10000
     respond-timeout-ms: 300000

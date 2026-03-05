@@ -8,6 +8,7 @@ import molip.server.socket.dto.request.SocketDisconnectRequest;
 import molip.server.socket.dto.request.SocketLastSeenUpdateRequest;
 import molip.server.socket.dto.request.SocketMessageSendRequest;
 import molip.server.socket.dto.request.SocketPongRequest;
+import molip.server.socket.dto.request.SocketReportMessageCancelRequest;
 import molip.server.socket.dto.request.SocketReportMessageSendRequest;
 import molip.server.socket.dto.request.SocketRoomSubscribeRequest;
 import molip.server.socket.dto.request.SocketRoomUnsubscribeRequest;
@@ -170,6 +171,22 @@ public class SocketStompController {
                 .<SocketEventResponse<?>>map(
                         sessionContext ->
                                 socketReportMessageService.sendMessage(
+                                        sessionContext.userId(), request))
+                .orElseGet(() -> reconnectRequired(sessionId));
+    }
+
+    @MessageMapping("/report/message/cancel")
+    @SendToUser(value = "/queue/report", broadcast = false)
+    public SocketEventResponse<?> cancelReportMessage(
+            SocketReportMessageCancelRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+
+        return socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .<SocketEventResponse<?>>map(
+                        sessionContext ->
+                                socketReportMessageService.cancelMessage(
                                         sessionContext.userId(), request))
                 .orElseGet(() -> reconnectRequired(sessionId));
     }

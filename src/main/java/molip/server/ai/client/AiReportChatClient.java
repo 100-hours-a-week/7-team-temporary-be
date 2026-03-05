@@ -20,15 +20,18 @@ public class AiReportChatClient {
     private final RestTemplate restTemplate;
     private final String baseUrl;
     private final String respondPath;
+    private final String cancelPath;
 
     public AiReportChatClient(
             @Qualifier("aiReportChatRespondRestTemplate") RestTemplate restTemplate,
             @Value("${ai.chatbot.base-url}") String baseUrl,
-            @Value("${ai.chatbot.respond-path}") String respondPath) {
+            @Value("${ai.chatbot.respond-path}") String respondPath,
+            @Value("${ai.chatbot.cancel-path}") String cancelPath) {
 
         this.restTemplate = restTemplate;
         this.baseUrl = baseUrl;
         this.respondPath = respondPath;
+        this.cancelPath = cancelPath;
     }
 
     public AiReportChatRespondResponse requestRespond(
@@ -55,6 +58,30 @@ public class AiReportChatClient {
         } catch (HttpStatusCodeException exception) {
             if (exception.getStatusCode().value() == 409) {
                 throw new BaseException(ErrorCode.CONFLICT_REPORT_RESPONSE_RUNNING);
+            }
+
+            throw new BaseException(ErrorCode.INTERNAL_SERVER_ERROR);
+        } catch (ResourceAccessException exception) {
+            throw new BaseException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public void requestCancel(Long reportId, Long streamMessageId) {
+        try {
+            restTemplate.exchange(
+                    baseUrl + cancelPath,
+                    HttpMethod.DELETE,
+                    null,
+                    Void.class,
+                    reportId,
+                    streamMessageId);
+        } catch (HttpStatusCodeException exception) {
+            if (exception.getStatusCode().value() == 404) {
+                throw new BaseException(ErrorCode.MESSAGE_NOT_FOUND);
+            }
+
+            if (exception.getStatusCode().value() == 409) {
+                throw new BaseException(ErrorCode.CONFLICT_RESPONSE_ALREADY_ENDED);
             }
 
             throw new BaseException(ErrorCode.INTERNAL_SERVER_ERROR);

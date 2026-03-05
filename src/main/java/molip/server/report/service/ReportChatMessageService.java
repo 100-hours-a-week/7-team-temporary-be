@@ -133,6 +133,17 @@ public class ReportChatMessageService {
     }
 
     @Transactional
+    public void deleteAiStreamMessageIfExists(Long messageId) {
+        if (messageId == null) {
+            return;
+        }
+
+        reportChatMessageRepository
+                .findByIdAndDeletedAtIsNullAndIsDeletedFalse(messageId)
+                .ifPresent(ReportChatMessage::deleteMessage);
+    }
+
+    @Transactional
     public ReportChatMessage createUserMessage(Report report, String inputMessage) {
         validateCreateUserMessage(report, inputMessage);
 
