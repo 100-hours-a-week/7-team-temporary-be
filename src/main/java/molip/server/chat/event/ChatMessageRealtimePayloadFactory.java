@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ChatMessageRealtimePayloadFactory {
 
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final MessageImageService messageImageService;
@@ -112,7 +113,7 @@ public class ChatMessageRealtimePayloadFactory {
                                 imageService.issueGetUrlWithoutValidation(
                                         ImageType.USERS, image.getUploadKey()))
                 .map(this::toImageInfoResponse)
-                .orElse(null);
+                .orElseGet(this::resolveDefaultProfileImage);
     }
 
     private List<MessageImageInfoResponse> toMessageImageResponses(List<Image> images) {
@@ -155,6 +156,14 @@ public class ChatMessageRealtimePayloadFactory {
     }
 
     private ImageInfoResponse toImageInfoResponse(ImageGetUrlResponse response) {
+        return ImageInfoResponse.of(response.url(), response.expiresAt(), response.imageKey());
+    }
+
+    private ImageInfoResponse resolveDefaultProfileImage() {
+        ImageGetUrlResponse response =
+                imageService.issueGetUrlWithoutValidation(
+                        ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
+
         return ImageInfoResponse.of(response.url(), response.expiresAt(), response.imageKey());
     }
 

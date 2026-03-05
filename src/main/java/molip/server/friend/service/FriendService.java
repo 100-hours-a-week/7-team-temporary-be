@@ -29,6 +29,17 @@ public class FriendService {
     }
 
     @Transactional
+    public void lockFriendRelationPair(Long userId, Long friendUserId) {
+        if (userId == null || friendUserId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (friendRepository.findFriendPairForUpdate(userId, friendUserId).isEmpty()) {
+            throw new BaseException(ErrorCode.REQUEST_NOT_FOUND_FRIEND);
+        }
+    }
+
+    @Transactional
     public void createFriendRelations(Users requestedUser, Users sentUser) {
         friendRepository.save(new Friend(requestedUser, sentUser.getId()));
         friendRepository.save(new Friend(sentUser, requestedUser.getId()));

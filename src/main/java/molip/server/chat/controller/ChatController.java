@@ -7,6 +7,7 @@ import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
+import molip.server.chat.dto.response.ChatDirectRoomEnterResponse;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
 import molip.server.chat.dto.response.ChatMessageSendCommandResult;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
@@ -152,6 +153,19 @@ public class ChatController implements ChatApi {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         ChatRoomEnterResponse response = chatRoomCommandFacade.enterChatRoom(userId, roomId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.CHAT_ROOM_ENTER_SUCCESS, response));
+    }
+
+    @PostMapping("/chat-rooms/participants/{friendId}")
+    @Override
+    public ResponseEntity<ServerResponse<ChatDirectRoomEnterResponse>> enterOrCreateDirectChatRoom(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long friendId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        ChatDirectRoomEnterResponse response =
+                chatRoomCommandFacade.enterOrCreateDirectChatRoom(userId, friendId);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_ENTER_SUCCESS, response));

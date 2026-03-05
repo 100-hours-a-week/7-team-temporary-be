@@ -17,6 +17,7 @@ import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.entity.MessageImage;
+import molip.server.chat.event.ChatLastSeenReadSyncedEvent;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
@@ -36,19 +37,23 @@ import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserImageService;
 import molip.server.user.service.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
 public class ChatRoomQueryFacade {
 
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final ChatRoomService chatRoomService;
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatMessageService chatMessageService;
     private final MessageImageService messageImageService;
+    private final ApplicationEventPublisher eventPublisher;
     private final UserImageService userImageService;
     private final UserService userService;
     private final ImageService imageService;
@@ -144,13 +149,25 @@ public class ChatRoomQueryFacade {
         return PageResponse.of(participationPage, content, page, size);
     }
 
+    @Transactional
     public CursorResponse<ChatMessageItemResponse> getMessages(
             Long userId, Long roomId, Long cursor, int size) {
-        validateChatMessageAccess(userId, roomId);
+        ChatRoomParticipant participant = validateChatMessageAccess(userId, roomId);
 
         Page<ChatMessage> messagePage = chatMessageService.getMessages(roomId, cursor, size);
 
         List<ChatMessage> messages = messagePage.getContent();
+
+        if (cursor == null && !messages.isEmpty()) {
+            Long latestMessageId = messages.getFirst().getId();
+
+            if (participant.getLastSeenMessageId() == null
+                    || latestMessageId > participant.getLastSeenMessageId()) {
+                eventPublisher.publishEvent(
+                        new ChatLastSeenReadSyncedEvent(
+                                participant.getId(), userId, roomId, latestMessageId));
+            }
+        }
 
         List<Long> messageIds = messages.stream().map(ChatMessage::getId).toList();
 
@@ -239,10 +256,10 @@ public class ChatRoomQueryFacade {
                 toKst(message.getSentAt()));
     }
 
-    private void validateChatMessageAccess(Long userId, Long roomId) {
+    private ChatRoomParticipant validateChatMessageAccess(Long userId, Long roomId) {
         chatRoomService.getChatRoom(roomId);
 
-        chatRoomParticipantService
+        return chatRoomParticipantService
                 .getActiveParticipant(roomId, userId)
                 .orElseThrow(() -> new BaseException(ErrorCode.FORBIDDEN_CHAT_ACCESS));
     }
@@ -256,7 +273,15 @@ public class ChatRoomQueryFacade {
                                 imageService.issueGetUrlWithoutValidation(
                                         ImageType.USERS, image.getUploadKey()))
                 .map(this::toImageInfoResponse)
-                .orElse(null);
+                .orElseGet(this::getDefaultProfileImage);
+    }
+
+    private ImageInfoResponse getDefaultProfileImage() {
+        ImageGetUrlResponse response =
+                imageService.issueGetUrlWithoutValidation(
+                        ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
+
+        return ImageInfoResponse.of(response.url(), response.expiresAt(), response.imageKey());
     }
 
     private ImageInfoResponse toImageInfoResponse(ImageGetUrlResponse response) {

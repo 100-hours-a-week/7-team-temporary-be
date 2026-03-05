@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class FriendRequestQueryFacade {
-    private static final String DEFAULT_PROFILE_IMAGE_KEY = "default_image.png";
+    private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
     private static final ZoneId ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final FriendRequestService friendRequestService;
@@ -59,12 +59,13 @@ public class FriendRequestQueryFacade {
     }
 
     private ImageInfoResponse resolveProfileImage(Long userId) {
-
         UserImage userImage = userImageRepository.findLatestByUserIdWithImage(userId).orElse(null);
+
         if (userImage == null) {
             ImageGetUrlResponse defaultImage =
                     imageService.issueGetUrlWithoutValidation(
                             ImageType.USERS, DEFAULT_PROFILE_IMAGE_KEY);
+
             return ImageInfoResponse.of(
                     defaultImage.url(), defaultImage.expiresAt(), defaultImage.imageKey());
         }

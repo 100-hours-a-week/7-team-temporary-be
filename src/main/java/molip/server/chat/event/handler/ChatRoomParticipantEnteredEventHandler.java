@@ -18,6 +18,7 @@ import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
+import molip.server.common.enums.ChatRoomType;
 import molip.server.socket.dto.response.SocketUnreadChangedResponse;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -39,6 +40,10 @@ public class ChatRoomParticipantEnteredEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handle(ChatRoomParticipantEnteredEvent event) {
+        if (event.chatRoom().getType() == ChatRoomType.DIRECT_CHAT) {
+            return;
+        }
+
         OffsetDateTime joinedAt = toKst(event.participant().getCreatedAt());
         String eventId = UUID.randomUUID().toString();
         log.info(
