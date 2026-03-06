@@ -430,3 +430,10 @@ CREATE TABLE IF NOT EXISTS batch_step_run (
   INDEX idx_batch_step_run_job_step (job_run_id, step_name, target_type, target_id),
   CONSTRAINT fk_batch_step_run_job_run_id FOREIGN KEY (job_run_id) REFERENCES batch_job_run(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS shedlock (
+  name VARCHAR(64) NOT NULL PRIMARY KEY,
+  lock_until DATETIME(3) NOT NULL,
+  locked_at DATETIME(3) NOT NULL,
+  locked_by VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

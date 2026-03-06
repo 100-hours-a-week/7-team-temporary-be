@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -42,13 +43,15 @@ public class ReportQueryFacade {
     public ReportResponse getReportByStartDate(Long userId, String startDateText) {
         LocalDate startDate = parseStartDate(startDateText);
         LocalDate endDate = startDate.plusDays(6);
+        Users user = userService.getUser(userId);
 
+        validateReportStartDateAfterSignup(user, startDate);
         validateReportAvailability(endDate);
 
         Report report = reportService.findByUserIdAndPeriod(userId, startDate, endDate);
 
         if (report == null) {
-            report = generateWeeklyReport(userId, startDate, endDate);
+            report = generateWeeklyReport(user, startDate, endDate);
         }
 
         List<ReportDailyStatResponse> dailyStats =
@@ -116,13 +119,12 @@ public class ReportQueryFacade {
                 stat.getReportDate().toString(), stat.getAchievementRate());
     }
 
-    private Report generateWeeklyReport(Long userId, LocalDate startDate, LocalDate endDate) {
-        Users user = userService.getUser(userId);
-
+    private Report generateWeeklyReport(Users user, LocalDate startDate, LocalDate endDate) {
         Report report = reportService.getOrCreateReport(user, startDate, endDate);
 
         List<ReportDailyStat> dailyStats = new ArrayList<>();
         LocalDate date = startDate;
+        Long userId = user.getId();
 
         for (int i = 0; i < 7; i++) {
             dailyStats.add(
@@ -135,6 +137,21 @@ public class ReportQueryFacade {
         reportDailyStatService.replaceDailyStats(report, dailyStats);
 
         return report;
+    }
+
+    private void validateReportStartDateAfterSignup(Users user, LocalDate startDate) {
+        if (user.getCreatedAt() == null) {
+            return;
+        }
+
+        LocalDate firstAvailableStartDate =
+                user.getCreatedAt()
+                        .toLocalDate()
+                        .with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
+        if (startDate.isBefore(firstAvailableStartDate)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REPORT_BEFORE_SIGNUP);
+        }
     }
 
     private OffsetDateTime toKst(LocalDateTime dateTime) {

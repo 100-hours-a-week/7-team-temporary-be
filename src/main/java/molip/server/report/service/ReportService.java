@@ -1,6 +1,8 @@
 package molip.server.report.service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
@@ -65,6 +67,8 @@ public class ReportService {
 
     @Transactional
     public Report getOrCreateReport(Users user, LocalDate startDate, LocalDate endDate) {
+        validateReportStartDateAfterSignup(user, startDate);
+
         Report report = findByUserIdAndPeriod(user.getId(), startDate, endDate);
 
         if (report != null) {
@@ -72,5 +76,20 @@ public class ReportService {
         }
 
         return reportRepository.save(new Report(user, startDate, endDate, 2, 0));
+    }
+
+    private void validateReportStartDateAfterSignup(Users user, LocalDate startDate) {
+        if (user.getCreatedAt() == null) {
+            return;
+        }
+
+        LocalDate firstAvailableStartDate =
+                user.getCreatedAt()
+                        .toLocalDate()
+                        .with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
+        if (startDate.isBefore(firstAvailableStartDate)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_REPORT_BEFORE_SIGNUP);
+        }
     }
 }
