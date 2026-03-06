@@ -328,7 +328,7 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
     }
 
     private String toTimeTextTime(LocalDateTime value) {
-        return value.format(TIME_TEXT_FORMATTER);
+        return value == null ? null : value.format(TIME_TEXT_FORMATTER);
     }
 
     private java.time.LocalTime findStartArrange(List<Schedule> schedules) {
