@@ -7,12 +7,12 @@ server:
 spring:
   batch:
     job:
-      enabled: ${SPRING_BATCH_JOB_ENABLED:false}
+      enabled: ${SPRING_BATCH_JOB_ENABLED}
   datasource:
-    url: ${WRITE_DB_URL:jdbc:mysql://localhost:3306/molip}
+    url: ${WRITE_DB_URL}
     driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${WRITE_DB_USERNAME:${MYSQL_USERNAME}}
-    password: ${WRITE_DB_PASSWORD:${MYSQL_PASSWORD}}
+    username: ${WRITE_DB_USERNAME}
+    password: ${WRITE_DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -23,7 +23,7 @@ spring:
         generate_statistics: true
   sql:
     init:
-      mode: always
+      mode: never
       encoding: utf-8
   servlet:
     multipart:
@@ -36,7 +36,7 @@ spring:
         secret-key: ${AWS_S3_SECRET_KEY}
         bucket: ${AWS_S3_BUCKET}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP_ID:molip-migration}
       auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
@@ -50,9 +50,9 @@ spring:
   data:
     redis:
       enabled: true
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
 
 
 jwt:
@@ -141,21 +141,21 @@ batch:
 
 
 migration:
-  enabled: ${MIGRATION_ENABLED:false}
+  enabled: ${MIGRATION_ENABLED}
   datasource:
-    url: ${MIGRATION_DB_URL:jdbc:mysql://localhost:3306/testread}
+    url: ${MIGRATION_DB_URL}
     username: ${MIGRATION_DB_USERNAME}
     password: ${MIGRATION_DB_PASSWORD}
 
 app:
   datasource:
     read:
-      url: ${READ_DB_URL:jdbc:mysql://localhost:3306/testread}
+      url: ${READ_DB_URL}
       driverClassName: com.mysql.cj.jdbc.Driver
       username: ${READ_DB_USERNAME}
       password: ${READ_DB_PASSWORD}
     write:
-      url: ${WRITE_DB_URL:jdbc:mysql://localhost:3306/molip}
+      url: ${WRITE_DB_URL}
       driverClassName: com.mysql.cj.jdbc.Driver
       username: ${WRITE_DB_USERNAME}
       password: ${WRITE_DB_PASSWORD}

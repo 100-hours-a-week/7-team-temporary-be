@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.job.Job;
@@ -23,6 +24,10 @@ public class WeeklyIngestBatchScheduler {
 
     // @Scheduled(initialDelay = 300000, fixedDelay = 300000)
     @Scheduled(cron = "0 0 06 ? * SUN", zone = "Asia/Seoul")
+    @SchedulerLock(
+            name = "weeklyIngestBatchScheduler_runWeeklyIngestJob",
+            lockAtMostFor = "PT2H",
+            lockAtLeastFor = "PT1M")
     public void runWeeklyIngestJob() {
         try {
             LocalDate runDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
