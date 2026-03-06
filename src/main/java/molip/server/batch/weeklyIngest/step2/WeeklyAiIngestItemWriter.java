@@ -303,10 +303,10 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
                                         recordId,
                                         scheduleId,
                                         history.getEventType().name(),
-                                        toTimestamp(history.getPrevStartAt()),
-                                        toTimestamp(history.getPrevEndAt()),
-                                        toTimestamp(history.getNextStartAt()),
-                                        toTimestamp(history.getNextEndAt()),
+                                        toTimeTextTime(history.getPrevStartAt()),
+                                        toTimeTextTime(history.getPrevEndAt()),
+                                        toTimeTextTime(history.getNextStartAt()),
+                                        toTimeTextTime(history.getNextEndAt()),
                                         toTimestamp(history.getCreatedAt()),
                                         Timestamp.valueOf(now)
                                     };
@@ -324,6 +324,10 @@ public class WeeklyAiIngestItemWriter implements ItemWriter<Users>, StepExecutio
 
     private String toTimeText(LocalTime value) {
         return value == null ? null : value.format(TIME_TEXT_FORMATTER);
+    }
+
+    private String toTimeTextTime(LocalDateTime value) {
+        return value.format(TIME_TEXT_FORMATTER);
     }
 
     private java.time.LocalTime findStartArrange(List<Schedule> schedules) {
