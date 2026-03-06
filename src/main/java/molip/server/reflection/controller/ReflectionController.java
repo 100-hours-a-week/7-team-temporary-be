@@ -13,6 +13,7 @@ import molip.server.reflection.dto.response.ReflectionExistResponse;
 import molip.server.reflection.dto.response.ReflectionLikeResponse;
 import molip.server.reflection.dto.response.ReflectionListItemResponse;
 import molip.server.reflection.facade.ReflectionCommandFacade;
+import molip.server.reflection.facade.ReflectionLikeCommandFacade;
 import molip.server.reflection.facade.ReflectionQueryFacade;
 import molip.server.reflection.service.ReflectionService;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReflectionController implements ReflectionApi {
 
     private final ReflectionCommandFacade reflectionCommandFacade;
+    private final ReflectionLikeCommandFacade reflectionLikeCommandFacade;
     private final ReflectionQueryFacade reflectionQueryFacade;
     private final ReflectionService reflectionService;
 
@@ -109,10 +111,15 @@ public class ReflectionController implements ReflectionApi {
     @GetMapping("/reflections/{reflectionId}")
     @Override
     public ResponseEntity<ServerResponse<ReflectionDetailResponse>> getReflectionDetail(
-            @PathVariable Long reflectionId) {
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reflectionId) {
+
+        Long viewerId = null;
+        if (userDetails != null) {
+            viewerId = Long.valueOf(userDetails.getUsername());
+        }
 
         ReflectionDetailResponse response =
-                reflectionQueryFacade.getOpenReflectionDetail(reflectionId);
+                reflectionQueryFacade.getOpenReflectionDetail(viewerId, reflectionId);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.REFLECTION_DETAIL_SUCCESS, response));
@@ -142,7 +149,11 @@ public class ReflectionController implements ReflectionApi {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         reflectionCommandFacade.updateReflection(
-                userId, reflectionId, request.reflectionImageIds(), request.content());
+                userId,
+                reflectionId,
+                request.reflectionImageKeys(),
+                request.content(),
+                request.isOpen());
 
         return ResponseEntity.noContent().build();
     }
@@ -160,15 +171,24 @@ public class ReflectionController implements ReflectionApi {
 
     @PostMapping("/reflections/{reflectionId}/like")
     @Override
-    @Deprecated
-    public ResponseEntity<Void> likeReflection(@PathVariable Long reflectionId) {
+    public ResponseEntity<Void> likeReflection(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reflectionId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reflectionLikeCommandFacade.likeReflection(userId, reflectionId);
+
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/reflections/{reflectionId}/like")
     @Override
-    @Deprecated
-    public ResponseEntity<Void> unlikeReflection(@PathVariable Long reflectionId) {
+    public ResponseEntity<Void> unlikeReflection(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reflectionId) {
+
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        reflectionLikeCommandFacade.unlikeReflection(userId, reflectionId);
+
         return ResponseEntity.noContent().build();
     }
 

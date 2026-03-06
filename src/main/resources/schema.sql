@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   birth DATE NOT NULL,
   focus_time_zone VARCHAR(20) NOT NULL,
   day_end_time TIME(6) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS image (
   upload_key CHAR(36) NOT NULL,
   upload_status VARCHAR(20) NOT NULL,
   expires_at DATETIME(6) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -31,6 +33,7 @@ CREATE TABLE IF NOT EXISTS user_image (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   image_id BIGINT NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -73,6 +76,7 @@ CREATE TABLE IF NOT EXISTS notification (
   status VARCHAR(20) NOT NULL,
   scheduled_at DATETIME(6) NOT NULL,
   sent_at DATETIME(6) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -88,6 +92,7 @@ CREATE TABLE IF NOT EXISTS user_fcm_token (
   platform VARCHAR(20) NOT NULL,
   is_active TINYINT(1) NOT NULL,
   last_seen_at DATETIME(6) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -100,6 +105,7 @@ CREATE TABLE IF NOT EXISTS day_plan (
   user_id BIGINT NOT NULL,
   plan_date DATE NOT NULL,
   ai_usage_remaining_count INT NOT NULL DEFAULT 2,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -111,6 +117,7 @@ CREATE TABLE IF NOT EXISTS issue (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   content VARCHAR(500) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -132,6 +139,7 @@ CREATE TABLE IF NOT EXISTS schedule (
   estimated_time_range VARCHAR(20) NULL,
   focus_level INTEGER NULL,
   is_urgent TINYINT(1) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -147,11 +155,27 @@ CREATE TABLE IF NOT EXISTS schedule_history (
   prev_end_at DATETIME(6) NULL,
   next_start_at DATETIME(6) NULL,
   next_end_at DATETIME(6) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_schedule_history_schedule_deleted (schedule_id, deleted_at),
   CONSTRAINT fk_schedule_history_schedule_id FOREIGN KEY (schedule_id) REFERENCES schedule(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS schedule_action_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  schedule_id BIGINT NULL,
+  action_type VARCHAR(20) NOT NULL,
+  api_path VARCHAR(100) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_schedule_action_log_user_created (user_id, created_at),
+  INDEX idx_schedule_action_log_action_created (action_type, created_at),
+  INDEX idx_schedule_action_log_schedule_created (schedule_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS day_reflection (
@@ -161,6 +185,7 @@ CREATE TABLE IF NOT EXISTS day_reflection (
   title CHAR(13) NOT NULL,
   content VARCHAR(200) NOT NULL,
   is_open TINYINT(1) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -174,6 +199,7 @@ CREATE TABLE IF NOT EXISTS day_reflection_image (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   day_reflection_id BIGINT NOT NULL,
   image_id BIGINT NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -186,6 +212,7 @@ CREATE TABLE IF NOT EXISTS reflection_like (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   day_reflection_id BIGINT NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -201,6 +228,7 @@ CREATE TABLE IF NOT EXISTS chat_room (
   type VARCHAR(20) NOT NULL,
   description VARCHAR(125) NOT NULL,
   max_participants INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -214,6 +242,7 @@ CREATE TABLE IF NOT EXISTS chat_room_participant (
   last_seen_message_id BIGINT NULL,
   camera_enabled TINYINT(1) NOT NULL,
   left_at DATETIME(6) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -223,7 +252,7 @@ CREATE TABLE IF NOT EXISTS chat_room_participant (
   CONSTRAINT fk_chat_room_participant_room_id FOREIGN KEY (chat_room_id) REFERENCES chat_room(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS message (
+CREATE TABLE IF NOT EXISTS chat_message (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   chat_room_id BIGINT NOT NULL,
   message_type VARCHAR(20) NOT NULL,
@@ -232,6 +261,7 @@ CREATE TABLE IF NOT EXISTS message (
   sent_at DATETIME(6) NOT NULL,
   sender_type VARCHAR(20) NOT NULL,
   sender_id BIGINT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -244,11 +274,12 @@ CREATE TABLE IF NOT EXISTS message_image (
   message_id BIGINT NOT NULL,
   image_id BIGINT NOT NULL,
   sort_order INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_message_image_message_deleted (message_id, deleted_at),
-  CONSTRAINT fk_message_image_message_id FOREIGN KEY (message_id) REFERENCES message(id),
+  CONSTRAINT fk_message_image_message_id FOREIGN KEY (message_id) REFERENCES chat_message(id),
   CONSTRAINT fk_message_image_image_id FOREIGN KEY (image_id) REFERENCES image(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -257,6 +288,7 @@ CREATE TABLE IF NOT EXISTS terms (
   name VARCHAR(50) NOT NULL,
   terms_type VARCHAR(20) NOT NULL,
   is_active TINYINT(1) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL
@@ -267,6 +299,7 @@ CREATE TABLE IF NOT EXISTS terms_sign (
   user_id BIGINT NOT NULL,
   terms_id BIGINT NOT NULL,
   is_agreed TINYINT(1) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -282,6 +315,7 @@ CREATE TABLE IF NOT EXISTS report (
   end_date DATE NOT NULL,
   ai_report_response_limit INTEGER NOT NULL,
   ai_report_response_used INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -294,6 +328,7 @@ CREATE TABLE IF NOT EXISTS report_daily_stat (
   report_id BIGINT NOT NULL,
   report_date DATE NOT NULL,
   achievement_rate INTEGER NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
@@ -309,9 +344,96 @@ CREATE TABLE IF NOT EXISTS report_chat_message (
   is_deleted TINYINT(1) NOT NULL,
   sent_at DATETIME(6) NOT NULL,
   sender_type VARCHAR(20) NOT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
   INDEX idx_report_chat_message_report_deleted_sent (report_id, deleted_at, sent_at),
   CONSTRAINT fk_report_chat_message_report_id FOREIGN KEY (report_id) REFERENCES report(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS outbox_event (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  aggregate_type VARCHAR(50) NOT NULL,
+  aggregate_id VARCHAR(50) NOT NULL,
+  event_type VARCHAR(20) NOT NULL,
+  event_version BIGINT NOT NULL DEFAULT 0,
+  occurred_at DATETIME(6) NOT NULL,
+  payload LONGTEXT NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  retry_count INT NOT NULL,
+  last_error VARCHAR(1000) NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  INDEX idx_outbox_status_updated (status, updated_at),
+  INDEX idx_outbox_event_id (event_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS event_apply_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  aggregate_type VARCHAR(50) NOT NULL,
+  aggregate_id VARCHAR(50) NOT NULL,
+  event_type VARCHAR(20) NOT NULL,
+  event_version BIGINT NOT NULL DEFAULT 0,
+  applied_at DATETIME(6) NOT NULL,
+  UNIQUE KEY uk_event_apply_log_event_id (event_id),
+  INDEX idx_event_apply_log_aggregate (aggregate_type, aggregate_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS migration_event_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  aggregate_type VARCHAR(50) NOT NULL,
+  aggregate_id VARCHAR(50) NOT NULL,
+  event_type VARCHAR(20) NOT NULL,
+  event_version BIGINT NOT NULL DEFAULT 0,
+  occurred_at DATETIME(6) NOT NULL,
+  payload LONGTEXT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  INDEX idx_migration_event_log_event_id (event_id),
+  INDEX idx_migration_event_log_aggregate (aggregate_type, aggregate_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS batch_job_run (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  job_name VARCHAR(255) NOT NULL,
+  run_date DATE NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  started_at DATETIME(6) NULL,
+  finished_at DATETIME(6) NULL,
+  retry_count INT NOT NULL,
+  last_error VARCHAR(500) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_batch_job_run_name_date (job_name, run_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS batch_step_run (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  job_run_id BIGINT NOT NULL,
+  step_name VARCHAR(100) NOT NULL,
+  target_type VARCHAR(20) NOT NULL,
+  target_id BIGINT NULL,
+  status VARCHAR(20) NOT NULL,
+  retry_count INT NOT NULL,
+  last_error VARCHAR(500) NULL,
+  started_at DATETIME(6) NULL,
+  finished_at DATETIME(6) NULL,
+  version BIGINT NOT NULL DEFAULT 0,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  deleted_at DATETIME(6) NULL,
+  INDEX idx_batch_step_run_job_step (job_run_id, step_name, target_type, target_id),
+  CONSTRAINT fk_batch_step_run_job_run_id FOREIGN KEY (job_run_id) REFERENCES batch_job_run(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS shedlock (
+  name VARCHAR(64) NOT NULL PRIMARY KEY,
+  lock_until DATETIME(3) NOT NULL,
+  locked_at DATETIME(3) NOT NULL,
+  locked_by VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -92,7 +92,7 @@ public interface UserApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<UserSearchItemResponse>>> searchByNickname(
-            String nickname, int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails, String nickname, int page, int size);
 
     @Operation(summary = "이메일 중복 체크")
     @ApiResponses({

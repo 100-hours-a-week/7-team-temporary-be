@@ -9,4 +9,10 @@ public record MessageImageInfoResponse(
         @Schema(description = "만료 시각", example = "2026-01-13T11:10:00+09:00")
                 OffsetDateTime expiresAt,
         @Schema(description = "이미지 키", example = "messages/12/abc.png") String key,
-        @Schema(description = "정렬 순서", example = "1") Integer sortOrder) {}
+        @Schema(description = "정렬 순서", example = "1") Integer sortOrder) {
+
+    public static MessageImageInfoResponse of(
+            String url, OffsetDateTime expiresAt, String key, Integer sortOrder) {
+        return new MessageImageInfoResponse(url, expiresAt, key, sortOrder);
+    }
+}

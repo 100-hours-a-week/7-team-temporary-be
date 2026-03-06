@@ -4,6 +4,7 @@ import molip.server.ai.dto.request.AiPlannerRequest;
 import molip.server.ai.dto.response.AiPlannerResponse;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -21,7 +22,7 @@ public class AiPlannerClient {
     private final String plannerPath;
 
     public AiPlannerClient(
-            RestTemplate restTemplate,
+            @Qualifier("aiPlannerRestTemplate") RestTemplate restTemplate,
             @Value("${ai.planner.base-url}") String baseUrl,
             @Value("${ai.planner.path}") String plannerPath) {
 

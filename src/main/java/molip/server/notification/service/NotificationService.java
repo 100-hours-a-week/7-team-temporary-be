@@ -12,6 +12,9 @@ import molip.server.common.enums.NotificationTitle;
 import molip.server.common.enums.NotificationType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.notification.entity.Notification;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.repository.NotificationRepository;
@@ -26,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final OutboxEventService outboxEventService;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 
@@ -69,7 +73,13 @@ public class NotificationService {
         }
 
         if (!notifications.isEmpty()) {
-            notificationRepository.saveAll(notifications);
+            List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
+            for (Notification notification : savedNotifications) {
+                outboxEventService.recordCreated(
+                        AggregateType.NOTIFICATION,
+                        notification.getId(),
+                        OutboxPayloadMapper.notification(notification));
+            }
         }
     }
 
@@ -89,36 +99,96 @@ public class NotificationService {
             return;
         }
 
-        notificationRepository.save(
-                new Notification(
-                        user,
-                        scheduleId,
-                        NotificationType.SCHEDULE_REMINDER,
-                        NotificationTitle.SCHEDULE_REMINDER.getValue(),
-                        buildReminderContent(title, startAt),
-                        NotificationStatus.PENDING,
-                        scheduledAt));
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                scheduleId,
+                                NotificationType.SCHEDULE_REMINDER,
+                                NotificationTitle.SCHEDULE_REMINDER.getValue(),
+                                buildReminderContent(title, startAt),
+                                NotificationStatus.PENDING,
+                                scheduledAt));
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
+    }
+
+    @Transactional
+    public void createFriendRequestedNotification(Users user, String requesterNickname) {
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                null,
+                                NotificationType.FRIEND_REQUESTED,
+                                buildFriendRequestedTitle(requesterNickname),
+                                "목록에서 확인해주세요!",
+                                NotificationStatus.PENDING,
+                                LocalDateTime.now()));
+
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
+    }
+
+    @Transactional
+    public void createFriendCreatedNotification(Users user, String accepterNickname) {
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                null,
+                                NotificationType.FRIEND_CREATED,
+                                buildFriendCreatedTitle(accepterNickname),
+                                "친구 요청이 수락되어 친구 관계가 맺어졌습니다.",
+                                NotificationStatus.PENDING,
+                                LocalDateTime.now()));
+
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
     }
 
     @Transactional
     public void markSent(Notification notification, LocalDateTime sentAt) {
 
         notification.markSent(sentAt);
+        outboxEventService.recordUpdated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
     }
 
     @Transactional
     public void markFailed(Notification notification) {
 
         notification.markFailed();
+        outboxEventService.recordUpdated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
     }
 
     @Transactional
     public void deleteScheduleReminders(Long scheduleId) {
 
-        notificationRepository
-                .findByScheduleIdAndTypeAndDeletedAtIsNull(
-                        scheduleId, NotificationType.SCHEDULE_REMINDER)
-                .forEach(Notification::deleteNotification);
+        List<Notification> notifications =
+                notificationRepository
+                        .findByScheduleIdAndTypeAndDeletedAtIsNull(
+                                scheduleId, NotificationType.SCHEDULE_REMINDER)
+                        .stream()
+                        .toList();
+        for (Notification notification : notifications) {
+            notification.deleteNotification();
+            outboxEventService.recordDeleted(
+                    AggregateType.NOTIFICATION,
+                    notification.getId(),
+                    OutboxPayloadMapper.notification(notification));
+        }
     }
 
     private void validatePage(int page, int size) {
@@ -140,5 +210,13 @@ public class NotificationService {
     private boolean shouldCreateReminder(LocalDateTime scheduledAt) {
 
         return !scheduledAt.isBefore(LocalDateTime.now());
+    }
+
+    private String buildFriendRequestedTitle(String requesterNickname) {
+        return requesterNickname + "님이 친구 요청을 보냈습니다.";
+    }
+
+    private String buildFriendCreatedTitle(String accepterNickname) {
+        return accepterNickname + "님이 친구 요청을 수락했습니다.";
     }
 }

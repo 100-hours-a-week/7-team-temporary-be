@@ -5,6 +5,14 @@ server:
     connection-timeout: 5m
 
 spring:
+  batch:
+    job:
+      enabled: ${SPRING_BATCH_JOB_ENABLED}
+  datasource:
+    url: ${WRITE_DB_URL}
+    driverClassName: com.mysql.cj.jdbc.Driver
+    username: ${WRITE_DB_USERNAME}
+    password: ${WRITE_DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -13,14 +21,9 @@ spring:
         format_sql: true
         use_sql_comments: true
         generate_statistics: true
-  datasource:
-    url: ${MYSQL_URL}
-    driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USERNAME}
-    password: ${MYSQL_PASSWORD}
   sql:
     init:
-      mode: always
+      mode: never
       encoding: utf-8
   servlet:
     multipart:
@@ -32,6 +35,24 @@ spring:
         access-key: ${AWS_S3_ACCESS_KEY}
         secret-key: ${AWS_S3_SECRET_KEY}
         bucket: ${AWS_S3_BUCKET}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:molip-migration}
+      auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: false
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: ${KAFKA_LISTENER_ACK_MODE:manual}
+  data:
+    redis:
+      enabled: true
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
 
 
 jwt:
@@ -80,6 +101,25 @@ ai:
     base-url: ${AI_PLANNER_BASE_URL}
     path: ${AI_PLANNER_PATH}
     timeout-ms: ${AI_PLANNER_TIMEOUT_MS}
+  report:
+    weekly-generate-path: ${AI_WEEKLY_REPORT_GENERATE_PATH}
+    weekly-fetch-path: ${AI_WEEKLY_REPORT_FETCH_PATH}
+    timeout-ms: ${AI_WEEKLY_REPORT_TIMEOUT_MS}
+  personalization:
+    path: ${AI_PERSONALIZATION_INGEST_PATH}
+  datasource:
+    url: ${AI_DB_URL}
+    username: ${AI_DB_USERNAME}
+    password: ${AI_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  chatbot:
+    base-url: ${AI_CHATBOT_BASE_URL}
+    respond-path: ${AI_CHATBOT_RESPOND_PATH}
+    cancel-path: ${AI_CHATBOT_CANCEL_PATH}
+    stream-path: ${AI_CHATBOT_STREAM_PATH}
+    connect-timeout-ms: ${AI_CHATBOT_CONNECT_TIMEOUT_MS:10000}
+    respond-timeout-ms: ${AI_CHATBOT_RESPOND_TIMEOUT_MS:300000}
+    stream-timeout-ms: ${AI_CHATBOT_STREAM_TIMEOUT_MS:300000}
 
 
 fcm:
@@ -91,3 +131,57 @@ notification:
   dispatch:
     fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
     batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}
+
+batch:
+  weekly:
+    report-fetch:
+      initial-delay-ms: ${BATCH_WEEKLY_REPORT_FETCH_INITIAL_DELAY_MS:30000}
+      poll-interval-ms: ${BATCH_WEEKLY_REPORT_FETCH_POLL_INTERVAL_MS:20000}
+      max-attempts: ${BATCH_WEEKLY_REPORT_FETCH_MAX_ATTEMPTS:15}
+
+
+migration:
+  enabled: ${MIGRATION_ENABLED}
+  datasource:
+    url: ${MIGRATION_DB_URL}
+    username: ${MIGRATION_DB_USERNAME}
+    password: ${MIGRATION_DB_PASSWORD}
+
+app:
+  datasource:
+    read:
+      url: ${READ_DB_URL}
+      driverClassName: com.mysql.cj.jdbc.Driver
+      username: ${READ_DB_USERNAME}
+      password: ${READ_DB_PASSWORD}
+    write:
+      url: ${WRITE_DB_URL}
+      driverClassName: com.mysql.cj.jdbc.Driver
+      username: ${WRITE_DB_USERNAME}
+      password: ${WRITE_DB_PASSWORD}
+
+kafka:
+  enabled: ${KAFKA_ENABLED:false}
+  producer:
+    enabled: ${KAFKA_PRODUCER_ENABLED:false}
+  consumer:
+    enabled: ${KAFKA_CONSUMER_ENABLED:false}
+    dlq:
+      max-attempts: ${KAFKA_CONSUMER_DLQ_MAX_ATTEMPTS:10}
+      backoff-ms: ${KAFKA_CONSUMER_DLQ_BACKOFF_MS:0}
+      republish-enabled: ${KAFKA_CONSUMER_DLQ_REPUBLISH_ENABLED:true}
+      republish-delay-ms: ${KAFKA_CONSUMER_DLQ_REPUBLISH_DELAY_MS:1000}
+  outbox:
+    fixed-delay-ms: ${KAFKA_OUTBOX_FIXED_DELAY_MS:5000}
+    batch-size: ${KAFKA_OUTBOX_BATCH_SIZE:200}
+    dlq:
+      fixed-delay-ms: ${KAFKA_OUTBOX_DLQ_FIXED_DELAY_MS:15000}
+      batch-size: ${KAFKA_OUTBOX_DLQ_BATCH_SIZE:200}
+    retry:
+      fixed-delay-ms: ${KAFKA_OUTBOX_RETRY_FIXED_DELAY_MS:10000}
+      delay-ms: ${KAFKA_OUTBOX_RETRY_DELAY_MS:60000}
+      max-attempts: ${KAFKA_OUTBOX_RETRY_MAX_ATTEMPTS:5}
+      batch-size: ${KAFKA_OUTBOX_RETRY_BATCH_SIZE:200}
+  topics:
+    domain-events: ${KAFKA_DOMAIN_EVENTS_TOPIC:domain.events.v1}
+    dlq: ${KAFKA_DOMAIN_EVENTS_DLQ_TOPIC:domain.events.v1.DLQ}

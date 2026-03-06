@@ -5,9 +5,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
+import molip.server.reflection.dto.cache.ReflectionCachePayload;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;
 import molip.server.reflection.repository.DayReflectionRepository;
@@ -28,6 +33,9 @@ public class ReflectionService {
 
     private final DayReflectionRepository dayReflectionRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
+    private final ReflectionImageService reflectionImageService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional
     public DayReflection createReflection(
@@ -42,6 +50,17 @@ public class ReflectionService {
             eventPublisher.publishEvent(new DayReflectionImagesCreateEvent(reflection, images));
         }
 
+        outboxEventService.recordCreated(
+                AggregateType.DAY_REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
+        cacheService.cacheReflection(
+                ReflectionCachePayload.from(
+                        reflection,
+                        images == null
+                                ? List.of()
+                                : images.stream().map(Image::getUploadKey).toList(),
+                        dayPlan.getUser().getNickname()));
         return reflection;
     }
 
@@ -104,6 +123,17 @@ public class ReflectionService {
         }
 
         reflection.updateOpen(isOpen);
+        outboxEventService.recordUpdated(
+                AggregateType.DAY_REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
+        List<String> imageKeys =
+                reflectionImageService.getImagesByReflectionId(reflectionId).stream()
+                        .map(item -> item.getImage().getUploadKey())
+                        .toList();
+        cacheService.cacheReflection(
+                ReflectionCachePayload.from(
+                        reflection, imageKeys, reflection.getUser().getNickname()));
     }
 
     private String formatTitle(LocalDate planDate) {

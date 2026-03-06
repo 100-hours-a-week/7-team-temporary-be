@@ -6,10 +6,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import molip.server.common.cache.ReadConsistencyCacheService;
+import molip.server.common.enums.UploadStatus;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
+import molip.server.reflection.dto.cache.ReflectionCachePayload;
 import molip.server.reflection.dto.request.ReflectionCreateRequest;
 import molip.server.reflection.dto.response.ReflectionCreateResponse;
 import molip.server.reflection.entity.DayReflection;
@@ -35,12 +41,14 @@ public class ReflectionCommandFacade {
     private final ImageRepository imageRepository;
     private final ReflectionService reflectionService;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
+    private final ReadConsistencyCacheService cacheService;
 
     @Transactional
     public ReflectionCreateResponse createReflection(
             Long userId, Long dayPlanId, ReflectionCreateRequest request) {
 
-        List<Long> imageIds = request.reflectionImageIds();
+        List<String> imageKeys = request.reflectionImageKeys();
 
         DayPlan dayPlan =
                 dayPlanRepository
@@ -51,13 +59,16 @@ public class ReflectionCommandFacade {
         validateOwnership(dayPlan, userId);
         validateNotExists(dayPlanId);
 
-        List<Image> images = resolveImages(imageIds);
+        List<Image> images = resolveImagesForCreate(imageKeys);
 
         String content = request.content() == null ? "" : request.content();
-        boolean isOpen = request.isPublic() != null && request.isPublic();
+        boolean isOpen = request.isOpen() != null && request.isOpen();
 
         DayReflection reflection =
                 reflectionService.createReflection(dayPlan, content, isOpen, images);
+        cacheService.cacheReflection(
+                ReflectionCachePayload.from(
+                        reflection, extractImageKeys(images), dayPlan.getUser().getNickname()));
 
         return ReflectionCreateResponse.from(reflection.getId());
     }
@@ -74,32 +85,65 @@ public class ReflectionCommandFacade {
         }
     }
 
-    private List<Image> resolveImages(List<Long> imageIds) {
-        if (imageIds == null || imageIds.isEmpty()) {
+    private List<Image> resolveImagesForCreate(List<String> imageKeys) {
+        if (imageKeys == null || imageKeys.isEmpty()) {
             return List.of();
         }
 
-        List<Long> uniqueImageIds = uniqueIds(imageIds);
-        List<Image> images = imageRepository.findByIdInAndDeletedAtIsNull(uniqueImageIds);
+        List<String> uniqueImageKeys = uniqueKeys(imageKeys);
+        List<Image> images = imageRepository.findByUploadKeyInAndDeletedAtIsNull(uniqueImageKeys);
 
-        if (images.size() != uniqueImageIds.size()) {
+        if (images.size() != uniqueImageKeys.size()) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_IMAGES);
         }
 
+        validatePendingOnly(images);
         return images;
     }
 
-    private List<Long> uniqueIds(List<Long> imageIds) {
-        Set<Long> unique = new LinkedHashSet<>(imageIds);
+    private List<String> uniqueKeys(List<String> imageKeys) {
+        validateImageKeys(imageKeys);
+        Set<String> unique = new LinkedHashSet<>(imageKeys);
 
         return new ArrayList<>(unique);
     }
 
+    private void validateImageKeys(List<String> imageKeys) {
+        for (String imageKey : imageKeys) {
+            if (imageKey == null || imageKey.isBlank()) {
+                throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_IMAGES);
+            }
+        }
+    }
+
+    private void validatePendingOnly(List<Image> images) {
+        for (Image image : images) {
+            if (image.getUploadStatus() != UploadStatus.PENDING) {
+                throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_IMAGES);
+            }
+        }
+    }
+
+    private void validateNewImagesPending(List<Image> images, Set<Long> existingImageIds) {
+        for (Image image : images) {
+            if (existingImageIds.contains(image.getId())) {
+                continue;
+            }
+            if (image.getUploadStatus() != UploadStatus.PENDING) {
+                throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_IMAGES);
+            }
+        }
+    }
+
     @Transactional
     public void updateReflection(
-            Long userId, Long reflectionId, List<Long> reflectionImageIds, String content) {
+            Long userId,
+            Long reflectionId,
+            List<String> reflectionImageKeys,
+            String content,
+            Boolean isOpen) {
 
-        List<Long> imageIds = reflectionImageIds == null ? List.of() : reflectionImageIds;
+        List<String> imageKeys = reflectionImageKeys == null ? List.of() : reflectionImageKeys;
         validateUpdateReflection(userId, reflectionId);
 
         DayReflection reflection = reflectionService.getReflection(reflectionId);
@@ -109,11 +153,8 @@ public class ReflectionCommandFacade {
             reflection.updateContent(content);
         }
 
-        List<Long> uniqueImageIds = uniqueIds(imageIds);
-        List<Image> images = imageRepository.findByIdInAndDeletedAtIsNull(uniqueImageIds);
-
-        if (images.size() != uniqueImageIds.size()) {
-            throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_IMAGES);
+        if (isOpen != null) {
+            reflection.updateOpen(isOpen);
         }
 
         List<DayReflectionImage> existing =
@@ -122,13 +163,31 @@ public class ReflectionCommandFacade {
         Set<Long> existingImageIds =
                 existing.stream().map(item -> item.getImage().getId()).collect(Collectors.toSet());
 
+        List<String> uniqueImageKeys = uniqueKeys(imageKeys);
+        List<Image> images = imageRepository.findByUploadKeyInAndDeletedAtIsNull(uniqueImageKeys);
+
+        if (images.size() != uniqueImageKeys.size()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REFLECTION_IMAGES);
+        }
+
+        validateNewImagesPending(images, existingImageIds);
+
+        Set<Long> incomingImageIds = images.stream().map(Image::getId).collect(Collectors.toSet());
+
         List<Long> removeImageIds =
-                existingImageIds.stream().filter(id -> !uniqueImageIds.contains(id)).toList();
+                existingImageIds.stream().filter(id -> !incomingImageIds.contains(id)).toList();
 
         List<Image> addImages =
                 images.stream().filter(image -> !existingImageIds.contains(image.getId())).toList();
 
         publishImageUpdateEvents(reflection.getId(), removeImageIds, addImages, reflection);
+        outboxEventService.recordUpdated(
+                AggregateType.DAY_REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
+        cacheService.cacheReflection(
+                ReflectionCachePayload.from(
+                        reflection, extractImageKeys(images), reflection.getUser().getNickname()));
     }
 
     @Transactional
@@ -157,6 +216,11 @@ public class ReflectionCommandFacade {
         }
 
         reflection.delete();
+        outboxEventService.recordDeleted(
+                AggregateType.DAY_REFLECTION,
+                reflection.getId(),
+                OutboxPayloadMapper.reflection(reflection));
+        cacheService.evictReflection(reflection.getId());
     }
 
     private void validateReflectionOwnership(DayReflection reflection, Long userId) {
@@ -189,5 +253,12 @@ public class ReflectionCommandFacade {
         if (!addImages.isEmpty()) {
             eventPublisher.publishEvent(new ReflectionImagesAddedEvent(reflection, addImages));
         }
+    }
+
+    private List<String> extractImageKeys(List<Image> images) {
+        if (images == null || images.isEmpty()) {
+            return List.of();
+        }
+        return images.stream().map(Image::getUploadKey).toList();
     }
 }

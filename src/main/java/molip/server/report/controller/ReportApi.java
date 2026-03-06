@@ -12,9 +12,11 @@ import molip.server.common.response.ServerResponse;
 import molip.server.report.dto.request.ReportMessageCreateRequest;
 import molip.server.report.dto.response.ReportMessageCreateResponse;
 import molip.server.report.dto.response.ReportMessageItemResponse;
+import molip.server.report.dto.response.ReportMessageStreamResumeResponse;
 import molip.server.report.dto.response.ReportResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "Report", description = "리포트 API")
 public interface ReportApi {
@@ -31,6 +33,10 @@ public interface ReportApi {
                 description = "날짜 누락",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
         @ApiResponse(
+                responseCode = "403",
+                description = "아직 공개되지 않은 리포트",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
                 responseCode = "401",
                 description = "유효하지 않은 토큰",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class))),
@@ -43,7 +49,8 @@ public interface ReportApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<ServerResponse<ReportResponse>> getReportByStartDate(String startDate);
+    ResponseEntity<ServerResponse<ReportResponse>> getReportByStartDate(
+            @AuthenticationPrincipal UserDetails userDetails, String startDate);
 
     @Operation(summary = "리포트 메시지 목록 조회")
     @SecurityRequirement(name = "JWT")
@@ -74,7 +81,7 @@ public interface ReportApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<CursorResponse<ReportMessageItemResponse>>> getReportMessages(
-            Long reportId, Long cursor, int size);
+            @AuthenticationPrincipal UserDetails userDetails, Long reportId, Long cursor, int size);
 
     @Operation(summary = "AI 응답 생성을 위한 메시지 전송")
     @SecurityRequirement(name = "JWT")
@@ -114,12 +121,26 @@ public interface ReportApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ReportMessageCreateResponse>> createReportMessage(
-            Long reportId, ReportMessageCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long reportId,
+            ReportMessageCreateRequest request);
 
-    @Operation(summary = "리포트 메시지 스트림 구독")
+    @Operation(
+            summary = "리포트 메시지 스트림 재개 정보 조회",
+            description =
+                    "path의 messageId는 streamMessageId(= AI 응답 세션 ID)입니다. "
+                            + "현재까지 누적된 텍스트/시퀀스를 반환하고, 내부적으로 소켓 스트리밍 재시작을 트리거합니다.")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "스트림 시작"),
+        @ApiResponse(
+                responseCode = "200",
+                description = "재개 정보 조회 성공",
+                content =
+                        @Content(
+                                schema =
+                                        @Schema(
+                                                implementation =
+                                                        ReportMessageStreamResumeResponse.class))),
         @ApiResponse(
                 responseCode = "401",
                 description = "유효하지 않은 토큰",
@@ -141,9 +162,12 @@ public interface ReportApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<SseEmitter> streamReportMessage(Long reportId, Long messageId);
+    ResponseEntity<ServerResponse<ReportMessageStreamResumeResponse>> streamReportMessage(
+            @AuthenticationPrincipal UserDetails userDetails, Long reportId, Long streamMessageId);
 
-    @Operation(summary = "응답 생성 취소")
+    @Operation(
+            summary = "응답 생성 취소",
+            description = "path의 messageId는 streamMessageId(= AI 응답 세션 ID)입니다.")
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "취소 성공"),
@@ -168,5 +192,6 @@ public interface ReportApi {
                 description = "서버 오류",
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
-    ResponseEntity<Void> cancelReportMessage(Long reportId, Long messageId);
+    ResponseEntity<Void> cancelReportMessage(
+            @AuthenticationPrincipal UserDetails userDetails, Long reportId, Long streamMessageId);
 }

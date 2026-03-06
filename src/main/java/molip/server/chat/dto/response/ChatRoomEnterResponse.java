@@ -4,4 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "채팅방 입장 응답")
 public record ChatRoomEnterResponse(
-        @Schema(description = "참가자 ID", example = "101") Long participantId) {}
+        @Schema(description = "참가자 ID", example = "101") Long participantId) {
+
+    public static ChatRoomEnterResponse from(Long participantId) {
+        return new ChatRoomEnterResponse(participantId);
+    }
+}

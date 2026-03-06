@@ -21,13 +21,16 @@ import molip.server.common.enums.ScheduleStatus;
 import molip.server.common.enums.ScheduleType;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.migration.event.ChangeType;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.event.ScheduleReminderResetEvent;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.entity.ScheduleHistory;
 import molip.server.schedule.event.ScheduleHistoryRecordedEvent;
+import molip.server.schedule.event.ScheduleOutboxEvent;
 import molip.server.schedule.repository.ScheduleRepository;
+import molip.server.schedule.repository.ScheduleStatusCount;
 import molip.server.schedule.service.strategy.ScheduleCreator;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -80,6 +83,7 @@ public class ScheduleService {
         Schedule savedSchedule = scheduleRepository.save(schedule);
 
         publishScheduleCreatedEvent(savedSchedule);
+        recordScheduleCreated(savedSchedule);
 
         return savedSchedule;
     }
@@ -123,6 +127,8 @@ public class ScheduleService {
             schedule.updateAsFlex(title, estimatedTimeRange, focusLevel, isUrgent);
         }
 
+        recordScheduleUpdated(schedule);
+
         eventPublisher.publishEvent(
                 new ScheduleReminderResetEvent(
                         schedule.getId(),
@@ -146,6 +152,7 @@ public class ScheduleService {
         validateOwnership(userId, schedule);
 
         schedule.updateStatus(status);
+        recordScheduleUpdated(schedule);
     }
 
     @Transactional
@@ -181,7 +188,10 @@ public class ScheduleService {
                                                 .build())
                         .toList();
 
-        return scheduleRepository.saveAll(children);
+        List<Schedule> savedChildren = scheduleRepository.saveAll(children);
+        recordScheduleUpdated(parentSchedule);
+        recordSchedulesCreated(savedChildren);
+        return savedChildren;
     }
 
     @Transactional(readOnly = true)
@@ -279,6 +289,28 @@ public class ScheduleService {
                 dayPlanId, currentTime, excludeStatuses, excludeAssignmentStatuses);
     }
 
+    @Transactional(readOnly = true)
+    public int calculateAchievementRate(Long userId, LocalDate planDate) {
+        List<molip.server.schedule.repository.ScheduleStatusCount> rows =
+                scheduleRepository.countAssignedByStatus(
+                        userId, planDate, List.of(ScheduleStatus.DONE, ScheduleStatus.TODO));
+
+        Map<ScheduleStatus, Long> counts = new EnumMap<>(ScheduleStatus.class);
+
+        for (ScheduleStatusCount row : rows) {
+            counts.put(row.getStatus(), row.getCount() == null ? 0L : row.getCount());
+        }
+
+        long done = counts.getOrDefault(ScheduleStatus.DONE, 0L);
+        long total = done + counts.getOrDefault(ScheduleStatus.TODO, 0L);
+
+        if (total == 0) {
+            return 0;
+        }
+
+        return (int) Math.round((done * 100.0) / total);
+    }
+
     @Transactional
     public List<Schedule> applyAiArrangement(
             Long userId, DayPlan targetDayPlan, List<AiPlannerResultResponse> results) {
@@ -341,6 +373,7 @@ public class ScheduleService {
                     schedule.getStartAt(),
                     schedule.getEndAt());
 
+            recordScheduleUpdated(schedule);
             updatedSchedules.add(schedule);
         }
 
@@ -361,6 +394,7 @@ public class ScheduleService {
         }
 
         schedule.deleteSchedule();
+        recordScheduleDeleted(schedule);
     }
 
     @Transactional
@@ -393,6 +427,9 @@ public class ScheduleService {
         targetSchedule.updateAssignmentStatus(AssignmentStatus.EXCLUDED);
         targetSchedule.updateType(ScheduleType.FLEX);
         targetSchedule.updateTime(null, null);
+
+        recordScheduleUpdated(excludedSchedule);
+        recordScheduleUpdated(targetSchedule);
     }
 
     private List<Schedule> createChildrenFromAi(
@@ -435,6 +472,7 @@ public class ScheduleService {
                     child.getEndAt());
         }
 
+        recordSchedulesCreated(savedChildren);
         return savedChildren;
     }
 
@@ -499,6 +537,8 @@ public class ScheduleService {
                 schedule.getFocusLevel(),
                 schedule.getIsUrgent());
 
+        recordScheduleUpdated(schedule);
+
         eventPublisher.publishEvent(
                 new ScheduleReminderResetEvent(
                         schedule.getId(),
@@ -519,6 +559,30 @@ public class ScheduleService {
 
         if (targetSchedule.getStartAt() == null || targetSchedule.getEndAt() == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_MISSING_REQUIRED);
+        }
+    }
+
+    private void recordScheduleCreated(Schedule schedule) {
+        eventPublisher.publishEvent(new ScheduleOutboxEvent(schedule, ChangeType.CREATED));
+    }
+
+    private void recordScheduleUpdated(Schedule schedule) {
+        eventPublisher.publishEvent(new ScheduleOutboxEvent(schedule, ChangeType.UPDATED));
+    }
+
+    private void recordScheduleDeleted(Schedule schedule) {
+        eventPublisher.publishEvent(new ScheduleOutboxEvent(schedule, ChangeType.DELETED));
+    }
+
+    private void recordSchedulesCreated(List<Schedule> schedules) {
+        for (Schedule schedule : schedules) {
+            recordScheduleCreated(schedule);
+        }
+    }
+
+    private void recordSchedulesUpdated(List<Schedule> schedules) {
+        for (Schedule schedule : schedules) {
+            recordScheduleUpdated(schedule);
         }
     }
 

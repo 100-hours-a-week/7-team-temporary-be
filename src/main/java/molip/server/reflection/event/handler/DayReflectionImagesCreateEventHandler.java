@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.image.entity.Image;
+import molip.server.migration.event.AggregateType;
+import molip.server.migration.event.OutboxPayloadMapper;
+import molip.server.migration.outbox.OutboxEventService;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.entity.DayReflectionImage;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Component;
 public class DayReflectionImagesCreateEventHandler {
 
     private final DayReflectionImageRepository dayReflectionImageRepository;
+    private final OutboxEventService outboxEventService;
 
     @EventListener
     public void handle(DayReflectionImagesCreateEvent event) {
@@ -27,6 +31,17 @@ public class DayReflectionImagesCreateEventHandler {
             image.markSuccess();
             reflectionImages.add(new DayReflectionImage(reflection, image));
         }
-        dayReflectionImageRepository.saveAll(reflectionImages);
+        List<DayReflectionImage> savedImages =
+                dayReflectionImageRepository.saveAll(reflectionImages);
+        for (DayReflectionImage savedImage : savedImages) {
+            outboxEventService.recordCreated(
+                    AggregateType.DAY_REFLECTION_IMAGE,
+                    savedImage.getId(),
+                    OutboxPayloadMapper.reflectionImage(savedImage));
+            outboxEventService.recordUpdated(
+                    AggregateType.IMAGE,
+                    savedImage.getImage().getId(),
+                    OutboxPayloadMapper.image(savedImage.getImage()));
+        }
     }
 }

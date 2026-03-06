@@ -12,10 +12,10 @@ import java.util.Optional;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AuthResponse;
 import molip.server.auth.jwt.JwtUtil;
-import molip.server.auth.store.DeviceStore;
-import molip.server.auth.store.RefreshTokenStore;
-import molip.server.auth.store.TokenBlacklistStore;
-import molip.server.auth.store.TokenVersionStore;
+import molip.server.auth.store.redis.RedisDeviceStore;
+import molip.server.auth.store.redis.RedisRefreshTokenStore;
+import molip.server.auth.store.redis.RedisTokenBlacklistStore;
+import molip.server.auth.store.redis.RedisTokenVersionStore;
 import molip.server.common.enums.FocusTimeZone;
 import molip.server.common.enums.Gender;
 import molip.server.common.exception.BaseException;
@@ -35,10 +35,10 @@ class AuthServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtUtil jwtUtil;
-    @Mock private TokenBlacklistStore tokenBlacklistStore;
-    @Mock private TokenVersionStore tokenVersionStore;
-    @Mock private RefreshTokenStore refreshTokenStore;
-    @Mock private DeviceStore deviceStore;
+    @Mock private RedisTokenBlacklistStore tokenBlacklistStore;
+    @Mock private RedisTokenVersionStore tokenVersionStore;
+    @Mock private RedisRefreshTokenStore refreshTokenStore;
+    @Mock private RedisDeviceStore deviceStore;
 
     @InjectMocks private AuthService authService;
 
