@@ -11,15 +11,18 @@ public record ChatRoomSearchItemResponse(
         @Schema(description = "제목", example = "삼전 적정가는 18만이다.") String title,
         @Schema(description = "설명", example = "자료 공유방") String description,
         @Schema(description = "최대 인원", example = "50") int maxParticipants,
-        @Schema(description = "참여자 수", example = "12") int participantsCount) {
+        @Schema(description = "참여자 수", example = "12") int participantsCount,
+        @Schema(description = "내 참여 여부", example = "true") boolean isJoined) {
 
-    public static ChatRoomSearchItemResponse of(ChatRoom chatRoom, int participantsCount) {
+    public static ChatRoomSearchItemResponse of(
+            ChatRoom chatRoom, int participantsCount, boolean isJoined) {
         return new ChatRoomSearchItemResponse(
                 chatRoom.getId(),
                 chatRoom.getType(),
                 chatRoom.getTitle(),
                 chatRoom.getDescription(),
                 chatRoom.getMaxParticipants(),
-                participantsCount);
+                participantsCount,
+                isJoined);
     }
 }

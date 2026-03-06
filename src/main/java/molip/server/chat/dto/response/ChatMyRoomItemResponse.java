@@ -13,6 +13,7 @@ public record ChatMyRoomItemResponse(
         @Schema(description = "설명", example = "삼전이 18만원이 적정가인가에 대한 토론방") String description,
         @Schema(description = "최대 인원", example = "10") int maxParticipants,
         @Schema(description = "참여자 수", example = "2") int participantsCount,
+        @Schema(description = "내 참여 여부", example = "true") boolean isJoined,
         @Schema(description = "안 읽은 메시지 수", example = "3") int unreadCount,
         @Schema(description = "마지막 사용자 메시지 미리보기", example = "안녕하세요") String lastUserMessagePreview,
         @Schema(description = "마지막 사용자 메시지 전송 시각", example = "2026-01-13T19:20:10+09:00")
@@ -31,6 +32,7 @@ public record ChatMyRoomItemResponse(
                 chatRoom.getDescription(),
                 chatRoom.getMaxParticipants(),
                 participantsCount,
+                true,
                 unreadCount,
                 lastUserMessagePreview,
                 lastUserMessageSentAt);

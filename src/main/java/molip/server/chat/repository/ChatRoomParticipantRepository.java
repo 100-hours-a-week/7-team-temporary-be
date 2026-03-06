@@ -82,4 +82,16 @@ public interface ChatRoomParticipantRepository extends JpaRepository<ChatRoomPar
             @Param("type") ChatRoomType type,
             @Param("systemMessageType") MessageType systemMessageType,
             Pageable pageable);
+
+    @Query(
+            """
+            select p.chatRoom.id
+            from ChatRoomParticipant p
+            where p.user.id = :userId
+              and p.chatRoom.id in :chatRoomIds
+              and p.deletedAt is null
+              and p.leftAt is null
+            """)
+    List<Long> findActiveChatRoomIdsByUserIdAndChatRoomIds(
+            @Param("userId") Long userId, @Param("chatRoomIds") List<Long> chatRoomIds);
 }

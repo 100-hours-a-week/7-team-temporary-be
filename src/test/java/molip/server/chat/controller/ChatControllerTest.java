@@ -11,8 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Optional;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
 import molip.server.chat.entity.ChatRoom;
+import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.service.ChatRoomParticipantService;
@@ -65,8 +67,12 @@ class ChatControllerTest {
         ChatRoom chatRoom =
                 new ChatRoom(1L, request.title(), request.description(), request.maxParticipants());
         ReflectionTestUtils.setField(chatRoom, "id", 101L);
+        ChatRoomParticipant participant = org.mockito.Mockito.mock(ChatRoomParticipant.class);
 
         given(chatRoomService.createChatRoom(any(), any(), any(), any())).willReturn(chatRoom);
+        given(chatRoomParticipantService.getActiveParticipant(101L, 1L))
+                .willReturn(Optional.of(participant));
+        given(participant.getId()).willReturn(100L);
 
         // when & then
         mockMvc.perform(
@@ -77,7 +83,8 @@ class ChatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.message").value("채팅방이 생성되었습니다."))
-                .andExpect(jsonPath("$.data.roomId").value(101L));
+                .andExpect(jsonPath("$.data.roomId").value(101L))
+                .andExpect(jsonPath("$.data.participantId").value(100L));
     }
 
     @Test
