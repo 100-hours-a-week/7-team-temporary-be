@@ -129,6 +129,8 @@ public enum ErrorCode {
     FORBIDDEN_REPORT_ACCESS(HttpStatus.FORBIDDEN, "FORBIDDEN", "해당 리포트에 접근할 권한이 없습니다."),
     FORBIDDEN_REPORT_NOT_AVAILABLE_YET(
             HttpStatus.FORBIDDEN, "FORBIDDEN", "아직 조회 가능한 주간 리포트가 아닙니다."),
+    FORBIDDEN_REPORT_BEFORE_SIGNUP(
+            HttpStatus.FORBIDDEN, "FORBIDDEN", "가입 이전 주차 리포트는 조회할 수 없습니다. 다음 주차부터 조회해주세요."),
     REPORT_NOT_FOUND_GENERIC(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "리포트를 찾을 수 없습니다."),
     INVALID_REQUEST_INPUT_MESSAGE_REQUIRED(
             HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "inputMessage 값이 필요합니다."),
