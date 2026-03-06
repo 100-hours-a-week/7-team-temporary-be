@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.entity.ChatRoom;
@@ -95,6 +96,18 @@ public class ChatRoomParticipantService {
 
         return chatRoomParticipantRepository.findActiveParticipationsByUserIdAndChatRoomType(
                 userId, type, MessageType.SYSTEM, PageRequest.of(page - 1, size));
+    }
+
+    @Transactional(readOnly = true)
+    public Set<Long> findJoinedChatRoomIds(Long userId, List<Long> chatRoomIds) {
+        if (userId == null || chatRoomIds == null || chatRoomIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return chatRoomParticipantRepository
+                .findActiveChatRoomIdsByUserIdAndChatRoomIds(userId, chatRoomIds)
+                .stream()
+                .collect(Collectors.toSet());
     }
 
     @Transactional

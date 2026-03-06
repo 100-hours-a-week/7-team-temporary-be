@@ -119,12 +119,14 @@ public class ChatController implements ChatApi {
     @GetMapping("/chat-rooms")
     @Override
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String title,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
+        Long userId = Long.valueOf(userDetails.getUsername());
 
         PageResponse<ChatRoomSearchItemResponse> response =
-                chatRoomQueryFacade.searchChatRooms(title, page, size);
+                chatRoomQueryFacade.searchChatRooms(userId, title, page, size);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));

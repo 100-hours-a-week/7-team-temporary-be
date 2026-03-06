@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.response.ChatMessageItemResponse;
 import molip.server.chat.dto.response.ChatMyRoomItemResponse;
@@ -94,7 +95,7 @@ public class ChatRoomQueryFacade {
     }
 
     public PageResponse<ChatRoomSearchItemResponse> searchChatRooms(
-            String title, int page, int size) {
+            Long userId, String title, int page, int size) {
 
         Page<ChatRoom> chatRoomPage = chatRoomService.searchChatRooms(title, page, size);
 
@@ -103,6 +104,9 @@ public class ChatRoomQueryFacade {
         Map<Long, Integer> participantsCountMap =
                 chatRoomParticipantService.countActiveParticipantsByChatRoomIds(chatRoomIds);
 
+        Set<Long> joinedRoomIds =
+                chatRoomParticipantService.findJoinedChatRoomIds(userId, chatRoomIds);
+
         List<ChatRoomSearchItemResponse> content =
                 chatRoomPage.getContent().stream()
                         .map(
@@ -110,7 +114,8 @@ public class ChatRoomQueryFacade {
                                         ChatRoomSearchItemResponse.of(
                                                 chatRoom,
                                                 participantsCountMap.getOrDefault(
-                                                        chatRoom.getId(), 0)))
+                                                        chatRoom.getId(), 0),
+                                                joinedRoomIds.contains(chatRoom.getId())))
                         .toList();
 
         return PageResponse.of(chatRoomPage, content, page, size);
