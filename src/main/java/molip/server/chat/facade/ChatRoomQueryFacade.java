@@ -227,6 +227,7 @@ public class ChatRoomQueryFacade {
         return ChatRoomOwnerResponse.of(
                 owner.getId(),
                 owner.getNickname(),
+                ownerParticipant.getId(),
                 ownerParticipant.isCameraEnabled(),
                 getProfileImage(owner.getId()));
     }

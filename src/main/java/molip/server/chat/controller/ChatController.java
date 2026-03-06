@@ -18,12 +18,15 @@ import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.ChatRoomOwnerCheckResponse;
 import molip.server.chat.dto.response.ChatRoomSearchItemResponse;
 import molip.server.chat.entity.ChatRoom;
+import molip.server.chat.entity.ChatRoomParticipant;
 import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.common.SuccessCode;
 import molip.server.common.enums.ChatRoomType;
+import molip.server.common.exception.BaseException;
+import molip.server.common.exception.ErrorCode;
 import molip.server.common.response.CursorResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
@@ -60,10 +63,15 @@ public class ChatController implements ChatApi {
                 chatRoomService.createChatRoom(
                         userId, request.title(), request.description(), request.maxParticipants());
 
+        ChatRoomParticipant participant =
+                chatRoomParticipantService
+                        .getActiveParticipant(chatRoom.getId(), userId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+
         return ResponseEntity.ok(
                 ServerResponse.success(
                         SuccessCode.CHAT_ROOM_CREATED,
-                        ChatRoomCreateResponse.from(chatRoom.getId())));
+                        ChatRoomCreateResponse.from(chatRoom.getId(), participant.getId())));
     }
 
     @DeleteMapping("/chat-rooms/{roomId}")
