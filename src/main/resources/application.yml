@@ -5,6 +5,9 @@ server:
     connection-timeout: 5m
 
 spring:
+  batch:
+    job:
+      enabled: ${SPRING_BATCH_JOB_ENABLED:false}
   datasource:
     url: ${WRITE_DB_URL:jdbc:mysql://localhost:3306/molip}
     driverClassName: com.mysql.cj.jdbc.Driver
