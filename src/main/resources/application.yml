@@ -135,9 +135,9 @@ notification:
 batch:
   weekly:
     report-fetch:
-      initial-delay-ms: ${BATCH_WEEKLY_REPORT_FETCH_INITIAL_DELAY_MS:30000}
-      poll-interval-ms: ${BATCH_WEEKLY_REPORT_FETCH_POLL_INTERVAL_MS:20000}
-      max-attempts: ${BATCH_WEEKLY_REPORT_FETCH_MAX_ATTEMPTS:15}
+      initial-delay-ms: ${BATCH_WEEKLY_REPORT_FETCH_INITIAL_DELAY_MS:1800000}
+      poll-interval-ms: ${BATCH_WEEKLY_REPORT_FETCH_POLL_INTERVAL_MS:1800000}
+      max-attempts: ${BATCH_WEEKLY_REPORT_FETCH_MAX_ATTEMPTS:10}
 
 
 migration:

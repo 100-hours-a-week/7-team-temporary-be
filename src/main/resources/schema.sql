@@ -109,7 +109,9 @@ CREATE TABLE IF NOT EXISTS day_plan (
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
+  active_unique TINYINT GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END) STORED,
   INDEX idx_day_plan_user_date_deleted (user_id, plan_date, deleted_at),
+  UNIQUE KEY uk_day_plan_user_date_active (user_id, plan_date, active_unique),
   CONSTRAINT fk_day_plan_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -319,7 +321,9 @@ CREATE TABLE IF NOT EXISTS report (
   created_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6) NULL,
+  active_unique TINYINT GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END) STORED,
   INDEX idx_report_user_start_deleted (user_id, start_date, deleted_at),
+  UNIQUE KEY uk_report_user_period_active (user_id, start_date, end_date, active_unique),
   CONSTRAINT fk_report_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
