@@ -41,13 +41,13 @@ public class WeeklyAiReportFetchTasklet implements Tasklet {
     private final ReportRepository reportRepository;
     private final ReportChatMessageService reportChatMessageService;
 
-    @Value("${batch.weekly.report-fetch.initial-delay-ms:30000}")
+    @Value("${batch.weekly.report-fetch.initial-delay-ms:1800000}")
     private long initialDelayMs;
 
-    @Value("${batch.weekly.report-fetch.poll-interval-ms:20000}")
+    @Value("${batch.weekly.report-fetch.poll-interval-ms:1800000}")
     private long pollIntervalMs;
 
-    @Value("${batch.weekly.report-fetch.max-attempts:15}")
+    @Value("${batch.weekly.report-fetch.max-attempts:10}")
     private int maxAttempts;
 
     @Override
