@@ -30,6 +30,10 @@ public interface ChatRoomParticipantRepository extends JpaRepository<ChatRoomPar
             findTopByChatRoomIdAndUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
                     Long chatRoomId, Long userId);
 
+    @EntityGraph(attributePaths = {"user", "chatRoom"})
+    Optional<ChatRoomParticipant> findByIdAndChatRoomIdAndDeletedAtIsNullAndLeftAtIsNull(
+            Long participantId, Long chatRoomId);
+
     @Query(
             """
             select

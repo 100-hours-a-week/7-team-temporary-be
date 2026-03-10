@@ -70,6 +70,17 @@ public class ChatRoomParticipantService {
     }
 
     @Transactional(readOnly = true)
+    public ChatRoomParticipant getActiveParticipantByIdAndRoomId(Long participantId, Long roomId) {
+        if (participantId == null || roomId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        return chatRoomParticipantRepository
+                .findByIdAndChatRoomIdAndDeletedAtIsNullAndLeftAtIsNull(participantId, roomId)
+                .orElseThrow(() -> new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
     public Optional<ChatRoomParticipant> findById(Long participantId) {
         return chatRoomParticipantRepository.findById(participantId);
     }

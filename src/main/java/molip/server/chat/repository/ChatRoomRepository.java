@@ -13,6 +13,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
+    Optional<ChatRoom> findByIdAndDeletedAtIsNull(Long id);
+
     boolean existsByTitleAndDeletedAtIsNull(String title);
 
     Page<ChatRoom> findByTitleContainingAndDeletedAtIsNullOrderByCreatedAtDesc(

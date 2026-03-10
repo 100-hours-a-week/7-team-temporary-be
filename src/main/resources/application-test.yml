@@ -108,3 +108,10 @@ springdoc:
 
 swagger:
   enabled: false
+
+
+livekit:
+  url: ${LIVEKIT_URL:}
+  api-key: ${LIVEKIT_API_KEY:}
+  api-secret: ${LIVEKIT_API_SECRET:}
+  token-ttl-seconds: ${LIVEKIT_TOKEN_TTL_SECONDS:900}
