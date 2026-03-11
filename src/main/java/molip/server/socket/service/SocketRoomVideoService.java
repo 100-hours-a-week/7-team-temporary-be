@@ -22,7 +22,7 @@ public class SocketRoomVideoService {
     private static final String EVENT_VIDEO_ERROR = "video.error";
 
     private final ChatRoomCommandFacade chatRoomCommandFacade;
-    private final SocketRoomChannelBroadcaster socketRoomChannelBroadcaster;
+    private final SocketUserChannelBroadcaster socketUserChannelBroadcaster;
 
     public SocketEventResponse<?> toggleCamera(
             Long userId, String sessionId, SocketVideoCameraToggleRequest request) {
@@ -153,7 +153,7 @@ public class SocketRoomVideoService {
             return;
         }
 
-        socketRoomChannelBroadcaster.sendToSession(
+        socketUserChannelBroadcaster.sendToSession(
                 sessionId,
                 EVENT_VIDEO_ERROR,
                 SocketVideoErrorResponse.of(
