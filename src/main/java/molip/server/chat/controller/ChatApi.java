@@ -55,7 +55,9 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<ChatRoomCreateResponse>> createChatRoom(
-            @AuthenticationPrincipal UserDetails userDetails, ChatRoomCreateRequest request);
+            @AuthenticationPrincipal UserDetails userDetails,
+            ChatRoomType type,
+            ChatRoomCreateRequest request);
 
     @Operation(summary = "채팅방 삭제")
     @SecurityRequirement(name = "JWT")
@@ -184,7 +186,11 @@ public interface ChatApi {
                 content = @Content(schema = @Schema(implementation = ServerResponse.class)))
     })
     ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
-            @AuthenticationPrincipal UserDetails userDetails, String title, int page, int size);
+            @AuthenticationPrincipal UserDetails userDetails,
+            String title,
+            ChatRoomType type,
+            int page,
+            int size);
 
     @Operation(summary = "내가 참가자인 채팅방 목록 조회")
     @SecurityRequirement(name = "JWT")
