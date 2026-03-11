@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.ChatMessageSendRequest;
 import molip.server.chat.dto.request.ChatMessageUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
-import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatDirectRoomEnterResponse;
@@ -195,15 +194,6 @@ public class ChatController implements ChatApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_MESSAGE_LIST_SUCCESS, response));
-    }
-
-    @Deprecated
-    @PatchMapping("/chat-rooms/participants/{participantId}")
-    @Override
-    public ResponseEntity<Void> updateParticipantCamera(
-            @PathVariable Long participantId,
-            @RequestBody ChatRoomParticipantCameraUpdateRequest request) {
-        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/chat-rooms/{roomId}/participants/{participantId}")

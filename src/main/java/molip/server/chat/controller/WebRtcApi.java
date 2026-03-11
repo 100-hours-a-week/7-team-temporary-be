@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.VideoSessionSyncRequest;
 import molip.server.chat.dto.request.WebRtcTokenIssueRequest;
 import molip.server.chat.dto.response.WebRtcTokenIssueResponse;
@@ -78,4 +79,34 @@ public interface WebRtcApi {
             @AuthenticationPrincipal UserDetails userDetails,
             Long roomId,
             VideoSessionSyncRequest request);
+
+    @Operation(summary = "카메라 상태 변경")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "변경 성공"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "필수 값 누락",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 토큰",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "변경 권한 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "참가자 없음",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
+        @ApiResponse(
+                responseCode = "500",
+                description = "서버 오류",
+                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
+    })
+    ResponseEntity<Void> updateParticipantCamera(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Long participantId,
+            ChatRoomParticipantCameraUpdateRequest request);
 }

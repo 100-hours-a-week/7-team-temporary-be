@@ -86,6 +86,17 @@ public class ChatRoomParticipantService {
     }
 
     @Transactional(readOnly = true)
+    public ChatRoomParticipant getActiveParticipantById(Long participantId) {
+        if (participantId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        return chatRoomParticipantRepository
+                .findByIdAndDeletedAtIsNullAndLeftAtIsNull(participantId)
+                .orElseThrow(() -> new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
     public Map<Long, Integer> countActiveParticipantsByChatRoomIds(List<Long> chatRoomIds) {
         if (chatRoomIds == null || chatRoomIds.isEmpty()) {
             return Collections.emptyMap();
