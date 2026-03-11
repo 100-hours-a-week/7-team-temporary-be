@@ -5,10 +5,14 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.response.VideoPublishChangedResponse;
+import molip.server.chat.dto.response.VideoSessionSyncedResponse;
+import molip.server.chat.dto.response.VideoTokenIssuedResponse;
 import molip.server.chat.dto.response.WebRtcTokenIssueResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.event.VideoSessionAcknowledgedEvent;
 import molip.server.chat.event.VideoSessionSyncedEvent;
+import molip.server.chat.event.VideoTokenIssuedEvent;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.chat.service.video.WebRtcToken;
@@ -53,6 +57,15 @@ public class WebRtcCommandFacade {
                 webRtcTokenIssueService.issue(
                         roomId, participantId, loginUserId, participant.getUser().getNickname());
 
+        eventPublisher.publishEvent(
+                new VideoTokenIssuedEvent(
+                        roomId,
+                        VideoTokenIssuedResponse.of(
+                                roomId,
+                                participantId,
+                                issuedToken.expiresAt(),
+                                OffsetDateTime.now(ZoneOffset.of("+09:00")))));
+
         return WebRtcTokenIssueResponse.of(
                 roomId,
                 participantId,
@@ -88,6 +101,15 @@ public class WebRtcCommandFacade {
                 buildVideoPublishChangedPayload(roomId, participant, sessionId, published);
 
         eventPublisher.publishEvent(new VideoSessionSyncedEvent(roomId, eventType, payload));
+        eventPublisher.publishEvent(
+                new VideoSessionAcknowledgedEvent(
+                        roomId,
+                        VideoSessionSyncedResponse.of(
+                                roomId,
+                                participantId,
+                                sessionId.trim(),
+                                published,
+                                OffsetDateTime.now(ZoneOffset.of("+09:00")))));
     }
 
     private void validateRequired(Long loginUserId, Long roomId, Long participantId) {

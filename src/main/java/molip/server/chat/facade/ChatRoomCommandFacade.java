@@ -98,6 +98,12 @@ public class ChatRoomCommandFacade {
 
     @Transactional
     public void updateParticipantCamera(Long userId, Long participantId, Boolean cameraEnabled) {
+        updateParticipantCamera(userId, null, participantId, cameraEnabled);
+    }
+
+    @Transactional
+    public void updateParticipantCamera(
+            Long userId, Long roomId, Long participantId, Boolean cameraEnabled) {
         if (userId == null || participantId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
         }
@@ -107,7 +113,10 @@ public class ChatRoomCommandFacade {
         }
 
         ChatRoomParticipant participant =
-                chatRoomParticipantService.getActiveParticipantById(participantId);
+                roomId == null
+                        ? chatRoomParticipantService.getActiveParticipantById(participantId)
+                        : chatRoomParticipantService.getActiveParticipantByIdAndRoomId(
+                                participantId, roomId);
 
         if (!participant.getUser().getId().equals(userId)) {
             throw new BaseException(ErrorCode.FORBIDDEN_CAMERA_UPDATE);

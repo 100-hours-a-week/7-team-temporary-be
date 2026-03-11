@@ -95,6 +95,7 @@ public class ChatRoomParticipantEnteredEventHandler {
         eventPublisher.publishEvent(
                 new ChatRoomParticipantEnteredCommittedEvent(
                         event.chatRoom().getId(),
+                        event.chatRoom().getType(),
                         participantJoined,
                         messageCreated,
                         unreadChanges));
