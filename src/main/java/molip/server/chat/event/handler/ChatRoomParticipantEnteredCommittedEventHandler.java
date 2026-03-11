@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import molip.server.chat.event.ChatRoomParticipantEnteredCommittedEvent;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
 import molip.server.chat.redis.realtime.chatuser.ChatUserRealtimePublisher;
+import molip.server.common.enums.ChatRoomType;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -21,8 +22,13 @@ public class ChatRoomParticipantEnteredCommittedEventHandler {
     public void handle(ChatRoomParticipantEnteredCommittedEvent event) {
         log.info("handle participant entered committed event: roomId={}", event.roomId());
 
-        chatRoomRealtimePublisher.publish(
-                "participant.joined", event.roomId(), event.participantJoined());
+        if (event.roomType() == ChatRoomType.CAM_STUDY) {
+            chatRoomRealtimePublisher.publish(
+                    "video.participant.joined", event.roomId(), event.participantJoined());
+        } else {
+            chatRoomRealtimePublisher.publish(
+                    "participant.joined", event.roomId(), event.participantJoined());
+        }
         chatRoomRealtimePublisher.publish(
                 "message.created", event.roomId(), event.messageCreated());
 

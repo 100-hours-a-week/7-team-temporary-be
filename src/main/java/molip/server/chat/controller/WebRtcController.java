@@ -2,15 +2,18 @@ package molip.server.chat.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.VideoSessionSyncRequest;
 import molip.server.chat.dto.request.WebRtcTokenIssueRequest;
 import molip.server.chat.dto.response.WebRtcTokenIssueResponse;
+import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.chat.facade.WebRtcCommandFacade;
 import molip.server.common.SuccessCode;
 import molip.server.common.response.ServerResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WebRtcController implements WebRtcApi {
 
     private final WebRtcCommandFacade webRtcCommandFacade;
+    private final ChatRoomCommandFacade chatRoomCommandFacade;
 
     @PostMapping("/chat-rooms/{roomId}/webrtc/token")
     @Override
@@ -46,6 +50,20 @@ public class WebRtcController implements WebRtcApi {
 
         webRtcCommandFacade.syncVideoSession(
                 userId, roomId, request.participantId(), request.sessionId(), request.published());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/chat-rooms/participants/{participantId}")
+    @Override
+    public ResponseEntity<Void> updateParticipantCamera(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long participantId,
+            @RequestBody ChatRoomParticipantCameraUpdateRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        chatRoomCommandFacade.updateParticipantCamera(
+                userId, participantId, request.cameraEnabled());
 
         return ResponseEntity.noContent().build();
     }

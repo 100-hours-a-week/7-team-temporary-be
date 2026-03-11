@@ -1,5 +1,6 @@
 package molip.server.chat.facade;
 
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
 import molip.server.chat.dto.response.ChatMessageSendCommandResult;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
+import molip.server.chat.dto.response.VideoCameraChangedResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
@@ -20,6 +22,7 @@ import molip.server.chat.event.ChatMessageDeletedEvent;
 import molip.server.chat.event.ChatMessageSentEvent;
 import molip.server.chat.event.ChatMessageUpdatedEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
+import molip.server.chat.event.VideoCameraChangedEvent;
 import molip.server.chat.redis.idempotency.ChatMessageIdempotencyRecord;
 import molip.server.chat.redis.idempotency.RedisChatMessageIdempotencyStore;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
@@ -91,6 +94,50 @@ public class ChatRoomCommandFacade {
         ensureActiveDirectParticipant(friend, directRoom);
 
         return ChatDirectRoomEnterResponse.of(directRoom.getId(), "JOINED");
+    }
+
+    @Transactional
+    public void updateParticipantCamera(Long userId, Long participantId, Boolean cameraEnabled) {
+        updateParticipantCamera(userId, null, participantId, cameraEnabled);
+    }
+
+    @Transactional
+    public void updateParticipantCamera(
+            Long userId, Long roomId, Long participantId, Boolean cameraEnabled) {
+        if (userId == null || participantId == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (cameraEnabled == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_CAMERA_REQUIRED);
+        }
+
+        ChatRoomParticipant participant =
+                roomId == null
+                        ? chatRoomParticipantService.getActiveParticipantById(participantId)
+                        : chatRoomParticipantService.getActiveParticipantByIdAndRoomId(
+                                participantId, roomId);
+
+        if (!participant.getUser().getId().equals(userId)) {
+            throw new BaseException(ErrorCode.FORBIDDEN_CAMERA_UPDATE);
+        }
+
+        if (participant.isCameraEnabled() == cameraEnabled) {
+            return;
+        }
+
+        participant.updateCameraEnabled(cameraEnabled);
+
+        eventPublisher.publishEvent(
+                new VideoCameraChangedEvent(
+                        participant.getChatRoom().getId(),
+                        VideoCameraChangedResponse.of(
+                                UUID.randomUUID().toString(),
+                                participant.getChatRoom().getId(),
+                                participant.getId(),
+                                participant.getUser().getId(),
+                                cameraEnabled,
+                                OffsetDateTime.now(ZoneOffset.of("+09:00")))));
     }
 
     @Transactional
