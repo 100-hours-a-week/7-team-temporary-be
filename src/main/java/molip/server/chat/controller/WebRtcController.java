@@ -2,6 +2,7 @@ package molip.server.chat.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import molip.server.chat.dto.request.VideoSessionSyncRequest;
 import molip.server.chat.dto.request.WebRtcTokenIssueRequest;
 import molip.server.chat.dto.response.WebRtcTokenIssueResponse;
 import molip.server.chat.facade.WebRtcCommandFacade;
@@ -33,5 +34,19 @@ public class WebRtcController implements WebRtcApi {
                 webRtcCommandFacade.issueToken(userId, roomId, request.participantId());
 
         return ResponseEntity.ok(ServerResponse.success(SuccessCode.WEBRTC_TOKEN_ISSUED, response));
+    }
+
+    @PostMapping("/chat-rooms/{roomId}/video/sessions")
+    @Override
+    public ResponseEntity<Void> syncVideoSession(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long roomId,
+            @Valid @RequestBody VideoSessionSyncRequest request) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        webRtcCommandFacade.syncVideoSession(
+                userId, roomId, request.participantId(), request.sessionId(), request.published());
+
+        return ResponseEntity.noContent().build();
     }
 }
