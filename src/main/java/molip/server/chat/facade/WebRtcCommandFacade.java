@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import molip.server.chat.dto.response.VideoPublishChangedResponse;
 import molip.server.chat.dto.response.VideoSessionSyncedResponse;
 import molip.server.chat.dto.response.VideoTokenIssuedResponse;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class WebRtcCommandFacade {
 
     private static final String EVENT_VIDEO_PUBLISH_STARTED = "video.publish.started";
@@ -39,6 +41,11 @@ public class WebRtcCommandFacade {
     @Transactional(readOnly = true)
     public WebRtcTokenIssueResponse issueToken(Long loginUserId, Long roomId, Long participantId) {
         validateRequired(loginUserId, roomId, participantId);
+        log.info(
+                "livekit token issue requested: roomId={}, participantId={}, loginUserId={}",
+                roomId,
+                participantId,
+                loginUserId);
 
         ChatRoom chatRoom = chatRoomService.getChatRoom(roomId);
 
@@ -56,6 +63,11 @@ public class WebRtcCommandFacade {
         WebRtcToken issuedToken =
                 webRtcTokenIssueService.issue(
                         roomId, participantId, loginUserId, participant.getUser().getNickname());
+        log.info(
+                "livekit token issued: roomId={}, participantId={}, expiresAt={}",
+                roomId,
+                participantId,
+                issuedToken.expiresAt());
 
         eventPublisher.publishEvent(
                 new VideoTokenIssuedEvent(
@@ -82,6 +94,12 @@ public class WebRtcCommandFacade {
             String sessionId,
             Boolean published) {
         validateRequired(loginUserId, roomId, participantId);
+        log.info(
+                "livekit session sync requested: roomId={}, participantId={}, published={}, sessionId={}",
+                roomId,
+                participantId,
+                published,
+                sessionId);
 
         ChatRoom chatRoom = chatRoomService.getChatRoom(roomId);
         if (chatRoom.getType() != ChatRoomType.CAM_STUDY) {
@@ -110,6 +128,11 @@ public class WebRtcCommandFacade {
                                 sessionId.trim(),
                                 published,
                                 OffsetDateTime.now(ZoneOffset.of("+09:00")))));
+        log.info(
+                "livekit session sync published: roomId={}, participantId={}, eventType={}",
+                roomId,
+                participantId,
+                eventType);
     }
 
     private void validateRequired(Long loginUserId, Long roomId, Long participantId) {

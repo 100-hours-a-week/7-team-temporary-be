@@ -191,4 +191,14 @@ livekit:
   url: ${LIVEKIT_URL}
   api-key: ${LIVEKIT_API_KEY}
   api-secret: ${LIVEKIT_API_SECRET}
-  token-ttl-seconds: ${LIVEKIT_TOKEN_TTL_SECONDS:900}
+  webhook-secret: ${LIVEKIT_WEBHOOK_SECRET}
+  stun-urls: ${LIVEKIT_STUN_URLS}
+  turn-urls: ${LIVEKIT_TURN_URLS}
+  token-ttl-seconds: ${LIVEKIT_TOKEN_TTL_SECONDS:1800}
+
+webrtc:
+  session-sync-enabled: ${WEBRTC_SESSION_SYNC_ENABLED:true}
+  session-sync-retry-max: ${WEBRTC_SESSION_SYNC_RETRY_MAX:3}
+  session-sync-backoff-ms: ${WEBRTC_SESSION_SYNC_BACKOFF_MS:500}
+  log-verbose: ${WEBRTC_LOG_VERBOSE:false}
+  metrics-enabled: ${WEBRTC_METRICS_ENABLED:true}

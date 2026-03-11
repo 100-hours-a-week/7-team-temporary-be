@@ -111,7 +111,17 @@ swagger:
 
 
 livekit:
-  url: ${LIVEKIT_URL:}
-  api-key: ${LIVEKIT_API_KEY:}
-  api-secret: ${LIVEKIT_API_SECRET:}
-  token-ttl-seconds: ${LIVEKIT_TOKEN_TTL_SECONDS:900}
+  url: url
+  api-key: apikey
+  api-secret: apisecretkey
+  webhook-secret: webhooksecret
+  stun-urls: stunurl
+  turn-urls: turnurl
+  token-ttl-seconds: 1800
+
+webrtc:
+  session-sync-enabled: false
+  session-sync-retry-max: 0
+  session-sync-backoff-ms: 500
+  log-verbose: false
+  metrics-enabled: false

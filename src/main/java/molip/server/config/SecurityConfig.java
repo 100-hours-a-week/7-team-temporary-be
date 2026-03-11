@@ -52,6 +52,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/ws", "/api/chat/ws")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/dev/**")
+                                        .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.GET,
                                                 "/",

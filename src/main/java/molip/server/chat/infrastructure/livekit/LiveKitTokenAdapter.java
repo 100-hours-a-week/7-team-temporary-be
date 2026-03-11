@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import molip.server.chat.config.LiveKitProperties;
 import molip.server.chat.service.video.IssuedLiveKitToken;
 import molip.server.chat.service.video.LiveKitTokenCommand;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class LiveKitTokenAdapter implements LiveKitTokenPort {
 
     private final LiveKitProperties liveKitProperties;
@@ -28,6 +30,12 @@ public class LiveKitTokenAdapter implements LiveKitTokenPort {
     public IssuedLiveKitToken issueToken(LiveKitTokenCommand command) {
         validate(command);
         validateProperties();
+        log.info(
+                "livekit jwt signing start: roomName={}, identity={}, ttlSeconds={}, livekitUrl={}",
+                command.roomName(),
+                command.identity(),
+                command.ttlSeconds(),
+                liveKitProperties.getUrl());
 
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(command.ttlSeconds());
@@ -59,9 +67,20 @@ public class LiveKitTokenAdapter implements LiveKitTokenPort {
                             .addClaims(claims)
                             .signWith(key, SignatureAlgorithm.HS256)
                             .compact();
+            log.info(
+                    "livekit jwt signing success: roomName={}, identity={}, expiresAt={}",
+                    command.roomName(),
+                    command.identity(),
+                    expiresAt);
 
             return IssuedLiveKitToken.of(token, expiresAt);
         } catch (Exception e) {
+            log.error(
+                    "livekit jwt signing failed: roomName={}, identity={}, reason={}",
+                    command.roomName(),
+                    command.identity(),
+                    e.getMessage(),
+                    e);
             throw new BaseException(ErrorCode.VIDEO_TOKEN_ISSUE_FAILED);
         }
     }
@@ -82,6 +101,12 @@ public class LiveKitTokenAdapter implements LiveKitTokenPort {
                 || liveKitProperties.getApiKey().isBlank()
                 || liveKitProperties.getApiSecret() == null
                 || liveKitProperties.getApiSecret().isBlank()) {
+            log.error(
+                    "livekit properties invalid: apiKeyPresent={}, apiSecretPresent={}",
+                    liveKitProperties.getApiKey() != null
+                            && !liveKitProperties.getApiKey().isBlank(),
+                    liveKitProperties.getApiSecret() != null
+                            && !liveKitProperties.getApiSecret().isBlank());
             throw new BaseException(ErrorCode.VIDEO_TOKEN_ISSUE_FAILED);
         }
     }
