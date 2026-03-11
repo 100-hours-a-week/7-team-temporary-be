@@ -84,7 +84,11 @@ public class ChatRoomParticipantLeftEventHandler {
 
         eventPublisher.publishEvent(
                 new ChatRoomParticipantLeftCommittedEvent(
-                        event.chatRoom().getId(), participantLeft, messageCreated, unreadChanges));
+                        event.chatRoom().getId(),
+                        event.chatRoom().getType(),
+                        participantLeft,
+                        messageCreated,
+                        unreadChanges));
     }
 
     private SocketUnreadChangedResponse buildUnreadChanged(

@@ -108,3 +108,20 @@ springdoc:
 
 swagger:
   enabled: false
+
+
+livekit:
+  url: url
+  api-key: apikey
+  api-secret: apisecretkey
+  webhook-secret: webhooksecret
+  stun-urls: stunurl
+  turn-urls: turnurl
+  token-ttl-seconds: 1800
+
+webrtc:
+  session-sync-enabled: false
+  session-sync-retry-max: 0
+  session-sync-backoff-ms: 500
+  log-verbose: false
+  metrics-enabled: false
