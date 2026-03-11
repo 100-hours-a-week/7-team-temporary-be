@@ -49,6 +49,10 @@ public class ChatRoomParticipant extends BaseEntity {
         this.lastSeenMessageId = lastSeenMessageId;
     }
 
+    public void updateCameraEnabled(boolean cameraEnabled) {
+        this.cameraEnabled = cameraEnabled;
+    }
+
     public void leave() {
         this.leftAt = LocalDateTime.now();
     }

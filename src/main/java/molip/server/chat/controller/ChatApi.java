@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import molip.server.chat.dto.request.ChatMessageSendRequest;
 import molip.server.chat.dto.request.ChatMessageUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
-import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatDirectRoomEnterResponse;
@@ -307,38 +306,6 @@ public interface ChatApi {
     })
     ResponseEntity<ServerResponse<CursorResponse<ChatMessageItemResponse>>> getMessages(
             @AuthenticationPrincipal UserDetails userDetails, Long roomId, Long cursor, int size);
-
-    @Operation(summary = "카메라 상태 변경")
-    @SecurityRequirement(name = "JWT")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "변경 성공"),
-        @ApiResponse(
-                responseCode = "400",
-                description = "필수 값 누락",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "401",
-                description = "유효하지 않은 토큰",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "403",
-                description = "변경 권한 없음",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "404",
-                description = "참가자 없음",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "409",
-                description = "메시지 상태 충돌",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class))),
-        @ApiResponse(
-                responseCode = "500",
-                description = "서버 오류",
-                content = @Content(schema = @Schema(implementation = ServerResponse.class)))
-    })
-    ResponseEntity<Void> updateParticipantCamera(
-            Long participantId, ChatRoomParticipantCameraUpdateRequest request);
 
     @Operation(summary = "채팅방 퇴장")
     @SecurityRequirement(name = "JWT")
