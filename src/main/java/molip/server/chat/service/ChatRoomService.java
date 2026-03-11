@@ -45,7 +45,8 @@ public class ChatRoomService {
 
         ChatRoomType resolvedType = resolveCreatableType(type);
         ChatRoom chatRoom =
-                new ChatRoom(ownerId, title.trim(), resolvedType, description.trim(), maxParticipants);
+                new ChatRoom(
+                        ownerId, title.trim(), resolvedType, description.trim(), maxParticipants);
 
         ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
 
