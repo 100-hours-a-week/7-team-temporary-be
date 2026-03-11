@@ -1,6 +1,7 @@
 package molip.server.chat.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
@@ -19,6 +20,7 @@ import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
+import molip.server.common.enums.ChatRoomType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,7 +71,8 @@ class ChatControllerTest {
         ReflectionTestUtils.setField(chatRoom, "id", 101L);
         ChatRoomParticipant participant = org.mockito.Mockito.mock(ChatRoomParticipant.class);
 
-        given(chatRoomService.createChatRoom(any(), any(), any(), any())).willReturn(chatRoom);
+        given(chatRoomService.createChatRoom(any(), any(), any(), any(), isNull()))
+                .willReturn(chatRoom);
         given(chatRoomParticipantService.getActiveParticipant(101L, 1L))
                 .willReturn(Optional.of(participant));
         given(participant.getId()).willReturn(100L);
@@ -84,7 +87,8 @@ class ChatControllerTest {
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.message").value("채팅방이 생성되었습니다."))
                 .andExpect(jsonPath("$.data.roomId").value(101L))
-                .andExpect(jsonPath("$.data.participantId").value(100L));
+                .andExpect(jsonPath("$.data.participantId").value(100L))
+                .andExpect(jsonPath("$.data.type").value(ChatRoomType.OPEN_CHAT.name()));
     }
 
     @Test
