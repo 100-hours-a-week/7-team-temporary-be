@@ -56,12 +56,17 @@ public class ChatController implements ChatApi {
     @Override
     public ResponseEntity<ServerResponse<ChatRoomCreateResponse>> createChatRoom(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) ChatRoomType type,
             @RequestBody ChatRoomCreateRequest request) {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         ChatRoom chatRoom =
                 chatRoomService.createChatRoom(
-                        userId, request.title(), request.description(), request.maxParticipants());
+                        userId,
+                        request.title(),
+                        request.description(),
+                        request.maxParticipants(),
+                        type);
 
         ChatRoomParticipant participant =
                 chatRoomParticipantService
@@ -71,7 +76,8 @@ public class ChatController implements ChatApi {
         return ResponseEntity.ok(
                 ServerResponse.success(
                         SuccessCode.CHAT_ROOM_CREATED,
-                        ChatRoomCreateResponse.from(chatRoom.getId(), participant.getId())));
+                        ChatRoomCreateResponse.from(
+                                chatRoom.getId(), participant.getId(), chatRoom.getType())));
     }
 
     @DeleteMapping("/chat-rooms/{roomId}")
@@ -129,12 +135,13 @@ public class ChatController implements ChatApi {
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String title,
+            @RequestParam(required = false) ChatRoomType type,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         PageResponse<ChatRoomSearchItemResponse> response =
-                chatRoomQueryFacade.searchChatRooms(userId, title, page, size);
+                chatRoomQueryFacade.searchChatRooms(userId, title, type, page, size);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));
