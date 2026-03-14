@@ -29,6 +29,11 @@ jobs:
       # [삭제] aws-actions/amazon-ecr-login
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          config-inline: |
+            [registry."${{ secrets.REGISTRY_URL }}"]
+              http = true
+              insecure = true
 
       - name: Compute version + tag
         id: meta
