@@ -38,7 +38,7 @@ jobs:
           BRANCH="${GITHUB_REF_NAME}"
 
           # TODO: 테스트 완료 후 삭제
-          if [[ "$BRANCH" == "docker-ci-cd" ]]; then
+          if [[ "$BRANCH" == "docker-ci-cd" || "$BRANCH" == "k8s-deploy" ]]; then
             VERSION="v0.0.0-test"
           else
             # e.g. release/v1.4.3 or hotfix/v1.4.3 → v1.4.3
