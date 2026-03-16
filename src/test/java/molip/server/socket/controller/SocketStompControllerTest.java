@@ -60,8 +60,7 @@ class SocketStompControllerTest {
     @DisplayName("socket.connect 요청은 handshake service에 위임한다")
     void connectDelegatesToHandshakeService() {
         // given
-        SocketConnectRequest request =
-                new SocketConnectRequest("Bearer valid-token", "device-uuid");
+        SocketConnectRequest request = new SocketConnectRequest("device-uuid");
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
         headerAccessor.setSessionAttributes(new HashMap<>());
         SocketEventResponse<?> expected = SocketEventResponse.of("socket.connected", "ok");

@@ -37,11 +37,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class UserController implements UserApi {
+    private static final String ACCESS_TOKEN_COOKIE = "accessToken";
+    private static final String REFRESH_TOKEN_COOKIE = "refreshToken";
+    private static final String DEVICE_ID_COOKIE = "deviceId";
 
     private final UserService userService;
     private final UserCommandFacade userCommandFacade;
     private final UserQueryFacade userQueryFacade;
     private final AuthService authService;
+    private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
     public UserController(
@@ -49,11 +53,13 @@ public class UserController implements UserApi {
             UserCommandFacade userCommandFacade,
             UserQueryFacade userQueryFacade,
             AuthService authService,
+            @Value("${jwt.access-expiration-ms}") long accessTokenExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.userService = userService;
         this.userCommandFacade = userCommandFacade;
         this.userQueryFacade = userQueryFacade;
         this.authService = authService;
+        this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
 
@@ -61,7 +67,7 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<ServerResponse<SignUpResponse>> signUp(
             @RequestBody SignUpRequest request,
-            @CookieValue(name = "deviceId", required = false) String deviceId) {
+            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId) {
         Users user =
                 userService.registerUser(
                         request.email(),
@@ -79,25 +85,35 @@ public class UserController implements UserApi {
 
         SignUpResponse response = SignUpResponse.from(user.getId(), tokens.accessToken());
 
-        ResponseCookie refreshCookie =
-                ResponseCookie.from("refreshToken", tokens.refreshToken())
+        ResponseCookie accessCookie =
+                ResponseCookie.from(ACCESS_TOKEN_COOKIE, tokens.accessToken())
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("Lax")
-                        .path("/token")
+                        .path("/")
+                        .maxAge(Duration.ofMillis(accessTokenExpirationMs))
+                        .build();
+
+        ResponseCookie refreshCookie =
+                ResponseCookie.from(REFRESH_TOKEN_COOKIE, tokens.refreshToken())
+                        .httpOnly(true)
+                        .secure(true)
+                        .sameSite("Lax")
+                        .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
 
         ResponseCookie deviceCookie =
-                ResponseCookie.from("deviceId", tokens.deviceId())
+                ResponseCookie.from(DEVICE_ID_COOKIE, tokens.deviceId())
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("Lax")
-                        .path("/token")
+                        .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
 
         return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, deviceCookie.toString())
                 .body(ServerResponse.success(SuccessCode.SIGNUP_SUCCESS, response));

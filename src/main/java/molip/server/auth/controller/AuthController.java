@@ -1,5 +1,6 @@
 package molip.server.auth.controller;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import molip.server.auth.dto.request.LoginRequest;
@@ -21,13 +22,21 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AuthController implements AuthApi {
+
+    private static final String ACCESS_TOKEN_COOKIE = "accessToken";
+    private static final String REFRESH_TOKEN_COOKIE = "refreshToken";
+    private static final String DEVICE_ID_COOKIE = "deviceId";
+
     private final AuthService authService;
+    private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
     public AuthController(
             AuthService authService,
+            @Value("${jwt.access-expiration-ms}") long accessTokenExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.authService = authService;
+        this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
 
@@ -35,26 +44,16 @@ public class AuthController implements AuthApi {
     @Override
     public ResponseEntity<ServerResponse<AccessTokenResponse>> login(
             @RequestBody LoginRequest request,
-            @CookieValue(name = "deviceId", required = false) String deviceId) {
+            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId) {
         AuthResponse tokens = authService.login(request, deviceId);
         AccessTokenResponse response = new AccessTokenResponse(tokens.accessToken());
-        ResponseCookie refreshCookie =
-                ResponseCookie.from("refreshToken", tokens.refreshToken())
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("Lax")
-                        .path("/")
-                        .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-                        .build();
-        ResponseCookie deviceCookie =
-                ResponseCookie.from("deviceId", tokens.deviceId())
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("Lax")
-                        .path("/")
-                        .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-                        .build();
+
+        ResponseCookie accessCookie = buildAccessCookie(tokens.accessToken());
+        ResponseCookie refreshCookie = buildRefreshCookie(tokens.refreshToken());
+        ResponseCookie deviceCookie = buildDeviceCookie(tokens.deviceId());
+
         return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, deviceCookie.toString())
                 .body(ServerResponse.success(SuccessCode.LOGIN_SUCCESS, response));
@@ -63,36 +62,29 @@ public class AuthController implements AuthApi {
     @DeleteMapping("/token")
     @Override
     public ResponseEntity<Void> logout(HttpServletRequest request) {
-        String accessToken = resolveToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        String accessToken = resolveTokenFromCookie(request);
         authService.logout(accessToken);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, expireCookie(ACCESS_TOKEN_COOKIE).toString())
+                .header(HttpHeaders.SET_COOKIE, expireCookie(REFRESH_TOKEN_COOKIE).toString())
+                .header(HttpHeaders.SET_COOKIE, expireCookie(DEVICE_ID_COOKIE).toString())
+                .build();
     }
 
     @PutMapping("/token")
     @Override
     public ResponseEntity<ServerResponse<AccessTokenResponse>> refresh(
-            @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+            @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken) {
         AuthResponse tokens = authService.reissue(refreshToken);
         AccessTokenResponse response = new AccessTokenResponse(tokens.accessToken());
-        ResponseCookie refreshCookie =
-                ResponseCookie.from("refreshToken", tokens.refreshToken())
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("Lax")
-                        .path("/")
-                        .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-                        .build();
-        ResponseCookie deviceCookie =
-                ResponseCookie.from("deviceId", tokens.deviceId())
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("Lax")
-                        .path("/")
-                        .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-                        .build();
+
+        ResponseCookie accessCookie = buildAccessCookie(tokens.accessToken());
+        ResponseCookie refreshCookie = buildRefreshCookie(tokens.refreshToken());
+        ResponseCookie deviceCookie = buildDeviceCookie(tokens.deviceId());
 
         HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
         headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         headers.add(HttpHeaders.SET_COOKIE, deviceCookie.toString());
 
@@ -101,10 +93,58 @@ public class AuthController implements AuthApi {
                 .body(ServerResponse.success(SuccessCode.TOKEN_REISSUE_SUCCESS, response));
     }
 
-    private String resolveToken(String authorization) {
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            return authorization.substring(7);
+    private String resolveTokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
         }
+
+        for (Cookie cookie : cookies) {
+            if (ACCESS_TOKEN_COOKIE.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
         return null;
+    }
+
+    private ResponseCookie buildAccessCookie(String token) {
+        return ResponseCookie.from(ACCESS_TOKEN_COOKIE, token)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofMillis(accessTokenExpirationMs))
+                .build();
+    }
+
+    private ResponseCookie buildRefreshCookie(String token) {
+        return ResponseCookie.from(REFRESH_TOKEN_COOKIE, token)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+                .build();
+    }
+
+    private ResponseCookie buildDeviceCookie(String deviceId) {
+        return ResponseCookie.from(DEVICE_ID_COOKIE, deviceId)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
+                .build();
+    }
+
+    private ResponseCookie expireCookie(String name) {
+        return ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(0)
+                .build();
     }
 }
