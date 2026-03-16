@@ -8,7 +8,6 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
 
 @OpenAPIDefinition(
         info =
@@ -22,15 +21,13 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        return new OpenAPI().components(new Components().addSecuritySchemes("JWT", bearerAuth()));
+        return new OpenAPI().components(new Components().addSecuritySchemes("JWT", cookieAuth()));
     }
 
-    public SecurityScheme bearerAuth() {
+    public SecurityScheme cookieAuth() {
         return new SecurityScheme()
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("Bearer")
-                .bearerFormat("JWT")
-                .in(SecurityScheme.In.HEADER)
-                .name(HttpHeaders.AUTHORIZATION);
+                .type(SecurityScheme.Type.APIKEY)
+                .in(SecurityScheme.In.COOKIE)
+                .name("accessToken");
     }
 }

@@ -1,5 +1,6 @@
 package molip.server.socket.interceptor;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
@@ -47,5 +48,24 @@ class SocketStompChannelInterceptorTest {
 
         // then
         verify(redisSocketSessionStore).delete("session-uuid", 1L, "device-uuid");
+    }
+
+    @Test
+    @DisplayName("STOMP CONNECT 이면 cookie에서 accessToken을 읽어 세션에 저장한다")
+    void connectStoresAccessTokenFromCookie() {
+        // given
+        StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
+        accessor.setNativeHeader("cookie", "foo=bar; accessToken=token-value; a=b");
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+
+        // when
+        Message<?> updated = interceptor.preSend(message, messageChannel);
+        StompHeaderAccessor updatedAccessor = StompHeaderAccessor.wrap(updated);
+
+        // then
+        assertThat(updatedAccessor.getSessionAttributes()).isNotNull();
+        assertThat(updatedAccessor.getSessionAttributes().get("accessToken"))
+                .isEqualTo("token-value");
     }
 }
