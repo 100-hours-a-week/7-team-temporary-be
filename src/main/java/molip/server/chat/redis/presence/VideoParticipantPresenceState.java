@@ -6,6 +6,7 @@ public record VideoParticipantPresenceState(
         Long roomId,
         Long participantId,
         Long userId,
+        String nickname,
         String sessionId,
         Boolean cameraEnabled,
         OffsetDateTime onlineAt,
@@ -15,16 +16,31 @@ public record VideoParticipantPresenceState(
             Long roomId,
             Long participantId,
             Long userId,
+            String nickname,
             String sessionId,
             Boolean cameraEnabled,
             OffsetDateTime onlineAt,
             OffsetDateTime lastHeartbeatAt) {
         return new VideoParticipantPresenceState(
-                roomId, participantId, userId, sessionId, cameraEnabled, onlineAt, lastHeartbeatAt);
+                roomId,
+                participantId,
+                userId,
+                nickname,
+                sessionId,
+                cameraEnabled,
+                onlineAt,
+                lastHeartbeatAt);
     }
 
     public VideoParticipantPresenceState withHeartbeatAt(OffsetDateTime heartbeatAt) {
         return new VideoParticipantPresenceState(
-                roomId, participantId, userId, sessionId, cameraEnabled, onlineAt, heartbeatAt);
+                roomId,
+                participantId,
+                userId,
+                nickname,
+                sessionId,
+                cameraEnabled,
+                onlineAt,
+                heartbeatAt);
     }
 }

@@ -40,6 +40,7 @@ public class WebRtcQueryFacade {
                                         VideoOnlineParticipantItemResponse.of(
                                                 state.participantId(),
                                                 state.userId(),
+                                                state.nickname(),
                                                 state.sessionId(),
                                                 state.cameraEnabled(),
                                                 state.onlineAt(),

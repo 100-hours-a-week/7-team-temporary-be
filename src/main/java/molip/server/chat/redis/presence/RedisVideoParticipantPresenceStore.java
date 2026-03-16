@@ -31,6 +31,7 @@ public class RedisVideoParticipantPresenceStore {
             Long roomId,
             Long participantId,
             Long userId,
+            String nickname,
             String sessionId,
             Boolean cameraEnabled,
             OffsetDateTime now) {
@@ -39,7 +40,14 @@ public class RedisVideoParticipantPresenceStore {
 
         VideoParticipantPresenceState state =
                 VideoParticipantPresenceState.of(
-                        roomId, participantId, userId, sessionId, cameraEnabled, now, now);
+                        roomId,
+                        participantId,
+                        userId,
+                        nickname,
+                        sessionId,
+                        cameraEnabled,
+                        now,
+                        now);
         setPresence(key, state);
 
         redisTemplate.opsForSet().add(roomMembersKey(roomId), member);
