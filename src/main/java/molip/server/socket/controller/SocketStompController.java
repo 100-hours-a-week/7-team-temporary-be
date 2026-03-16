@@ -14,6 +14,9 @@ import molip.server.socket.dto.request.SocketRoomSubscribeRequest;
 import molip.server.socket.dto.request.SocketRoomUnsubscribeRequest;
 import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.request.SocketVideoCameraToggleRequest;
+import molip.server.socket.dto.request.SocketVideoParticipantHeartbeatRequest;
+import molip.server.socket.dto.request.SocketVideoParticipantOfflineRequest;
+import molip.server.socket.dto.request.SocketVideoParticipantOnlineRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.dto.response.SocketVideoReconnectRequiredResponse;
 import molip.server.socket.service.SocketHandshakeService;
@@ -209,6 +212,48 @@ public class SocketStompController {
                                 socketRoomVideoService.toggleCamera(
                                         sessionContext.userId(), sessionId, request))
                 .orElseGet(() -> videoReconnectRequired(sessionId));
+    }
+
+    @MessageMapping("/room/video/online")
+    public void markVideoParticipantOnline(
+            SocketVideoParticipantOnlineRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresentOrElse(
+                        sessionContext ->
+                                socketRoomVideoService.markOnline(
+                                        sessionContext.userId(), sessionId, request),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
+    }
+
+    @MessageMapping("/room/video/heartbeat")
+    public void heartbeatVideoParticipant(
+            SocketVideoParticipantHeartbeatRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresentOrElse(
+                        sessionContext ->
+                                socketRoomVideoService.heartbeat(
+                                        sessionContext.userId(), sessionId, request),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
+    }
+
+    @MessageMapping("/room/video/offline")
+    public void markVideoParticipantOffline(
+            SocketVideoParticipantOfflineRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresentOrElse(
+                        sessionContext ->
+                                socketRoomVideoService.markOffline(
+                                        sessionContext.userId(), sessionId, request),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
     }
 
     private SocketEventResponse<?> reconnectRequired(String sessionId) {

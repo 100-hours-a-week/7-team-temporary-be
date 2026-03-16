@@ -4,9 +4,13 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.facade.ChatRoomCommandFacade;
+import molip.server.chat.facade.WebRtcCommandFacade;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.socket.dto.request.SocketVideoCameraToggleRequest;
+import molip.server.socket.dto.request.SocketVideoParticipantHeartbeatRequest;
+import molip.server.socket.dto.request.SocketVideoParticipantOfflineRequest;
+import molip.server.socket.dto.request.SocketVideoParticipantOnlineRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.dto.response.SocketVideoCameraToggleAcceptedResponse;
 import molip.server.socket.dto.response.SocketVideoCameraToggleRejectedResponse;
@@ -22,6 +26,7 @@ public class SocketRoomVideoService {
     private static final String EVENT_VIDEO_ERROR = "video.error";
 
     private final ChatRoomCommandFacade chatRoomCommandFacade;
+    private final WebRtcCommandFacade webRtcCommandFacade;
     private final SocketUserChannelBroadcaster socketUserChannelBroadcaster;
 
     public SocketEventResponse<?> toggleCamera(
@@ -75,6 +80,89 @@ public class SocketRoomVideoService {
                     request.requestId(),
                     "VIDEO_INTERNAL_ERROR",
                     ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
+        }
+    }
+
+    public void markOnline(
+            Long userId, String sessionId, SocketVideoParticipantOnlineRequest request) {
+        if (userId == null
+                || request == null
+                || request.roomId() == null
+                || request.participantId() == null
+                || request.cameraEnabled() == null
+                || request.sessionId() == null
+                || request.sessionId().isBlank()) {
+            publishVideoError(
+                    sessionId,
+                    request == null ? null : request.roomId(),
+                    request == null ? null : request.participantId(),
+                    "VIDEO_CAMERA_INVALID_PAYLOAD",
+                    ErrorCode.INVALID_REQUEST_REQUIRED_VALUES.getMessage(),
+                    false);
+            return;
+        }
+
+        try {
+            webRtcCommandFacade.markParticipantOnline(
+                    userId,
+                    request.roomId(),
+                    request.participantId(),
+                    request.sessionId(),
+                    request.cameraEnabled());
+        } catch (BaseException exception) {
+            publishVideoError(
+                    sessionId,
+                    request.roomId(),
+                    request.participantId(),
+                    exception.getErrorCode().getStatusValue(),
+                    exception.getErrorCode().getMessage(),
+                    false);
+        } catch (Exception exception) {
+            publishVideoError(
+                    sessionId,
+                    request.roomId(),
+                    request.participantId(),
+                    "VIDEO_INTERNAL_ERROR",
+                    ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
+                    true);
+        }
+    }
+
+    public void heartbeat(
+            Long userId, String sessionId, SocketVideoParticipantHeartbeatRequest request) {
+        if (userId == null
+                || request == null
+                || request.roomId() == null
+                || request.participantId() == null
+                || request.sessionId() == null
+                || request.sessionId().isBlank()) {
+            return;
+        }
+
+        try {
+            webRtcCommandFacade.heartbeatParticipant(
+                    userId, request.roomId(), request.participantId(), request.sessionId());
+        } catch (Exception ignored) {
+
+        }
+    }
+
+    public void markOffline(
+            Long userId, String sessionId, SocketVideoParticipantOfflineRequest request) {
+        if (userId == null
+                || request == null
+                || request.roomId() == null
+                || request.participantId() == null
+                || request.sessionId() == null
+                || request.sessionId().isBlank()) {
+            return;
+        }
+
+        try {
+            webRtcCommandFacade.markParticipantOffline(
+                    userId, request.roomId(), request.participantId(), request.sessionId());
+        } catch (Exception ignored) {
+
         }
     }
 

@@ -200,5 +200,6 @@ webrtc:
   session-sync-enabled: ${WEBRTC_SESSION_SYNC_ENABLED:true}
   session-sync-retry-max: ${WEBRTC_SESSION_SYNC_RETRY_MAX:3}
   session-sync-backoff-ms: ${WEBRTC_SESSION_SYNC_BACKOFF_MS:500}
+  presence-ttl-seconds: ${WEBRTC_PRESENCE_TTL_SECONDS:45}
   log-verbose: ${WEBRTC_LOG_VERBOSE:false}
   metrics-enabled: ${WEBRTC_METRICS_ENABLED:true}

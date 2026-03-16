@@ -5,14 +5,17 @@ import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.VideoSessionSyncRequest;
 import molip.server.chat.dto.request.WebRtcTokenIssueRequest;
+import molip.server.chat.dto.response.VideoOnlineParticipantsResponse;
 import molip.server.chat.dto.response.WebRtcTokenIssueResponse;
 import molip.server.chat.facade.ChatRoomCommandFacade;
 import molip.server.chat.facade.WebRtcCommandFacade;
+import molip.server.chat.facade.WebRtcQueryFacade;
 import molip.server.common.SuccessCode;
 import molip.server.common.response.ServerResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WebRtcController implements WebRtcApi {
 
     private final WebRtcCommandFacade webRtcCommandFacade;
+    private final WebRtcQueryFacade webRtcQueryFacade;
     private final ChatRoomCommandFacade chatRoomCommandFacade;
 
     @PostMapping("/chat-rooms/{roomId}/webrtc/token")
@@ -66,5 +70,18 @@ public class WebRtcController implements WebRtcApi {
                 userId, participantId, request.cameraEnabled());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/chat-rooms/{roomId}/video/participants/online")
+    @Override
+    public ResponseEntity<ServerResponse<VideoOnlineParticipantsResponse>> getOnlineParticipants(
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long roomId) {
+        Long userId = Long.valueOf(userDetails.getUsername());
+
+        VideoOnlineParticipantsResponse response =
+                webRtcQueryFacade.getOnlineParticipants(userId, roomId);
+
+        return ResponseEntity.ok(
+                ServerResponse.success(SuccessCode.WEBRTC_ONLINE_PARTICIPANTS_FETCHED, response));
     }
 }
