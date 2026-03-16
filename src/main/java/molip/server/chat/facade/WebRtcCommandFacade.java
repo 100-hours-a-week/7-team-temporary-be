@@ -5,15 +5,19 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import molip.server.chat.dto.response.VideoParticipantPresenceResponse;
 import molip.server.chat.dto.response.VideoPublishChangedResponse;
 import molip.server.chat.dto.response.VideoSessionSyncedResponse;
 import molip.server.chat.dto.response.VideoTokenIssuedResponse;
 import molip.server.chat.dto.response.WebRtcTokenIssueResponse;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
+import molip.server.chat.event.VideoParticipantOfflineEvent;
+import molip.server.chat.event.VideoParticipantOnlineEvent;
 import molip.server.chat.event.VideoSessionAcknowledgedEvent;
 import molip.server.chat.event.VideoSessionSyncedEvent;
 import molip.server.chat.event.VideoTokenIssuedEvent;
+import molip.server.chat.redis.presence.RedisVideoParticipantPresenceStore;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.chat.service.video.WebRtcToken;
@@ -36,6 +40,7 @@ public class WebRtcCommandFacade {
     private final ChatRoomService chatRoomService;
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final WebRtcTokenIssueService webRtcTokenIssueService;
+    private final RedisVideoParticipantPresenceStore redisVideoParticipantPresenceStore;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
@@ -71,7 +76,7 @@ public class WebRtcCommandFacade {
 
         eventPublisher.publishEvent(
                 new VideoTokenIssuedEvent(
-                        roomId,
+                        loginUserId,
                         VideoTokenIssuedResponse.of(
                                 roomId,
                                 participantId,
@@ -135,6 +140,87 @@ public class WebRtcCommandFacade {
                 eventType);
     }
 
+    @Transactional
+    public void markParticipantOnline(
+            Long loginUserId,
+            Long roomId,
+            Long participantId,
+            String sessionId,
+            Boolean cameraEnabled) {
+        validateRequired(loginUserId, roomId, participantId);
+        if (cameraEnabled == null) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        ChatRoomParticipant participant =
+                getAuthorizedCamStudyParticipant(loginUserId, roomId, participantId);
+        String normalizedSessionId = normalizeSessionId(sessionId);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.of("+09:00"));
+
+        redisVideoParticipantPresenceStore.upsertOnline(
+                roomId,
+                participant.getId(),
+                participant.getUser().getId(),
+                participant.getUser().getNickname(),
+                normalizedSessionId,
+                cameraEnabled,
+                now);
+
+        eventPublisher.publishEvent(
+                new VideoParticipantOnlineEvent(
+                        roomId,
+                        VideoParticipantPresenceResponse.of(
+                                UUID.randomUUID().toString(),
+                                roomId,
+                                participant.getId(),
+                                participant.getUser().getId(),
+                                participant.getUser().getNickname(),
+                                normalizedSessionId,
+                                cameraEnabled,
+                                now)));
+    }
+
+    @Transactional
+    public void heartbeatParticipant(
+            Long loginUserId, Long roomId, Long participantId, String sessionId) {
+        validateRequired(loginUserId, roomId, participantId);
+
+        ChatRoomParticipant participant =
+                getAuthorizedCamStudyParticipant(loginUserId, roomId, participantId);
+        redisVideoParticipantPresenceStore.touchHeartbeat(
+                roomId,
+                participant.getId(),
+                normalizeSessionId(sessionId),
+                OffsetDateTime.now(ZoneOffset.of("+09:00")));
+    }
+
+    @Transactional
+    public void markParticipantOffline(
+            Long loginUserId, Long roomId, Long participantId, String sessionId) {
+        validateRequired(loginUserId, roomId, participantId);
+
+        ChatRoomParticipant participant =
+                getAuthorizedCamStudyParticipant(loginUserId, roomId, participantId);
+        String normalizedSessionId = normalizeSessionId(sessionId);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.of("+09:00"));
+
+        redisVideoParticipantPresenceStore.removeOffline(
+                roomId, participant.getId(), normalizedSessionId);
+
+        eventPublisher.publishEvent(
+                new VideoParticipantOfflineEvent(
+                        roomId,
+                        VideoParticipantPresenceResponse.of(
+                                UUID.randomUUID().toString(),
+                                roomId,
+                                participant.getId(),
+                                participant.getUser().getId(),
+                                participant.getUser().getNickname(),
+                                normalizedSessionId,
+                                participant.isCameraEnabled(),
+                                now)));
+    }
+
     private void validateRequired(Long loginUserId, Long roomId, Long participantId) {
         if (loginUserId == null || roomId == null || participantId == null) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
@@ -147,6 +233,30 @@ public class WebRtcCommandFacade {
         }
 
         return published ? EVENT_VIDEO_PUBLISH_STARTED : EVENT_VIDEO_PUBLISH_STOPPED;
+    }
+
+    private ChatRoomParticipant getAuthorizedCamStudyParticipant(
+            Long loginUserId, Long roomId, Long participantId) {
+        ChatRoom chatRoom = chatRoomService.getChatRoom(roomId);
+        if (chatRoom.getType() != ChatRoomType.CAM_STUDY) {
+            throw new BaseException(ErrorCode.VIDEO_ROOM_REQUIRED);
+        }
+
+        ChatRoomParticipant participant =
+                chatRoomParticipantService.getActiveParticipantByIdAndRoomId(participantId, roomId);
+        if (!loginUserId.equals(participant.getUser().getId())) {
+            throw new BaseException(ErrorCode.VIDEO_PARTICIPANT_FORBIDDEN);
+        }
+
+        return participant;
+    }
+
+    private String normalizeSessionId(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        return sessionId.trim();
     }
 
     private VideoPublishChangedResponse buildVideoPublishChangedPayload(

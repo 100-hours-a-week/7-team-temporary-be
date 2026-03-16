@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import molip.server.chat.dto.response.VideoTokenIssuedResponse;
+import molip.server.chat.dto.response.VideoParticipantPresenceResponse;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimeEnvelope;
 import molip.server.socket.dto.response.SocketEventResponse;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -13,9 +13,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class VideoTokenIssuedRealtimeEventHandler implements ChatRoomRealtimeEventHandler {
+public class VideoParticipantOfflineRealtimeEventHandler implements ChatRoomRealtimeEventHandler {
 
-    private static final String EVENT_TYPE = "video.token.issued";
+    private static final String EVENT_TYPE = "video.participant.offline";
 
     private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate simpMessagingTemplate;
@@ -28,14 +28,10 @@ public class VideoTokenIssuedRealtimeEventHandler implements ChatRoomRealtimeEve
     @Override
     public void handle(ChatRoomRealtimeEnvelope envelope) {
         try {
-            VideoTokenIssuedResponse payload =
-                    objectMapper.readValue(envelope.payloadJson(), VideoTokenIssuedResponse.class);
+            VideoParticipantPresenceResponse payload =
+                    objectMapper.readValue(
+                            envelope.payloadJson(), VideoParticipantPresenceResponse.class);
 
-            log.info(
-                    "broadcast room event: eventType={}, roomId={}, participantId={}",
-                    EVENT_TYPE,
-                    envelope.roomId(),
-                    payload.participantId());
             simpMessagingTemplate.convertAndSend(
                     "/sub/room/" + envelope.roomId(), SocketEventResponse.of(EVENT_TYPE, payload));
         } catch (JsonProcessingException ignored) {

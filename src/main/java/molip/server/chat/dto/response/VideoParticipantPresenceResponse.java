@@ -2,24 +2,26 @@ package molip.server.chat.dto.response;
 
 import java.time.OffsetDateTime;
 
-public record ChatParticipantJoinedResponse(
+public record VideoParticipantPresenceResponse(
         String eventId,
         Long roomId,
         Long participantId,
         Long userId,
         String nickname,
+        String sessionId,
         Boolean cameraEnabled,
-        OffsetDateTime joinedAt) {
+        OffsetDateTime at) {
 
-    public static ChatParticipantJoinedResponse of(
+    public static VideoParticipantPresenceResponse of(
             String eventId,
             Long roomId,
             Long participantId,
             Long userId,
             String nickname,
+            String sessionId,
             Boolean cameraEnabled,
-            OffsetDateTime joinedAt) {
-        return new ChatParticipantJoinedResponse(
-                eventId, roomId, participantId, userId, nickname, cameraEnabled, joinedAt);
+            OffsetDateTime at) {
+        return new VideoParticipantPresenceResponse(
+                eventId, roomId, participantId, userId, nickname, sessionId, cameraEnabled, at);
     }
 }

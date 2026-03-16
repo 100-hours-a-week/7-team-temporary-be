@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.VideoSessionSyncRequest;
 import molip.server.chat.dto.request.WebRtcTokenIssueRequest;
+import molip.server.chat.dto.response.VideoOnlineParticipantsResponse;
 import molip.server.chat.dto.response.WebRtcTokenIssueResponse;
 import molip.server.common.response.ServerResponse;
 import org.springframework.http.ResponseEntity;
@@ -109,4 +110,9 @@ public interface WebRtcApi {
             @AuthenticationPrincipal UserDetails userDetails,
             Long participantId,
             ChatRoomParticipantCameraUpdateRequest request);
+
+    @Operation(summary = "비디오 온라인 참여자 조회")
+    @SecurityRequirement(name = "JWT")
+    ResponseEntity<ServerResponse<VideoOnlineParticipantsResponse>> getOnlineParticipants(
+            @AuthenticationPrincipal UserDetails userDetails, Long roomId);
 }
