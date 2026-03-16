@@ -67,6 +67,36 @@ public class RedisVideoParticipantPresenceStore {
         redisTemplate.opsForSet().remove(roomMembersKey(roomId), member);
     }
 
+    public List<VideoParticipantPresenceState> removeAllByParticipant(
+            Long roomId, Long participantId) {
+        Set<String> members = redisTemplate.opsForSet().members(roomMembersKey(roomId));
+        if (members == null || members.isEmpty()) {
+            return List.of();
+        }
+
+        List<VideoParticipantPresenceState> removed = new ArrayList<>();
+        String prefix = participantId + "|";
+
+        for (String member : members) {
+            if (member == null || !member.startsWith(prefix)) {
+                continue;
+            }
+
+            String key = presenceKey(roomId, member);
+            String raw = redisTemplate.opsForValue().get(key);
+            Boolean deleted = redisTemplate.delete(key);
+            redisTemplate.opsForSet().remove(roomMembersKey(roomId), member);
+
+            if ((deleted == null || !deleted) || raw == null || raw.isBlank()) {
+                continue;
+            }
+
+            removed.add(parse(raw));
+        }
+
+        return removed;
+    }
+
     public List<VideoParticipantPresenceState> findOnlineByRoomId(Long roomId) {
         Set<String> members = redisTemplate.opsForSet().members(roomMembersKey(roomId));
         if (members == null || members.isEmpty()) {

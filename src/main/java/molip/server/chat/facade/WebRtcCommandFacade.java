@@ -173,6 +173,7 @@ public class WebRtcCommandFacade {
                                 roomId,
                                 participant.getId(),
                                 participant.getUser().getId(),
+                                participant.getUser().getNickname(),
                                 normalizedSessionId,
                                 cameraEnabled,
                                 now)));
@@ -213,6 +214,7 @@ public class WebRtcCommandFacade {
                                 roomId,
                                 participant.getId(),
                                 participant.getUser().getId(),
+                                participant.getUser().getNickname(),
                                 normalizedSessionId,
                                 participant.isCameraEnabled(),
                                 now)));

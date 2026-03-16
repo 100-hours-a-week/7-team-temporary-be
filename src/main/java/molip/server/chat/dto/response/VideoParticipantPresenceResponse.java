@@ -7,6 +7,7 @@ public record VideoParticipantPresenceResponse(
         Long roomId,
         Long participantId,
         Long userId,
+        String nickname,
         String sessionId,
         Boolean cameraEnabled,
         OffsetDateTime at) {
@@ -16,10 +17,11 @@ public record VideoParticipantPresenceResponse(
             Long roomId,
             Long participantId,
             Long userId,
+            String nickname,
             String sessionId,
             Boolean cameraEnabled,
             OffsetDateTime at) {
         return new VideoParticipantPresenceResponse(
-                eventId, roomId, participantId, userId, sessionId, cameraEnabled, at);
+                eventId, roomId, participantId, userId, nickname, sessionId, cameraEnabled, at);
     }
 }
