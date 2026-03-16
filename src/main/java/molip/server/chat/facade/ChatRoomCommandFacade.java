@@ -30,6 +30,7 @@ import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.chat.service.ChatRoomService;
 import molip.server.chat.service.MessageImageService;
+import molip.server.common.enums.ChatRoomType;
 import molip.server.common.enums.ImageType;
 import molip.server.common.enums.MessageType;
 import molip.server.common.exception.BaseException;
@@ -71,9 +72,11 @@ public class ChatRoomCommandFacade {
         Users user = userService.getUser(userId);
         Long lastSeenMessageId =
                 chatMessageService.getLatestMessage(roomId).map(ChatMessage::getId).orElse(null);
+        boolean initialCameraEnabled = resolveInitialCameraEnabled(chatRoom.getType());
 
         ChatRoomParticipant participant =
-                chatRoomParticipantService.createParticipant(user, chatRoom, lastSeenMessageId);
+                chatRoomParticipantService.createParticipant(
+                        user, chatRoom, lastSeenMessageId, initialCameraEnabled);
 
         eventPublisher.publishEvent(
                 new ChatRoomParticipantEnteredEvent(chatRoom, participant, user));
@@ -254,6 +257,14 @@ public class ChatRoomCommandFacade {
         }
 
         return participant;
+    }
+
+    private boolean resolveInitialCameraEnabled(ChatRoomType chatRoomType) {
+        if (chatRoomType == ChatRoomType.CAM_STUDY) {
+            return false;
+        }
+
+        return false;
     }
 
     private void validateSendMessageFallback(

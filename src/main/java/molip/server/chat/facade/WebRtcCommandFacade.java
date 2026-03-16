@@ -71,7 +71,7 @@ public class WebRtcCommandFacade {
 
         eventPublisher.publishEvent(
                 new VideoTokenIssuedEvent(
-                        roomId,
+                        loginUserId,
                         VideoTokenIssuedResponse.of(
                                 roomId,
                                 participantId,

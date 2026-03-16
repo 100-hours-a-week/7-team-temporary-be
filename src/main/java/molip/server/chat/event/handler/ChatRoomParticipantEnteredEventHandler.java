@@ -59,6 +59,7 @@ public class ChatRoomParticipantEnteredEventHandler {
                         event.participant().getId(),
                         event.user().getId(),
                         event.user().getNickname(),
+                        event.participant().isCameraEnabled(),
                         joinedAt);
 
         ChatMessage systemMessage =

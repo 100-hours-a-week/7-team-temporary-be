@@ -40,10 +40,16 @@ public class ChatRoomParticipantService {
     @Transactional
     public ChatRoomParticipant createParticipant(
             Users user, ChatRoom chatRoom, Long lastSeenMessageId) {
+        return createParticipant(user, chatRoom, lastSeenMessageId, false);
+    }
+
+    @Transactional
+    public ChatRoomParticipant createParticipant(
+            Users user, ChatRoom chatRoom, Long lastSeenMessageId, boolean cameraEnabled) {
         validateCreateParticipant(user, chatRoom);
 
         ChatRoomParticipant participant =
-                new ChatRoomParticipant(user, chatRoom, lastSeenMessageId, false);
+                new ChatRoomParticipant(user, chatRoom, lastSeenMessageId, cameraEnabled);
 
         return chatRoomParticipantRepository.save(participant);
     }
