@@ -1,6 +1,8 @@
 package molip.server.chat.facade;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,7 @@ import molip.server.chat.dto.response.ChatDirectRoomEnterResponse;
 import molip.server.chat.dto.response.ChatLastSeenUpdatedResponse;
 import molip.server.chat.dto.response.ChatMessageSendCommandResult;
 import molip.server.chat.dto.response.ChatMessageSendResponse;
+import molip.server.chat.dto.response.ChatParticipantJoinedResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.VideoCameraChangedResponse;
 import molip.server.chat.entity.ChatMessage;
@@ -23,6 +26,7 @@ import molip.server.chat.event.ChatMessageSentEvent;
 import molip.server.chat.event.ChatMessageUpdatedEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
 import molip.server.chat.event.VideoCameraChangedEvent;
+import molip.server.chat.event.VideoRoomParticipantEnteredEvent;
 import molip.server.chat.redis.idempotency.ChatMessageIdempotencyRecord;
 import molip.server.chat.redis.idempotency.RedisChatMessageIdempotencyStore;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
@@ -53,6 +57,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatRoomCommandFacade {
 
     private static final String DEFAULT_PROFILE_IMAGE_KEY = "user_default.svg";
+    private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final ChatRoomService chatRoomService;
     private final ChatRoomParticipantService chatRoomParticipantService;
@@ -72,16 +77,32 @@ public class ChatRoomCommandFacade {
         Users user = userService.getUser(userId);
         Long lastSeenMessageId =
                 chatMessageService.getLatestMessage(roomId).map(ChatMessage::getId).orElse(null);
-        boolean initialCameraEnabled = resolveInitialCameraEnabled(chatRoom.getType());
 
         ChatRoomParticipant participant =
-                chatRoomParticipantService.createParticipant(
-                        user, chatRoom, lastSeenMessageId, initialCameraEnabled);
+                chatRoomParticipantService.createParticipant(user, chatRoom, lastSeenMessageId);
 
-        eventPublisher.publishEvent(
-                new ChatRoomParticipantEnteredEvent(chatRoom, participant, user));
+        if (chatRoom.getType() == ChatRoomType.CAM_STUDY) {
+            eventPublisher.publishEvent(
+                    new VideoRoomParticipantEnteredEvent(
+                            chatRoom.getId(),
+                            ChatParticipantJoinedResponse.of(
+                                    UUID.randomUUID().toString(),
+                                    chatRoom.getId(),
+                                    participant.getId(),
+                                    user.getId(),
+                                    user.getNickname(),
+                                    participant.isCameraEnabled(),
+                                    toKst(participant.getCreatedAt()))));
+        } else {
+            eventPublisher.publishEvent(
+                    new ChatRoomParticipantEnteredEvent(chatRoom, participant, user));
+        }
 
         return ChatRoomEnterResponse.from(participant.getId());
+    }
+
+    private OffsetDateTime toKst(LocalDateTime dateTime) {
+        return OffsetDateTime.of(dateTime, KOREA_ZONE_ID.getRules().getOffset(dateTime));
     }
 
     @Transactional
@@ -257,14 +278,6 @@ public class ChatRoomCommandFacade {
         }
 
         return participant;
-    }
-
-    private boolean resolveInitialCameraEnabled(ChatRoomType chatRoomType) {
-        if (chatRoomType == ChatRoomType.CAM_STUDY) {
-            return false;
-        }
-
-        return false;
     }
 
     private void validateSendMessageFallback(

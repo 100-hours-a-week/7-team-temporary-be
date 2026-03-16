@@ -22,10 +22,7 @@ public class ChatRoomParticipantEnteredCommittedEventHandler {
     public void handle(ChatRoomParticipantEnteredCommittedEvent event) {
         log.info("handle participant entered committed event: roomId={}", event.roomId());
 
-        if (event.roomType() == ChatRoomType.CAM_STUDY) {
-            chatRoomRealtimePublisher.publish(
-                    "video.participant.joined", event.roomId(), event.participantJoined());
-        } else {
+        if (event.roomType() != ChatRoomType.CAM_STUDY) {
             chatRoomRealtimePublisher.publish(
                     "participant.joined", event.roomId(), event.participantJoined());
         }
