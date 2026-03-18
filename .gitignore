@@ -4,6 +4,7 @@ build/
 docs/
 elasticapm/
 k6/
+improve_v1
 troubleshooting/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

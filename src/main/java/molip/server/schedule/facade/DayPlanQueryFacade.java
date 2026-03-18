@@ -20,6 +20,7 @@ import molip.server.schedule.dto.response.DayPlanScheduleExistResponse.DayPlanSc
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.repository.DayPlanRepository;
 import molip.server.schedule.repository.ScheduleRepository;
+import molip.server.schedule.service.ScheduleCacheService;
 import molip.server.user.entity.Users;
 import molip.server.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,7 @@ public class DayPlanQueryFacade {
     private final ScheduleRepository scheduleRepository;
     private final OutboxEventService outboxEventService;
     private final ReadConsistencyCacheService cacheService;
+    private final ScheduleCacheService scheduleCacheService;
 
     @Transactional
     public DayPlan getOrCreateDayPlan(Long userId, String date) {
@@ -77,24 +79,30 @@ public class DayPlanQueryFacade {
     public DayPlanScheduleExistResponse getDayPlanExistence(
             Long userId, String startDate, String endDate) {
 
-        LocalDate start = parseDate(startDate);
-        LocalDate end = parseDate(endDate);
-        if (start.isAfter(end)) {
-            throw new BaseException(ErrorCode.INVALID_REQUEST_DATE_REQUIRED);
-        }
+        return scheduleCacheService.getPeriodExistence(
+                userId,
+                startDate,
+                endDate,
+                () -> {
+                    LocalDate start = parseDate(startDate);
+                    LocalDate end = parseDate(endDate);
+                    if (start.isAfter(end)) {
+                        throw new BaseException(ErrorCode.INVALID_REQUEST_DATE_REQUIRED);
+                    }
 
-        Set<LocalDate> hasPlans =
-                new HashSet<>(
-                        scheduleRepository.findPlanDatesWithTimeAssignedSchedules(
-                                userId, start, end));
+                    Set<LocalDate> hasPlans =
+                            new HashSet<>(
+                                    scheduleRepository.findPlanDatesWithTimeAssignedSchedules(
+                                            userId, start, end));
 
-        List<DayPlanScheduleExistItem> days = new ArrayList<>();
-        LocalDate cursor = start;
-        while (!cursor.isAfter(end)) {
-            days.add(new DayPlanScheduleExistItem(cursor, hasPlans.contains(cursor)));
-            cursor = cursor.plusDays(1);
-        }
+                    List<DayPlanScheduleExistItem> days = new ArrayList<>();
+                    LocalDate cursor = start;
+                    while (!cursor.isAfter(end)) {
+                        days.add(new DayPlanScheduleExistItem(cursor, hasPlans.contains(cursor)));
+                        cursor = cursor.plusDays(1);
+                    }
 
-        return DayPlanScheduleExistResponse.of(start, end, days);
+                    return DayPlanScheduleExistResponse.of(start, end, days);
+                });
     }
 }
