@@ -1,5 +1,7 @@
 package molip.server.user.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import molip.server.auth.dto.request.LoginRequest;
@@ -26,6 +28,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +49,7 @@ public class UserController implements UserApi {
     private final UserCommandFacade userCommandFacade;
     private final UserQueryFacade userQueryFacade;
     private final AuthService authService;
+    private final CookieCsrfTokenRepository csrfTokenRepository;
     private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
@@ -53,12 +58,14 @@ public class UserController implements UserApi {
             UserCommandFacade userCommandFacade,
             UserQueryFacade userQueryFacade,
             AuthService authService,
+            CookieCsrfTokenRepository csrfTokenRepository,
             @Value("${jwt.access-expiration-ms}") long accessTokenExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.userService = userService;
         this.userCommandFacade = userCommandFacade;
         this.userQueryFacade = userQueryFacade;
         this.authService = authService;
+        this.csrfTokenRepository = csrfTokenRepository;
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
@@ -67,7 +74,9 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<ServerResponse<SignUpResponse>> signUp(
             @RequestBody SignUpRequest request,
-            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId) {
+            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse) {
         Users user =
                 userService.registerUser(
                         request.email(),
@@ -111,6 +120,8 @@ public class UserController implements UserApi {
                         .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
+
+        issueCsrfToken(httpServletRequest, httpServletResponse);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -205,5 +216,10 @@ public class UserController implements UserApi {
         userService.deleteUser(userId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private void issueCsrfToken(HttpServletRequest request, HttpServletResponse response) {
+        CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
+        csrfTokenRepository.saveToken(csrfToken, request, response);
     }
 }
