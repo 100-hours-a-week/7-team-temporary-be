@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.Duration;
+import molip.server.auth.csrf.CsrfTokenIssuer;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AuthResponse;
 import molip.server.auth.service.AuthService;
@@ -28,8 +29,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,7 +48,7 @@ public class UserController implements UserApi {
     private final UserCommandFacade userCommandFacade;
     private final UserQueryFacade userQueryFacade;
     private final AuthService authService;
-    private final CookieCsrfTokenRepository csrfTokenRepository;
+    private final CsrfTokenIssuer csrfTokenIssuer;
     private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
@@ -58,14 +57,14 @@ public class UserController implements UserApi {
             UserCommandFacade userCommandFacade,
             UserQueryFacade userQueryFacade,
             AuthService authService,
-            CookieCsrfTokenRepository csrfTokenRepository,
+            CsrfTokenIssuer csrfTokenIssuer,
             @Value("${jwt.access-expiration-ms}") long accessTokenExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.userService = userService;
         this.userCommandFacade = userCommandFacade;
         this.userQueryFacade = userQueryFacade;
         this.authService = authService;
-        this.csrfTokenRepository = csrfTokenRepository;
+        this.csrfTokenIssuer = csrfTokenIssuer;
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
@@ -121,7 +120,7 @@ public class UserController implements UserApi {
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
 
-        issueCsrfToken(httpServletRequest, httpServletResponse);
+        csrfTokenIssuer.issue(httpServletRequest, httpServletResponse);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -216,10 +215,5 @@ public class UserController implements UserApi {
         userService.deleteUser(userId);
 
         return ResponseEntity.noContent().build();
-    }
-
-    private void issueCsrfToken(HttpServletRequest request, HttpServletResponse response) {
-        CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
-        csrfTokenRepository.saveToken(csrfToken, request, response);
     }
 }

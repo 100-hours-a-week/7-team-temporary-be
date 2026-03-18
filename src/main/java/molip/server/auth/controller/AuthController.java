@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
+import molip.server.auth.csrf.CsrfTokenIssuer;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AccessTokenResponse;
 import molip.server.auth.dto.response.AuthResponse;
@@ -14,8 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,17 +30,17 @@ public class AuthController implements AuthApi {
     private static final String DEVICE_ID_COOKIE = "deviceId";
 
     private final AuthService authService;
-    private final CookieCsrfTokenRepository csrfTokenRepository;
+    private final CsrfTokenIssuer csrfTokenIssuer;
     private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
     public AuthController(
             AuthService authService,
-            CookieCsrfTokenRepository csrfTokenRepository,
+            CsrfTokenIssuer csrfTokenIssuer,
             @Value("${jwt.access-expiration-ms}") long accessTokenExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.authService = authService;
-        this.csrfTokenRepository = csrfTokenRepository;
+        this.csrfTokenIssuer = csrfTokenIssuer;
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
@@ -60,7 +59,7 @@ public class AuthController implements AuthApi {
         ResponseCookie refreshCookie = buildRefreshCookie(tokens.refreshToken());
         ResponseCookie deviceCookie = buildDeviceCookie(tokens.deviceId());
 
-        issueCsrfToken(httpServletRequest, httpServletResponse);
+        csrfTokenIssuer.issue(httpServletRequest, httpServletResponse);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -156,10 +155,5 @@ public class AuthController implements AuthApi {
                 .path("/")
                 .maxAge(0)
                 .build();
-    }
-
-    private void issueCsrfToken(HttpServletRequest request, HttpServletResponse response) {
-        CsrfToken csrfToken = csrfTokenRepository.generateToken(request);
-        csrfTokenRepository.saveToken(csrfToken, request, response);
     }
 }

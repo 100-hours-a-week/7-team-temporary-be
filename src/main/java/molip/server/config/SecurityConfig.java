@@ -36,12 +36,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http, CookieCsrfTokenRepository csrfTokenRepository) throws Exception {
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        CsrfTokenRequestAttributeHandler csrfTokenRequestHandler =
+                new CsrfTokenRequestAttributeHandler();
+
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(
                         csrf ->
                                 csrf.csrfTokenRepository(csrfTokenRepository)
-                                        .csrfTokenRequestHandler(requestHandler)
+                                        .csrfTokenRequestHandler(csrfTokenRequestHandler)
                                         .ignoringRequestMatchers(csrfIgnorePostMatcher()))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
@@ -87,9 +89,7 @@ public class SecurityConfig {
 
     @Bean
     public CookieCsrfTokenRepository csrfTokenRepository() {
-        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        repository.setHeaderName("X-CSRF-TOKEN");
-        return repository;
+        return CookieCsrfTokenRepository.withHttpOnlyFalse();
     }
 
     @Bean
