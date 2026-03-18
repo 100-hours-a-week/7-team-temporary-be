@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -34,11 +35,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        CsrfTokenRequestAttributeHandler csrfTokenRequestHandler =
+                new CsrfTokenRequestAttributeHandler();
+
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(
                         csrf ->
                                 csrf.csrfTokenRepository(
                                                 CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                        .csrfTokenRequestHandler(csrfTokenRequestHandler)
                                         .ignoringRequestMatchers(csrfIgnorePostMatcher()))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
