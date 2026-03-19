@@ -3,6 +3,7 @@ package molip.server.config;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import molip.server.auth.csrf.SafeMethodCookieCsrfTokenRepository;
 import molip.server.auth.jwt.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,8 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,12 +35,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http, CsrfTokenRepository csrfTokenRepository) throws Exception {
+        CsrfTokenRequestAttributeHandler csrfTokenRequestHandler =
+                new CsrfTokenRequestAttributeHandler();
+
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(
                         csrf ->
-                                csrf.csrfTokenRepository(
-                                                CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                csrf.csrfTokenRepository(csrfTokenRepository)
+                                        .csrfTokenRequestHandler(csrfTokenRequestHandler)
                                         .ignoringRequestMatchers(csrfIgnorePostMatcher()))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
@@ -83,6 +89,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        return new SafeMethodCookieCsrfTokenRepository();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
@@ -99,7 +110,7 @@ public class SecurityConfig {
                 List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
         configuration.setAllowedHeaders(
-                List.of("Content-Type", "X-CSRF-TOKEN", "X-Requested-With"));
+                List.of("Content-Type", "X-CSRF-TOKEN", "X-XSRF-TOKEN", "X-Requested-With"));
 
         configuration.setAllowCredentials(true);
 

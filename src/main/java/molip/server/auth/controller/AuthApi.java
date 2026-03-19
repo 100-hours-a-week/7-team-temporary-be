@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AccessTokenResponse;
 import molip.server.common.response.ServerResponse;
@@ -38,7 +39,9 @@ public interface AuthApi {
     })
     ResponseEntity<ServerResponse<AccessTokenResponse>> login(
             LoginRequest request,
-            @CookieValue(name = "deviceId", required = false) String deviceId);
+            @CookieValue(name = "deviceId", required = false) String deviceId,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse);
 
     @Operation(summary = "로그아웃", description = "전 디바이스 로그아웃")
     @SecurityRequirement(name = "JWT")
