@@ -18,7 +18,6 @@ import molip.server.chat.dto.response.ChatMessageSendResponse;
 import molip.server.chat.dto.response.ChatParticipantJoinedResponse;
 import molip.server.chat.dto.response.ChatRoomEnterResponse;
 import molip.server.chat.dto.response.VideoCameraChangedResponse;
-import molip.server.chat.dto.response.VideoParticipantPresenceResponse;
 import molip.server.chat.entity.ChatMessage;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.entity.ChatRoomParticipant;
@@ -27,11 +26,9 @@ import molip.server.chat.event.ChatMessageSentEvent;
 import molip.server.chat.event.ChatMessageUpdatedEvent;
 import molip.server.chat.event.ChatRoomParticipantEnteredEvent;
 import molip.server.chat.event.VideoCameraChangedEvent;
-import molip.server.chat.event.VideoParticipantOfflineEvent;
 import molip.server.chat.event.VideoRoomParticipantEnteredEvent;
 import molip.server.chat.redis.idempotency.ChatMessageIdempotencyRecord;
 import molip.server.chat.redis.idempotency.RedisChatMessageIdempotencyStore;
-import molip.server.chat.redis.presence.RedisVideoParticipantPresenceStore;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
@@ -71,7 +68,6 @@ public class ChatRoomCommandFacade {
     private final UserImageService userImageService;
     private final ImageService imageService;
     private final RedisChatMessageIdempotencyStore redisChatMessageIdempotencyStore;
-    private final RedisVideoParticipantPresenceStore redisVideoParticipantPresenceStore;
     private final ChatRoomRealtimePublisher chatRoomRealtimePublisher;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -166,26 +162,6 @@ public class ChatRoomCommandFacade {
                                 participant.getUser().getId(),
                                 cameraEnabled,
                                 OffsetDateTime.now(ZoneOffset.of("+09:00")))));
-
-        if (!cameraEnabled && participant.getChatRoom().getType() == ChatRoomType.CAM_STUDY) {
-            redisVideoParticipantPresenceStore
-                    .removeAllByParticipant(participant.getChatRoom().getId(), participant.getId())
-                    .forEach(
-                            removed ->
-                                    eventPublisher.publishEvent(
-                                            new VideoParticipantOfflineEvent(
-                                                    participant.getChatRoom().getId(),
-                                                    VideoParticipantPresenceResponse.of(
-                                                            UUID.randomUUID().toString(),
-                                                            participant.getChatRoom().getId(),
-                                                            participant.getId(),
-                                                            participant.getUser().getId(),
-                                                            participant.getUser().getNickname(),
-                                                            removed.sessionId(),
-                                                            false,
-                                                            OffsetDateTime.now(
-                                                                    ZoneOffset.of("+09:00"))))));
-        }
     }
 
     @Transactional
