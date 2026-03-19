@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import molip.server.common.response.PageResponse;
 import molip.server.common.response.ServerResponse;
 import molip.server.user.dto.request.SignUpRequest;
@@ -46,7 +48,9 @@ public interface UserApi {
     })
     ResponseEntity<ServerResponse<SignUpResponse>> signUp(
             SignUpRequest request,
-            @CookieValue(name = "deviceId", required = false) String deviceId);
+            @CookieValue(name = "deviceId", required = false) String deviceId,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse);
 
     @Operation(summary = "회원 상세 정보 조회")
     @SecurityRequirement(name = "JWT")

@@ -2,7 +2,9 @@ package molip.server.auth.controller;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
+import molip.server.auth.csrf.CsrfTokenIssuer;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AccessTokenResponse;
 import molip.server.auth.dto.response.AuthResponse;
@@ -28,14 +30,17 @@ public class AuthController implements AuthApi {
     private static final String DEVICE_ID_COOKIE = "deviceId";
 
     private final AuthService authService;
+    private final CsrfTokenIssuer csrfTokenIssuer;
     private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
     public AuthController(
             AuthService authService,
+            CsrfTokenIssuer csrfTokenIssuer,
             @Value("${jwt.access-expiration-ms}") long accessTokenExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.authService = authService;
+        this.csrfTokenIssuer = csrfTokenIssuer;
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
@@ -44,13 +49,16 @@ public class AuthController implements AuthApi {
     @Override
     public ResponseEntity<ServerResponse<AccessTokenResponse>> login(
             @RequestBody LoginRequest request,
-            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId) {
+            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse) {
         AuthResponse tokens = authService.login(request, deviceId);
         AccessTokenResponse response = new AccessTokenResponse(tokens.accessToken());
 
         ResponseCookie accessCookie = buildAccessCookie(tokens.accessToken());
         ResponseCookie refreshCookie = buildRefreshCookie(tokens.refreshToken());
         ResponseCookie deviceCookie = buildDeviceCookie(tokens.deviceId());
+        csrfTokenIssuer.issue(httpServletRequest, httpServletResponse);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())

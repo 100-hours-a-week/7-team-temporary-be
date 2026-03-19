@@ -1,7 +1,10 @@
 package molip.server.user.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.Duration;
+import molip.server.auth.csrf.CsrfTokenIssuer;
 import molip.server.auth.dto.request.LoginRequest;
 import molip.server.auth.dto.response.AuthResponse;
 import molip.server.auth.service.AuthService;
@@ -45,6 +48,7 @@ public class UserController implements UserApi {
     private final UserCommandFacade userCommandFacade;
     private final UserQueryFacade userQueryFacade;
     private final AuthService authService;
+    private final CsrfTokenIssuer csrfTokenIssuer;
     private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
 
@@ -53,12 +57,14 @@ public class UserController implements UserApi {
             UserCommandFacade userCommandFacade,
             UserQueryFacade userQueryFacade,
             AuthService authService,
+            CsrfTokenIssuer csrfTokenIssuer,
             @Value("${jwt.access-expiration-ms}") long accessTokenExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
         this.userService = userService;
         this.userCommandFacade = userCommandFacade;
         this.userQueryFacade = userQueryFacade;
         this.authService = authService;
+        this.csrfTokenIssuer = csrfTokenIssuer;
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
@@ -67,7 +73,9 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<ServerResponse<SignUpResponse>> signUp(
             @RequestBody SignUpRequest request,
-            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId) {
+            @CookieValue(name = DEVICE_ID_COOKIE, required = false) String deviceId,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse) {
         Users user =
                 userService.registerUser(
                         request.email(),
@@ -111,6 +119,7 @@ public class UserController implements UserApi {
                         .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
+        csrfTokenIssuer.issue(httpServletRequest, httpServletResponse);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
