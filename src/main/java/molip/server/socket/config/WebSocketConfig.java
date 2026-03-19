@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.concurrent.ThreadPoolExecutor;
 import lombok.RequiredArgsConstructor;
 import molip.server.socket.handler.SocketStompErrorHandler;
+import molip.server.socket.interceptor.SocketHttpHandshakeInterceptor;
 import molip.server.socket.interceptor.SocketStompChannelInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final SocketHttpHandshakeInterceptor socketHttpHandshakeInterceptor;
     private final SocketStompChannelInterceptor socketStompChannelInterceptor;
 
     @Override
@@ -31,7 +33,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         "https://stg.molip.today",
                         "http://molip.today",
                         "https://molip.today",
-                        "http://127.0.0.1:3000");
+                        "http://127.0.0.1:3000")
+                .addInterceptors(socketHttpHandshakeInterceptor);
     }
 
     @Override
