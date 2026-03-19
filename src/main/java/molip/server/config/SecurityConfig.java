@@ -3,6 +3,7 @@ package molip.server.config;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import molip.server.auth.csrf.SafeMethodCookieCsrfTokenRepository;
 import molip.server.auth.jwt.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -35,7 +36,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(
-            HttpSecurity http, CookieCsrfTokenRepository csrfTokenRepository) throws Exception {
+            HttpSecurity http, CsrfTokenRepository csrfTokenRepository) throws Exception {
         CsrfTokenRequestAttributeHandler csrfTokenRequestHandler =
                 new CsrfTokenRequestAttributeHandler();
 
@@ -88,8 +89,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CookieCsrfTokenRepository csrfTokenRepository() {
-        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+    public CsrfTokenRepository csrfTokenRepository() {
+        return new SafeMethodCookieCsrfTokenRepository();
     }
 
     @Bean
@@ -109,7 +110,7 @@ public class SecurityConfig {
                 List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
         configuration.setAllowedHeaders(
-                List.of("Content-Type", "X-CSRF-TOKEN", "X-Requested-With"));
+                List.of("Content-Type", "X-CSRF-TOKEN", "X-XSRF-TOKEN", "X-Requested-With"));
 
         configuration.setAllowCredentials(true);
 

@@ -73,6 +73,8 @@ springdoc:
     path: /swagger-ui.html
     display-request-duration: true
     persistAuthorization: true
+    csrf:
+      enabled: true
 
 swagger:
   enabled: ${SWAGGER_ENABLED}

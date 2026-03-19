@@ -58,7 +58,6 @@ public class AuthController implements AuthApi {
         ResponseCookie accessCookie = buildAccessCookie(tokens.accessToken());
         ResponseCookie refreshCookie = buildRefreshCookie(tokens.refreshToken());
         ResponseCookie deviceCookie = buildDeviceCookie(tokens.deviceId());
-
         csrfTokenIssuer.issue(httpServletRequest, httpServletResponse);
 
         return ResponseEntity.ok()

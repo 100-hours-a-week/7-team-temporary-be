@@ -119,7 +119,6 @@ public class UserController implements UserApi {
                         .path("/")
                         .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                         .build();
-
         csrfTokenIssuer.issue(httpServletRequest, httpServletResponse);
 
         return ResponseEntity.ok()
