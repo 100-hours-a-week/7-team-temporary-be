@@ -11,7 +11,7 @@ import org.springframework.security.web.csrf.DeferredCsrfToken;
 
 public class SafeMethodCookieCsrfTokenRepository implements CsrfTokenRepository {
 
-    private static final Set<String> NULL_DELETE_IGNORE_POST_PATHS = Set.of("/token", "/users");
+    private static final Set<String> NULL_DELETE_ALLOW_DELETE_PATHS = Set.of("/token", "/users");
 
     private final CookieCsrfTokenRepository delegate =
             CookieCsrfTokenRepository.withHttpOnlyFalse();
@@ -29,7 +29,7 @@ public class SafeMethodCookieCsrfTokenRepository implements CsrfTokenRepository 
     @Override
     public void saveToken(
             CsrfToken token, HttpServletRequest request, HttpServletResponse response) {
-        if (token == null && shouldIgnoreDeletion(request)) {
+        if (token == null && shouldBlockDeletion(request)) {
             return;
         }
         delegate.saveToken(token, request, response);
@@ -41,23 +41,11 @@ public class SafeMethodCookieCsrfTokenRepository implements CsrfTokenRepository 
         return delegate.loadDeferredToken(request, response);
     }
 
-    private boolean isSafeMethod(String method) {
-        return HttpMethod.GET.matches(method)
-                || HttpMethod.HEAD.matches(method)
-                || HttpMethod.TRACE.matches(method)
-                || HttpMethod.OPTIONS.matches(method);
-    }
-
-    private boolean shouldIgnoreDeletion(HttpServletRequest request) {
-        if (isSafeMethod(request.getMethod())) {
-            return true;
-        }
-
-        if (HttpMethod.POST.matches(request.getMethod())) {
+    private boolean shouldBlockDeletion(HttpServletRequest request) {
+        if (HttpMethod.DELETE.matches(request.getMethod())) {
             String path = request.getServletPath();
-            return NULL_DELETE_IGNORE_POST_PATHS.contains(path);
+            return !NULL_DELETE_ALLOW_DELETE_PATHS.contains(path);
         }
-
-        return false;
+        return true;
     }
 }
