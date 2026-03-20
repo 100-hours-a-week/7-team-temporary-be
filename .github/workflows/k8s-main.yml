@@ -134,7 +134,7 @@ jobs:
           # be-default와 be-chat 둘 다 같은 이미지
           for svc in be-default be-chat; do
           
-            VALUES="molip-deploy/charts/${svc}/values.yml"
+            VALUES="molip-deploy/charts/${svc}/values.yaml"
             echo "Updating ${VALUES} → tag: ${PROD_TAG}"
           
             # Registry URL 주입
