@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - k8s-deploy
 
 env:
   # 변경: ECR → Private Registry
