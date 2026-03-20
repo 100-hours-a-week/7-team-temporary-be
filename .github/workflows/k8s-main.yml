@@ -1,0 +1,187 @@
+name: CD Production
+
+on:
+  push:
+    branches:
+      - main
+      - k8s-deploy
+
+env:
+  # 변경: ECR → Private Registry
+  REGISTRY: ${{ secrets.REGISTRY_URL }}
+  IMAGE_NAME: molip/be
+  DEPLOY_REPO: ${{ secrets.GITOPS_REPO }}
+
+jobs:
+  promote:
+    name: Promote Image to Prod
+    runs-on: ubuntu-latest
+
+    outputs:
+      prod_tag: ${{ steps.promote.outputs.prod_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 기존과 동일
+      - name: Extract release version
+        id: meta
+        run: |
+          set -euo pipefail
+
+          # TODO: 테스트 완료 후 삭제
+          if [[ "$GITHUB_REF_NAME" == "k8s-deploy" ]]; then
+            echo "branch=k8s-deploy" >> $GITHUB_OUTPUT
+            echo "version=v0.0.0-test" >> $GITHUB_OUTPUT
+            echo "Test branch: k8s-deploy"
+            exit 0
+          fi
+
+          MSG="$(git log -1 --pretty=%B)"
+          BRANCH=$(echo "$MSG" | sed -En 's#.*(release/v[0-9]+\.[0-9]+\.[0-9]+).*#\1#p')
+          if [ -z "$BRANCH" ]; then
+            BRANCH=$(echo "$MSG" | sed -En 's#.*(hotfix/v[0-9]+\.[0-9]+\.[0-9]+).*#\1#p')
+          fi
+          if [ -z "$BRANCH" ]; then
+            echo "Cannot detect release/hotfix branch from merge commit"
+            exit 1
+          fi
+          VERSION=$(echo "$BRANCH" | sed -E 's#^(release|hotfix)/##')
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release Branch: $BRANCH"
+          echo "Version: $VERSION"
+
+      - name: Get release HEAD SHA
+        id: sha
+        run: |
+          set -euo pipefail
+
+          # TODO: 테스트 완료 후 삭제
+          if [[ "${{ steps.meta.outputs.branch }}" == "k8s-deploy" ]]; then
+            SHA=$(git rev-parse --short=7 HEAD)
+            echo "sha=$SHA" >> $GITHUB_OUTPUT
+            echo "Test SHA: $SHA"
+            exit 0
+          fi
+
+          if git fetch origin "${{ steps.meta.outputs.branch }}" 2>/dev/null; then
+            SHA=$(git rev-parse --short=7 "origin/${{ steps.meta.outputs.branch }}")
+          else
+            echo "Branch already deleted, extracting SHA from merge commit parent"
+            SHA=$(git rev-parse --short=7 HEAD^2 2>/dev/null || git rev-parse --short=7 HEAD)
+          fi
+
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "Release SHA: $SHA"
+
+      # 변경: ECR API → crane으로 이미지 리태깅
+      # 동작은 동일: stg 이미지를 prod 태그로 프로모트
+      - name: Install crane
+        run: |
+          curl -sL "https://github.com/google/go-containerregistry/releases/download/v0.20.2/go-containerregistry_Linux_x86_64.tar.gz" \
+            | tar xz -C /usr/local/bin crane
+
+      - name: Promote staging image to prod
+        id: promote
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.meta.outputs.version }}"
+          SHA="${{ steps.sha.outputs.sha }}"
+
+          STG_TAG="stg-${VERSION}-${SHA}"
+          PROD_TAG="prod-${VERSION}-${SHA}"
+
+          SRC="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${STG_TAG}"
+
+          echo "Promoting: $STG_TAG → $PROD_TAG"
+
+          # staging 이미지 존재 확인 (기존 ECR describe-images 대체)
+          if ! crane manifest --insecure "${SRC}" > /dev/null 2>&1; then
+            echo "Staging image not found: $STG_TAG"
+            exit 1
+          fi
+
+          # prod 태그 부여 (기존 ECR put-image 대체, 이미지 재빌드 없음)
+          crane tag --insecure "${SRC}" "${PROD_TAG}"
+          crane tag --insecure "${SRC}" "prod-current"
+
+          echo "prod_tag=$PROD_TAG" >> $GITHUB_OUTPUT
+
+  # 변경: Jenkins 배포 → GitOps 레포 업데이트 (ArgoCD가 감지)
+  deploy:
+    name: Update GitOps Repo
+    runs-on: ubuntu-latest
+    needs: promote
+
+    steps:
+      - name: Checkout deploy repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DEPLOY_REPO }}
+          token: ${{ secrets.GITOPS_PAT }}
+
+      - name: Update image tag
+        run: |
+          set -euo pipefail
+
+          PROD_TAG="${{ needs.promote.outputs.prod_tag }}"
+
+          # be-default와 be-chat 둘 다 같은 이미지
+          for svc in be-default be-chat; do
+          
+            VALUES="molip-deploy/charts/${svc}/values.yml"
+            echo "Updating ${VALUES} → tag: ${PROD_TAG}"
+          
+            # Registry URL 주입
+            sed -i "s|__REGISTRY_URL__|${{ env.REGISTRY }}|" "${VALUES}"
+
+            # 이미지 태그 업데이트
+            sed -i "s|tag:.*|tag: \"${PROD_TAG}\"|" "${VALUES}"
+
+            grep "repository:" "${VALUES}"
+            grep "tag:" "${VALUES}"
+          done
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git diff --staged --quiet && echo "No changes" && exit 0
+
+          PROD_TAG="${{ needs.promote.outputs.prod_tag }}"
+          git commit -m "deploy(prod): ${PROD_TAG}"
+          git push
+
+#  notify:
+#    name: Discord Notification
+#    runs-on: ubuntu-latest
+#    needs: [promote, deploy]
+#    if: always()
+#
+#    steps:
+#      - name: Notify CD result
+#        run: |
+#          ACTOR="${{ github.actor }}"
+#          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+#          PROD_TAG="${{ needs.promote.outputs.prod_tag }}"
+#
+#          if [ "${{ needs.promote.result }}" = "success" ] && [ "${{ needs.deploy.result }}" = "success" ]; then
+#            STATUS="🚀 Production 배포 성공 (ArgoCD)"
+#          else
+#            STATUS="🚨 Production 배포 실패"
+#          fi
+#
+#          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+#            -H "Content-Type: application/json" \
+#            -d "{
+#              \"content\": \"$STATUS\nRepo: ${{ github.repository }}\nImage: $PROD_TAG\nServices: be-default, be-chat\nActor: $ACTOR\nCommit: $SHORT_SHA\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+#            }" || true
