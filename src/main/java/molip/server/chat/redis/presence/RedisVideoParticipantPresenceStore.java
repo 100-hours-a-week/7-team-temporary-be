@@ -131,6 +131,47 @@ public class RedisVideoParticipantPresenceStore {
                 .toList();
     }
 
+    public void updateCameraEnabledByParticipant(
+            Long roomId, Long participantId, Boolean cameraEnabled) {
+        if (roomId == null || participantId == null || cameraEnabled == null) {
+            return;
+        }
+
+        Set<String> members = redisTemplate.opsForSet().members(roomMembersKey(roomId));
+        if (members == null || members.isEmpty()) {
+            return;
+        }
+
+        String prefix = participantId + "|";
+        for (String member : members) {
+            if (member == null || !member.startsWith(prefix)) {
+                continue;
+            }
+
+            String key = presenceKey(roomId, member);
+            String raw = redisTemplate.opsForValue().get(key);
+            if (raw == null || raw.isBlank()) {
+                redisTemplate.opsForSet().remove(roomMembersKey(roomId), member);
+                continue;
+            }
+
+            VideoParticipantPresenceState current = parse(raw);
+            VideoParticipantPresenceState updated =
+                    VideoParticipantPresenceState.of(
+                            current.roomId(),
+                            current.participantId(),
+                            current.userId(),
+                            current.nickname(),
+                            current.sessionId(),
+                            cameraEnabled,
+                            current.onlineAt(),
+                            current.lastHeartbeatAt());
+
+            setPresence(key, updated);
+            redisTemplate.expire(key, Duration.ofSeconds(resolveTtlSeconds()));
+        }
+    }
+
     private void setPresence(String key, VideoParticipantPresenceState state) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(state));
