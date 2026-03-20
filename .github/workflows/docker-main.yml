@@ -1,9 +1,9 @@
-name: CD Production
+name: Jenkins CD
 
 on:
   push:
     branches:
-      - main
+      - deprecated
 
 env:
   AWS_REGION: ap-northeast-2
