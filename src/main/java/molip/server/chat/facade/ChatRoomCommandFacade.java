@@ -29,6 +29,7 @@ import molip.server.chat.event.VideoCameraChangedEvent;
 import molip.server.chat.event.VideoRoomParticipantEnteredEvent;
 import molip.server.chat.redis.idempotency.ChatMessageIdempotencyRecord;
 import molip.server.chat.redis.idempotency.RedisChatMessageIdempotencyStore;
+import molip.server.chat.redis.presence.RedisVideoParticipantPresenceStore;
 import molip.server.chat.redis.realtime.chatroom.ChatRoomRealtimePublisher;
 import molip.server.chat.service.ChatMessageService;
 import molip.server.chat.service.ChatRoomParticipantService;
@@ -68,6 +69,7 @@ public class ChatRoomCommandFacade {
     private final UserImageService userImageService;
     private final ImageService imageService;
     private final RedisChatMessageIdempotencyStore redisChatMessageIdempotencyStore;
+    private final RedisVideoParticipantPresenceStore redisVideoParticipantPresenceStore;
     private final ChatRoomRealtimePublisher chatRoomRealtimePublisher;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -151,6 +153,8 @@ public class ChatRoomCommandFacade {
         }
 
         participant.updateCameraEnabled(cameraEnabled);
+        redisVideoParticipantPresenceStore.updateCameraEnabledByParticipant(
+                participant.getChatRoom().getId(), participant.getId(), cameraEnabled);
 
         eventPublisher.publishEvent(
                 new VideoCameraChangedEvent(
