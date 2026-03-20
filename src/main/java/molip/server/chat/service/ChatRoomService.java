@@ -1,5 +1,6 @@
 package molip.server.chat.service;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.entity.ChatRoom;
 import molip.server.chat.event.ChatRoomCreatedEvent;
@@ -28,12 +29,24 @@ public class ChatRoomService {
     @Transactional
     public ChatRoom createChatRoom(
             Long ownerId, String title, String description, Integer maxParticipants) {
-        validateCreateChatRoom(ownerId, title, description, maxParticipants);
+        return createChatRoom(ownerId, title, description, maxParticipants, null);
+    }
+
+    @Transactional
+    public ChatRoom createChatRoom(
+            Long ownerId,
+            String title,
+            String description,
+            Integer maxParticipants,
+            ChatRoomType type) {
+        validateCreateChatRoom(ownerId, title, description, maxParticipants, type);
 
         validateDuplicatedTitle(title.trim());
 
+        ChatRoomType resolvedType = resolveCreatableType(type);
         ChatRoom chatRoom =
-                new ChatRoom(ownerId, title.trim(), description.trim(), maxParticipants);
+                new ChatRoom(
+                        ownerId, title.trim(), resolvedType, description.trim(), maxParticipants);
 
         ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
 
@@ -101,9 +114,13 @@ public class ChatRoomService {
 
     @Transactional(readOnly = true)
     public Page<ChatRoom> searchChatRooms(String title, int page, int size) {
+        return searchChatRooms(title, null, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ChatRoom> searchChatRooms(String title, ChatRoomType type, int page, int size) {
         validateSearchChatRooms(page, size);
-        java.util.List<ChatRoomType> visibleTypes =
-                java.util.List.of(ChatRoomType.OPEN_CHAT, ChatRoomType.CAM_STUDY);
+        List<ChatRoomType> visibleTypes = resolveVisibleTypes(type);
 
         if (title == null || title.isBlank()) {
             return chatRoomRepository.findByTypeInAndDeletedAtIsNullOrderByCreatedAtDesc(
@@ -143,7 +160,11 @@ public class ChatRoomService {
     }
 
     private void validateCreateChatRoom(
-            Long ownerId, String title, String description, Integer maxParticipants) {
+            Long ownerId,
+            String title,
+            String description,
+            Integer maxParticipants,
+            ChatRoomType type) {
         if (ownerId == null
                 || title == null
                 || title.isBlank()
@@ -152,6 +173,10 @@ public class ChatRoomService {
                 || maxParticipants == null
                 || maxParticipants <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_REQUIRED_VALUES);
+        }
+
+        if (type != null && type != ChatRoomType.OPEN_CHAT && type != ChatRoomType.CAM_STUDY) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_CHAT_TYPE);
         }
     }
 
@@ -191,6 +216,26 @@ public class ChatRoomService {
         if (page <= 0 || size <= 0) {
             throw new BaseException(ErrorCode.INVALID_REQUEST_INVALID_PAGE);
         }
+    }
+
+    private ChatRoomType resolveCreatableType(ChatRoomType type) {
+        if (type == null) {
+            return ChatRoomType.OPEN_CHAT;
+        }
+
+        return type;
+    }
+
+    private java.util.List<ChatRoomType> resolveVisibleTypes(ChatRoomType type) {
+        if (type == null) {
+            return java.util.List.of(ChatRoomType.OPEN_CHAT, ChatRoomType.CAM_STUDY);
+        }
+
+        if (type != ChatRoomType.OPEN_CHAT && type != ChatRoomType.CAM_STUDY) {
+            throw new BaseException(ErrorCode.INVALID_REQUEST_CHAT_TYPE);
+        }
+
+        return java.util.List.of(type);
     }
 
     private void validateDirectRoomUserPair(Long userId, Long friendId) {

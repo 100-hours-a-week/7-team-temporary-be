@@ -8,6 +8,7 @@ public record ChatParticipantJoinedResponse(
         Long participantId,
         Long userId,
         String nickname,
+        Boolean cameraEnabled,
         OffsetDateTime joinedAt) {
 
     public static ChatParticipantJoinedResponse of(
@@ -16,8 +17,9 @@ public record ChatParticipantJoinedResponse(
             Long participantId,
             Long userId,
             String nickname,
+            Boolean cameraEnabled,
             OffsetDateTime joinedAt) {
         return new ChatParticipantJoinedResponse(
-                eventId, roomId, participantId, userId, nickname, joinedAt);
+                eventId, roomId, participantId, userId, nickname, cameraEnabled, joinedAt);
     }
 }

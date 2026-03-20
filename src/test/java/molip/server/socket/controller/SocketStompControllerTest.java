@@ -19,6 +19,7 @@ import molip.server.socket.service.SocketHandshakeService;
 import molip.server.socket.service.SocketReportMessageService;
 import molip.server.socket.service.SocketRoomMessageService;
 import molip.server.socket.service.SocketRoomSubscriptionService;
+import molip.server.socket.service.SocketRoomVideoService;
 import molip.server.socket.session.SocketSessionContext;
 import molip.server.socket.session.SocketSessionSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class SocketStompControllerTest {
     @Mock private SocketHandshakeService socketHandshakeService;
     @Mock private SocketRoomSubscriptionService socketRoomSubscriptionService;
     @Mock private SocketRoomMessageService socketRoomMessageService;
+    @Mock private SocketRoomVideoService socketRoomVideoService;
     @Mock private SocketReportMessageService socketReportMessageService;
     @Mock private SocketSessionSupport socketSessionSupport;
 
@@ -49,6 +51,7 @@ class SocketStompControllerTest {
                         socketHandshakeService,
                         socketRoomSubscriptionService,
                         socketRoomMessageService,
+                        socketRoomVideoService,
                         socketReportMessageService,
                         socketSessionSupport);
     }
@@ -57,8 +60,7 @@ class SocketStompControllerTest {
     @DisplayName("socket.connect 요청은 handshake service에 위임한다")
     void connectDelegatesToHandshakeService() {
         // given
-        SocketConnectRequest request =
-                new SocketConnectRequest("Bearer valid-token", "device-uuid");
+        SocketConnectRequest request = new SocketConnectRequest("device-uuid");
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create();
         headerAccessor.setSessionAttributes(new HashMap<>());
         SocketEventResponse<?> expected = SocketEventResponse.of("socket.connected", "ok");

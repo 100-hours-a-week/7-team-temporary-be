@@ -2,6 +2,8 @@ server:
   port: 8080
   forward-headers-strategy: framework
   tomcat:
+    mbeanregistry:
+      enabled: true
     connection-timeout: 5m
 
 spring:
@@ -71,6 +73,8 @@ springdoc:
     path: /swagger-ui.html
     display-request-duration: true
     persistAuthorization: true
+    csrf:
+      enabled: true
 
 swagger:
   enabled: ${SWAGGER_ENABLED}
@@ -154,11 +158,29 @@ app:
       driverClassName: com.mysql.cj.jdbc.Driver
       username: ${READ_DB_USERNAME}
       password: ${READ_DB_PASSWORD}
+      hikari:
+        pool-name: ${READ_DB_POOL_NAME:read-hikari-pool}
+        maximum-pool-size: ${READ_DB_MAX_POOL_SIZE:30}
+        minimum-idle: ${READ_DB_MIN_IDLE:10}
+        connection-timeout: ${READ_DB_CONNECTION_TIMEOUT_MS:3000}
+        validation-timeout: ${READ_DB_VALIDATION_TIMEOUT_MS:1000}
+        idle-timeout: ${READ_DB_IDLE_TIMEOUT_MS:600000}
+        max-lifetime: ${READ_DB_MAX_LIFETIME_MS:1800000}
+        leak-detection-threshold: ${READ_DB_LEAK_DETECTION_MS:0}
     write:
       url: ${WRITE_DB_URL}
       driverClassName: com.mysql.cj.jdbc.Driver
       username: ${WRITE_DB_USERNAME}
       password: ${WRITE_DB_PASSWORD}
+      hikari:
+        pool-name: ${WRITE_DB_POOL_NAME:write-hikari-pool}
+        maximum-pool-size: ${WRITE_DB_MAX_POOL_SIZE:30}
+        minimum-idle: ${WRITE_DB_MIN_IDLE:10}
+        connection-timeout: ${WRITE_DB_CONNECTION_TIMEOUT_MS:3000}
+        validation-timeout: ${WRITE_DB_VALIDATION_TIMEOUT_MS:1000}
+        idle-timeout: ${WRITE_DB_IDLE_TIMEOUT_MS:600000}
+        max-lifetime: ${WRITE_DB_MAX_LIFETIME_MS:1800000}
+        leak-detection-threshold: ${WRITE_DB_LEAK_DETECTION_MS:0}
 
 kafka:
   enabled: ${KAFKA_ENABLED:false}
@@ -185,3 +207,21 @@ kafka:
   topics:
     domain-events: ${KAFKA_DOMAIN_EVENTS_TOPIC:domain.events.v1}
     dlq: ${KAFKA_DOMAIN_EVENTS_DLQ_TOPIC:domain.events.v1.DLQ}
+
+
+livekit:
+  url: ${LIVEKIT_URL}
+  api-key: ${LIVEKIT_API_KEY}
+  api-secret: ${LIVEKIT_API_SECRET}
+  webhook-secret: ${LIVEKIT_WEBHOOK_SECRET}
+  stun-urls: ${LIVEKIT_STUN_URLS}
+  turn-urls: ${LIVEKIT_TURN_URLS}
+  token-ttl-seconds: ${LIVEKIT_TOKEN_TTL_SECONDS:1800}
+
+webrtc:
+  session-sync-enabled: ${WEBRTC_SESSION_SYNC_ENABLED:true}
+  session-sync-retry-max: ${WEBRTC_SESSION_SYNC_RETRY_MAX:3}
+  session-sync-backoff-ms: ${WEBRTC_SESSION_SYNC_BACKOFF_MS:500}
+  presence-ttl-seconds: ${WEBRTC_PRESENCE_TTL_SECONDS:45}
+  log-verbose: ${WEBRTC_LOG_VERBOSE:false}
+  metrics-enabled: ${WEBRTC_METRICS_ENABLED:true}

@@ -13,6 +13,7 @@ import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.enums.ScheduleActionType;
 import molip.server.schedule.service.DayPlanService;
 import molip.server.schedule.service.ScheduleActionLogService;
+import molip.server.schedule.service.ScheduleCacheService;
 import molip.server.schedule.service.ScheduleService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ public class ScheduleQueryFacade {
     private final ScheduleService scheduleService;
     private final DayPlanService dayPlanService;
     private final ScheduleActionLogService scheduleActionLogService;
+    private final ScheduleCacheService scheduleCacheService;
 
     @Transactional
     public DayPlanSchedulePageResponse getTimeAssignedSchedulesByDate(
@@ -59,29 +61,38 @@ public class ScheduleQueryFacade {
     public DayPlanTodoListResponse getTodoSchedulesByDayPlan(
             Long userId, Long dayPlanId, int page, int size) {
 
-        DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
-
-        LocalDate toDate = dayPlan.getPlanDate();
-        LocalDate fromDate = toDate.minusDays(1);
-
-        Page<Schedule> schedules =
-                scheduleService.getTodoListSchedules(userId, fromDate, toDate, page, size);
-
-        Page<ScheduleSummaryResponse> mapped =
-                schedules.map(
-                        schedule ->
-                                ScheduleSummaryResponse.from(
-                                        schedule, schedule.getParentSchedule()));
-
         DayPlanTodoListResponse response =
-                DayPlanTodoListResponse.of(
-                        dayPlan.getId(),
-                        dayPlan.getAiUsageRemainingCount(),
-                        mapped.getContent(),
+                scheduleCacheService.getTodoList(
+                        userId,
+                        dayPlanId,
                         page,
                         size,
-                        mapped.getTotalElements(),
-                        mapped.getTotalPages());
+                        () -> {
+                            DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
+
+                            LocalDate toDate = dayPlan.getPlanDate();
+                            LocalDate fromDate = toDate.minusDays(1);
+
+                            Page<Schedule> schedules =
+                                    scheduleService.getTodoListSchedules(
+                                            userId, fromDate, toDate, page, size);
+
+                            Page<ScheduleSummaryResponse> mapped =
+                                    schedules.map(
+                                            schedule ->
+                                                    ScheduleSummaryResponse.from(
+                                                            schedule,
+                                                            schedule.getParentSchedule()));
+
+                            return DayPlanTodoListResponse.of(
+                                    dayPlan.getId(),
+                                    dayPlan.getAiUsageRemainingCount(),
+                                    mapped.getContent(),
+                                    page,
+                                    size,
+                                    mapped.getTotalElements(),
+                                    mapped.getTotalPages());
+                        });
 
         scheduleActionLogService.publish(
                 userId, null, ScheduleActionType.READ, "/day-plan/{dayPlanId}/schedule");
@@ -93,21 +104,32 @@ public class ScheduleQueryFacade {
     public PageResponse<ScheduleSummaryResponse> getExcludedSchedules(
             Long userId, Long dayPlanId, String status, int page, int size) {
 
-        DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
+        PageResponse<ScheduleSummaryResponse> response =
+                scheduleCacheService.getExcludedList(
+                        userId,
+                        dayPlanId,
+                        status,
+                        page,
+                        size,
+                        () -> {
+                            DayPlan dayPlan = dayPlanService.getDayPlan(userId, dayPlanId);
 
-        LocalDate toDate = dayPlan.getPlanDate();
-        LocalDate fromDate = toDate.minusDays(1);
+                            LocalDate toDate = dayPlan.getPlanDate();
+                            LocalDate fromDate = toDate.minusDays(1);
 
-        Page<Schedule> schedules =
-                scheduleService.getExcludedSchedules(userId, status, fromDate, toDate, page, size);
+                            Page<Schedule> schedules =
+                                    scheduleService.getExcludedSchedules(
+                                            userId, status, fromDate, toDate, page, size);
 
-        Page<ScheduleSummaryResponse> mapped =
-                schedules.map(
-                        schedule ->
-                                ScheduleSummaryResponse.from(
-                                        schedule, schedule.getParentSchedule()));
+                            Page<ScheduleSummaryResponse> mapped =
+                                    schedules.map(
+                                            schedule ->
+                                                    ScheduleSummaryResponse.from(
+                                                            schedule,
+                                                            schedule.getParentSchedule()));
 
-        PageResponse<ScheduleSummaryResponse> response = PageResponse.from(mapped, page, size);
+                            return PageResponse.from(mapped, page, size);
+                        });
 
         scheduleActionLogService.publish(
                 userId, null, ScheduleActionType.READ, "/day-plan/{dayPlanId}/schedules");

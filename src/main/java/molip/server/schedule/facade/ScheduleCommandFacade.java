@@ -17,6 +17,7 @@ import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.enums.ScheduleActionType;
 import molip.server.schedule.service.DayPlanService;
 import molip.server.schedule.service.ScheduleActionLogService;
+import molip.server.schedule.service.ScheduleCacheService;
 import molip.server.schedule.service.ScheduleService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class ScheduleCommandFacade {
     private final ScheduleService scheduleService;
     private final DayPlanService dayPlanService;
     private final ScheduleActionLogService scheduleActionLogService;
+    private final ScheduleCacheService scheduleCacheService;
 
     @Transactional
     public Schedule createSchedule(
@@ -59,6 +61,7 @@ public class ScheduleCommandFacade {
                 created.getId(),
                 ScheduleActionType.CREATE,
                 "/day-plan/{dayPlanId}/schedule");
+        scheduleCacheService.evictUserScheduleCaches(userId);
 
         return created;
     }
@@ -88,6 +91,7 @@ public class ScheduleCommandFacade {
 
         scheduleActionLogService.publish(
                 userId, scheduleId, ScheduleActionType.UPDATE, "/schedule/{scheduleId}");
+        scheduleCacheService.evictUserScheduleCaches(userId);
     }
 
     @Transactional
@@ -96,6 +100,7 @@ public class ScheduleCommandFacade {
 
         scheduleActionLogService.publish(
                 userId, scheduleId, ScheduleActionType.DELETE, "/schedule/{scheduleId}");
+        scheduleCacheService.evictUserScheduleCaches(userId);
     }
 
     @Transactional
@@ -104,6 +109,7 @@ public class ScheduleCommandFacade {
 
         scheduleActionLogService.publish(
                 userId, scheduleId, ScheduleActionType.UPDATE, "/schedule/{scheduleId}/status");
+        scheduleCacheService.evictUserScheduleCaches(userId);
     }
 
     @Transactional
@@ -119,6 +125,7 @@ public class ScheduleCommandFacade {
 
         scheduleActionLogService.publish(
                 userId, scheduleId, ScheduleActionType.UPDATE, "/schedule/{scheduleId}");
+        scheduleCacheService.evictUserScheduleCaches(userId);
     }
 
     @Transactional
@@ -131,6 +138,7 @@ public class ScheduleCommandFacade {
                 targetScheduleId,
                 ScheduleActionType.UPDATE,
                 "/schedule/{targetScheduleId}/assignment-status");
+        scheduleCacheService.evictUserScheduleCaches(userId);
     }
 
     @Transactional
@@ -153,6 +161,7 @@ public class ScheduleCommandFacade {
                             userId, scheduleRequest.parentScheduleId(), scheduleRequest.titles()));
         }
 
+        scheduleCacheService.evictUserScheduleCaches(userId);
         return ScheduleChildrenCreateGroupResponse.groupFrom(results);
     }
 

@@ -95,9 +95,9 @@ public class ChatRoomQueryFacade {
     }
 
     public PageResponse<ChatRoomSearchItemResponse> searchChatRooms(
-            Long userId, String title, int page, int size) {
+            Long userId, String title, ChatRoomType type, int page, int size) {
 
-        Page<ChatRoom> chatRoomPage = chatRoomService.searchChatRooms(title, page, size);
+        Page<ChatRoom> chatRoomPage = chatRoomService.searchChatRooms(title, type, page, size);
 
         List<Long> chatRoomIds = chatRoomPage.getContent().stream().map(ChatRoom::getId).toList();
 

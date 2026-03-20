@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class SocketHandshakeService {
 
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
+    private static final String ACCESS_TOKEN_SESSION_KEY = "accessToken";
+    private static final String ACCESS_TOKEN_COOKIE = "accessToken";
     private static final String SOCKET_CONNECTED_EVENT = "socket.connected";
     private static final String SOCKET_ERROR_EVENT = "socket.error";
     private static final String SUBSCRIBED_USER_EVENT = "subscribed.user";
@@ -46,12 +48,7 @@ public class SocketHandshakeService {
             return invalidRequestResponse;
         }
 
-        String token = stripBearerPrefix(request.accessToken());
-        SocketEventResponse<?> invalidTokenFormatResponse = validateAccessTokenFormat(token);
-
-        if (invalidTokenFormatResponse != null) {
-            return invalidTokenFormatResponse;
-        }
+        String token = resolveAccessToken(headerAccessor);
 
         JwtValidationStatus tokenStatus = jwtTokenProvider.getAccessTokenStatus(token);
         SocketEventResponse<?> invalidTokenStatusResponse = validateTokenStatus(tokenStatus);
@@ -86,8 +83,7 @@ public class SocketHandshakeService {
 
         OffsetDateTime connectedAt = OffsetDateTime.now(KOREA_ZONE_ID);
         SocketSessionContext sessionContext =
-                SocketSessionContext.of(
-                        request.accessToken(), request.deviceId(), userId, connectedAt);
+                SocketSessionContext.of(token, request.deviceId(), userId, connectedAt);
 
         socketSessionSupport.setSessionContext(headerAccessor, sessionContext);
         socketSessionStore.save(sessionId, userId, request.deviceId(), connectedAt);
@@ -139,16 +135,8 @@ public class SocketHandshakeService {
     }
 
     private SocketEventResponse<?> validateConnectRequest(SocketConnectRequest request) {
-        if (request == null || isBlank(request.accessToken()) || isBlank(request.deviceId())) {
-            return error("CONNECT_INVALID_PAYLOAD", "accessToken 또는 deviceId가 누락되었습니다.", false);
-        }
-
-        return null;
-    }
-
-    private SocketEventResponse<?> validateAccessTokenFormat(String token) {
-        if (token == null) {
-            return error("CONNECT_INVALID_PAYLOAD", "accessToken 형식이 올바르지 않습니다.", false);
+        if (request == null || isBlank(request.deviceId())) {
+            return error("CONNECT_INVALID_PAYLOAD", "deviceId가 누락되었습니다.", false);
         }
 
         return null;
@@ -208,13 +196,30 @@ public class SocketHandshakeService {
         return value == null || value.isBlank();
     }
 
-    private String stripBearerPrefix(String bearerToken) {
-        if (!bearerToken.startsWith("Bearer ")) {
+    private String resolveAccessToken(SimpMessageHeaderAccessor headerAccessor) {
+        if (headerAccessor.getSessionAttributes() != null) {
+            Object tokenFromSession =
+                    headerAccessor.getSessionAttributes().get(ACCESS_TOKEN_SESSION_KEY);
+            if (tokenFromSession instanceof String token && !token.isBlank()) {
+                return token;
+            }
+        }
+
+        String cookieHeader = headerAccessor.getFirstNativeHeader("cookie");
+        if (isBlank(cookieHeader)) {
             return null;
         }
 
-        String token = bearerToken.substring(7).trim();
+        String[] cookiePairs = cookieHeader.split(";");
+        for (String cookiePair : cookiePairs) {
+            String[] nameValue = cookiePair.trim().split("=", 2);
+            if (nameValue.length == 2
+                    && ACCESS_TOKEN_COOKIE.equals(nameValue[0].trim())
+                    && !nameValue[1].trim().isBlank()) {
+                return nameValue[1].trim();
+            }
+        }
 
-        return token.isBlank() ? null : token;
+        return null;
     }
 }

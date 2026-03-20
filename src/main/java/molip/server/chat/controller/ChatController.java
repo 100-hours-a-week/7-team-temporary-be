@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.ChatMessageSendRequest;
 import molip.server.chat.dto.request.ChatMessageUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomCreateRequest;
-import molip.server.chat.dto.request.ChatRoomParticipantCameraUpdateRequest;
 import molip.server.chat.dto.request.ChatRoomUpdateRequest;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.dto.response.ChatDirectRoomEnterResponse;
@@ -56,12 +55,17 @@ public class ChatController implements ChatApi {
     @Override
     public ResponseEntity<ServerResponse<ChatRoomCreateResponse>> createChatRoom(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) ChatRoomType type,
             @RequestBody ChatRoomCreateRequest request) {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         ChatRoom chatRoom =
                 chatRoomService.createChatRoom(
-                        userId, request.title(), request.description(), request.maxParticipants());
+                        userId,
+                        request.title(),
+                        request.description(),
+                        request.maxParticipants(),
+                        type);
 
         ChatRoomParticipant participant =
                 chatRoomParticipantService
@@ -71,7 +75,8 @@ public class ChatController implements ChatApi {
         return ResponseEntity.ok(
                 ServerResponse.success(
                         SuccessCode.CHAT_ROOM_CREATED,
-                        ChatRoomCreateResponse.from(chatRoom.getId(), participant.getId())));
+                        ChatRoomCreateResponse.from(
+                                chatRoom.getId(), participant.getId(), chatRoom.getType())));
     }
 
     @DeleteMapping("/chat-rooms/{roomId}")
@@ -129,12 +134,13 @@ public class ChatController implements ChatApi {
     public ResponseEntity<ServerResponse<PageResponse<ChatRoomSearchItemResponse>>> searchChatRooms(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String title,
+            @RequestParam(required = false) ChatRoomType type,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int size) {
         Long userId = Long.valueOf(userDetails.getUsername());
 
         PageResponse<ChatRoomSearchItemResponse> response =
-                chatRoomQueryFacade.searchChatRooms(userId, title, page, size);
+                chatRoomQueryFacade.searchChatRooms(userId, title, type, page, size);
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_ROOM_SEARCH_SUCCESS, response));
@@ -195,15 +201,6 @@ public class ChatController implements ChatApi {
 
         return ResponseEntity.ok(
                 ServerResponse.success(SuccessCode.CHAT_MESSAGE_LIST_SUCCESS, response));
-    }
-
-    @Deprecated
-    @PatchMapping("/chat-rooms/participants/{participantId}")
-    @Override
-    public ResponseEntity<Void> updateParticipantCamera(
-            @PathVariable Long participantId,
-            @RequestBody ChatRoomParticipantCameraUpdateRequest request) {
-        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/chat-rooms/{roomId}/participants/{participantId}")

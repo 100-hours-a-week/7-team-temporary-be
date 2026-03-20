@@ -23,6 +23,7 @@ import molip.server.schedule.dto.response.ScheduleArrangeResultResponse;
 import molip.server.schedule.entity.DayPlan;
 import molip.server.schedule.entity.Schedule;
 import molip.server.schedule.service.DayPlanService;
+import molip.server.schedule.service.ScheduleCacheService;
 import molip.server.schedule.service.ScheduleService;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserService;
@@ -40,6 +41,7 @@ public class AiPlannerFacade {
     private final UserService userService;
     private final AiPlannerClient aiPlannerClient;
     private final ReadConsistencyCacheService cacheService;
+    private final ScheduleCacheService scheduleCacheService;
 
     @Transactional
     @AiRateLimit
@@ -79,6 +81,7 @@ public class AiPlannerFacade {
 
         List<Schedule> updatedSchedules =
                 scheduleService.applyAiArrangement(userId, dayPlan, response.results());
+        scheduleCacheService.evictUserScheduleCaches(userId);
 
         List<Schedule> responseSchedules = mergeSchedulesForResponse(schedules, updatedSchedules);
 

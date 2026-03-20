@@ -180,6 +180,14 @@ public enum ErrorCode {
     CONFLICT_MESSAGE_ALREADY_DELETED(HttpStatus.CONFLICT, "CONFLICT", "이미 삭제된 메시지입니다."),
     CONFLICT_MESSAGE_REQUEST_PROCESSING(
             HttpStatus.CONFLICT, "CONFLICT", "동일한 요청이 현재 처리 중입니다. 잠시 후 다시 시도해주세요."),
+    VIDEO_ROOM_REQUIRED(
+            HttpStatus.BAD_REQUEST, "VIDEO_ROOM_REQUIRED", "CAM_STUDY 방에서만 WebRTC 토큰을 발급할 수 있습니다."),
+    VIDEO_PARTICIPANT_FORBIDDEN(
+            HttpStatus.FORBIDDEN, "VIDEO_PARTICIPANT_FORBIDDEN", "해당 참여자에 대한 토큰 발급 권한이 없습니다."),
+    VIDEO_TOKEN_ISSUE_FAILED(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "VIDEO_TOKEN_ISSUE_FAILED",
+            "토큰 발급에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
     // Schedule
     CONFLICT_TIME_OVERLAP(HttpStatus.CONFLICT, "CONFLICT", "해당 시간대에 이미 일정이 존재합니다."),
