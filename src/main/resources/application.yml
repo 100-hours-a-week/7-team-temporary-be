@@ -52,9 +52,10 @@ spring:
   data:
     redis:
       enabled: true
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
+      sentinel:
+        master: ${REDIS_SENTINEL_MASTER:mymaster}
+        nodes: ${REDIS_SENTINEL_NODES:${REDIS_HOST}:${REDIS_PORT}}
 
 
 jwt:
