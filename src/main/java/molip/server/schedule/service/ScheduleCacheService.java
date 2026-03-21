@@ -3,6 +3,9 @@ package molip.server.schedule.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -48,6 +51,7 @@ public class ScheduleCacheService {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     private final ConcurrentHashMap<String, LongAdder> keyHits = new ConcurrentHashMap<>();
     private final LongAdder cacheRequestCount = new LongAdder();
@@ -62,6 +66,20 @@ public class ScheduleCacheService {
     private volatile long hotKeyRecomputedAtMillis = 0L;
     private volatile long lastMetricLoggedAtMillis = System.currentTimeMillis();
     private volatile Set<String> hotKeys = Set.of();
+    private Counter scheduleCacheRequestTotal;
+    private Counter scheduleCacheHitTotal;
+
+    @PostConstruct
+    void initMetrics() {
+        scheduleCacheRequestTotal =
+                Counter.builder("schedule_cache_request_total")
+                        .description("Total schedule cache requests")
+                        .register(meterRegistry);
+        scheduleCacheHitTotal =
+                Counter.builder("schedule_cache_hit_total")
+                        .description("Total schedule cache hits")
+                        .register(meterRegistry);
+    }
 
     public DayPlanTodoListResponse getTodoList(
             Long userId,
@@ -116,6 +134,7 @@ public class ScheduleCacheService {
 
     private <T> T getOrLoad(String key, JavaType javaType, Duration ttl, Supplier<T> loader) {
         cacheRequestCount.increment();
+        scheduleCacheRequestTotal.increment();
         rotateWindowIfNeeded();
         countHit(key);
         refreshHotKeysIfNeeded();
@@ -123,6 +142,7 @@ public class ScheduleCacheService {
         T cached = readCache(key, javaType);
         if (cached != null) {
             cacheHitCount.increment();
+            scheduleCacheHitTotal.increment();
             logMetricsIfNeeded();
             return cached;
         }
