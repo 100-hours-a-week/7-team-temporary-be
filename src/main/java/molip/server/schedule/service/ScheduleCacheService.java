@@ -14,6 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import molip.server.common.response.PageResponse;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
 import molip.server.schedule.dto.response.DayPlanTodoListResponse;
@@ -29,6 +30,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ScheduleCacheService {
 
     private static final Duration TODO_LIST_TTL = Duration.ofSeconds(90);
@@ -42,14 +44,23 @@ public class ScheduleCacheService {
     private static final int DISTRIBUTED_LOCK_RETRY_MAX = 3;
     private static final long DISTRIBUTED_LOCK_WAIT_MS = 100L;
     private static final Duration DISTRIBUTED_LOCK_TTL = Duration.ofSeconds(3);
+    private static final long METRIC_LOG_INTERVAL_MS = 60_000L;
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
     private final ConcurrentHashMap<String, LongAdder> keyHits = new ConcurrentHashMap<>();
+    private final LongAdder cacheRequestCount = new LongAdder();
+    private final LongAdder cacheHitCount = new LongAdder();
+    private final LongAdder cacheMissCount = new LongAdder();
+    private final LongAdder cacheEvictCount = new LongAdder();
+    private final LongAdder cacheFallbackCount = new LongAdder();
+    private final LongAdder lockAcquireCount = new LongAdder();
+    private final LongAdder lockWaitHitCount = new LongAdder();
 
     private volatile long windowStartedAtMillis = System.currentTimeMillis();
     private volatile long hotKeyRecomputedAtMillis = 0L;
+    private volatile long lastMetricLoggedAtMillis = System.currentTimeMillis();
     private volatile Set<String> hotKeys = Set.of();
 
     public DayPlanTodoListResponse getTodoList(
@@ -98,24 +109,34 @@ public class ScheduleCacheService {
                     deleteByPrefix("schedule:list:user:" + userId + ":");
                     deleteByPrefix("schedule:excluded:user:" + userId + ":");
                     deleteByPrefix("schedule:period:user:" + userId + ":");
+                    cacheEvictCount.increment();
+                    logMetricsIfNeeded();
                 });
     }
 
     private <T> T getOrLoad(String key, JavaType javaType, Duration ttl, Supplier<T> loader) {
+        cacheRequestCount.increment();
         rotateWindowIfNeeded();
         countHit(key);
         refreshHotKeysIfNeeded();
 
         T cached = readCache(key, javaType);
         if (cached != null) {
+            cacheHitCount.increment();
+            logMetricsIfNeeded();
             return cached;
         }
+        cacheMissCount.increment();
 
         if (!hotKeys.contains(key)) {
-            return loadAndCache(key, javaType, ttl, loader);
+            T loaded = loadAndCache(key, javaType, ttl, loader);
+            logMetricsIfNeeded();
+            return loaded;
         }
 
-        return loadWithDistributedLock(key, javaType, ttl, loader);
+        T loaded = loadWithDistributedLock(key, javaType, ttl, loader);
+        logMetricsIfNeeded();
+        return loaded;
     }
 
     private <T> T loadWithDistributedLock(
@@ -124,6 +145,7 @@ public class ScheduleCacheService {
         String lockToken = UUID.randomUUID().toString();
 
         if (tryAcquireLock(lockKey, lockToken)) {
+            lockAcquireCount.increment();
             try {
                 return loadAndCache(key, javaType, ttl, loader);
             } finally {
@@ -135,10 +157,12 @@ public class ScheduleCacheService {
             sleepQuietly(DISTRIBUTED_LOCK_WAIT_MS);
             T cached = readCache(key, javaType);
             if (cached != null) {
+                lockWaitHitCount.increment();
                 return cached;
             }
         }
 
+        cacheFallbackCount.increment();
         return loadAndCache(key, javaType, ttl, loader);
     }
 
@@ -272,6 +296,38 @@ public class ScheduleCacheService {
 
     private String lockKey(String key) {
         return "schedule:cache:lock:" + key;
+    }
+
+    private void logMetricsIfNeeded() {
+        long now = System.currentTimeMillis();
+        if (now - lastMetricLoggedAtMillis < METRIC_LOG_INTERVAL_MS) {
+            return;
+        }
+        synchronized (this) {
+            if (now - lastMetricLoggedAtMillis < METRIC_LOG_INTERVAL_MS) {
+                return;
+            }
+            long request = cacheRequestCount.sum();
+            long hit = cacheHitCount.sum();
+            long miss = cacheMissCount.sum();
+            long evict = cacheEvictCount.sum();
+            long fallback = cacheFallbackCount.sum();
+            long lockAcquired = lockAcquireCount.sum();
+            long lockWaitHit = lockWaitHitCount.sum();
+            double hitRatio = request == 0 ? 0.0 : (hit * 100.0 / request);
+
+            log.info(
+                    "CACHE_METRIC schedule request={} hit={} miss={} hitRatio={} evict={} fallback={} lockAcquired={} lockWaitHit={}",
+                    request,
+                    hit,
+                    miss,
+                    String.format("%.2f", hitRatio),
+                    evict,
+                    fallback,
+                    lockAcquired,
+                    lockWaitHit);
+            lastMetricLoggedAtMillis = now;
+        }
     }
 
     private String todoListKey(Long userId, Long dayPlanId, int page, int size) {
