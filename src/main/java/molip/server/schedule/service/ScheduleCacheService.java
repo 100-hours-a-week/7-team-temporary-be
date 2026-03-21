@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
@@ -22,6 +22,7 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -38,14 +39,13 @@ public class ScheduleCacheService {
     private static final int HOT_KEY_WINDOW_MINUTES = 5;
     private static final int HOT_KEY_TOP_N = 10;
     private static final long HOT_KEY_REFRESH_MS = 10_000L;
-    private static final int SINGLE_FLIGHT_RETRY_MAX = 3;
-    private static final long SINGLE_FLIGHT_WAIT_MS = 100L;
+    private static final int DISTRIBUTED_LOCK_RETRY_MAX = 3;
+    private static final long DISTRIBUTED_LOCK_WAIT_MS = 100L;
+    private static final Duration DISTRIBUTED_LOCK_TTL = Duration.ofSeconds(3);
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
-    private final ConcurrentHashMap<String, CompletableFuture<Void>> inFlight =
-            new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, LongAdder> keyHits = new ConcurrentHashMap<>();
 
     private volatile long windowStartedAtMillis = System.currentTimeMillis();
@@ -115,26 +115,24 @@ public class ScheduleCacheService {
             return loadAndCache(key, javaType, ttl, loader);
         }
 
-        return loadWithSingleFlight(key, javaType, ttl, loader);
+        return loadWithDistributedLock(key, javaType, ttl, loader);
     }
 
-    private <T> T loadWithSingleFlight(
+    private <T> T loadWithDistributedLock(
             String key, JavaType javaType, Duration ttl, Supplier<T> loader) {
+        String lockKey = lockKey(key);
+        String lockToken = UUID.randomUUID().toString();
 
-        CompletableFuture<Void> marker = new CompletableFuture<>();
-        CompletableFuture<Void> existing = inFlight.putIfAbsent(key, marker);
-
-        if (existing == null) {
+        if (tryAcquireLock(lockKey, lockToken)) {
             try {
                 return loadAndCache(key, javaType, ttl, loader);
             } finally {
-                marker.complete(null);
-                inFlight.remove(key);
+                releaseLock(lockKey, lockToken);
             }
         }
 
-        for (int i = 0; i < SINGLE_FLIGHT_RETRY_MAX; i++) {
-            sleepQuietly(SINGLE_FLIGHT_WAIT_MS);
+        for (int i = 0; i < DISTRIBUTED_LOCK_RETRY_MAX; i++) {
+            sleepQuietly(DISTRIBUTED_LOCK_WAIT_MS);
             T cached = readCache(key, javaType);
             if (cached != null) {
                 return cached;
@@ -142,6 +140,22 @@ public class ScheduleCacheService {
         }
 
         return loadAndCache(key, javaType, ttl, loader);
+    }
+
+    private boolean tryAcquireLock(String lockKey, String lockToken) {
+        Boolean acquired =
+                redisTemplate.opsForValue().setIfAbsent(lockKey, lockToken, DISTRIBUTED_LOCK_TTL);
+        return Boolean.TRUE.equals(acquired);
+    }
+
+    private void releaseLock(String lockKey, String lockToken) {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setResultType(Long.class);
+        script.setScriptText(
+                "if redis.call('get', KEYS[1]) == ARGV[1] then "
+                        + "return redis.call('del', KEYS[1]) "
+                        + "else return 0 end");
+        redisTemplate.execute(script, List.of(lockKey), lockToken);
     }
 
     private <T> T loadAndCache(String key, JavaType javaType, Duration ttl, Supplier<T> loader) {
@@ -254,6 +268,10 @@ public class ScheduleCacheService {
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private String lockKey(String key) {
+        return "schedule:cache:lock:" + key;
     }
 
     private String todoListKey(Long userId, Long dayPlanId, int page, int size) {
