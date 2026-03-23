@@ -55,18 +55,18 @@ public class ReportChatMessageService {
     }
 
     @Transactional
-    public void saveFirstAiSummaryMessage(Report report, String content) {
+    public boolean saveFirstAiSummaryMessage(Report report, String content) {
         if (report == null || report.getId() == null) {
             throw new BaseException(ErrorCode.REPORT_NOT_FOUND_GENERIC);
         }
 
         if (content == null || content.isBlank()) {
-            return;
+            return false;
         }
 
         if (reportChatMessageRepository.existsByReportIdAndDeletedAtIsNullAndIsDeletedFalse(
                 report.getId())) {
-            return;
+            return false;
         }
 
         ReportChatMessage message =
@@ -78,6 +78,8 @@ public class ReportChatMessageService {
                         false,
                         LocalDateTime.now(ZONE_ID));
         reportChatMessageRepository.save(message);
+
+        return true;
     }
 
     @Transactional(readOnly = true)

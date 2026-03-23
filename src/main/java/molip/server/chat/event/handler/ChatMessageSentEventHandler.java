@@ -13,8 +13,12 @@ import molip.server.chat.event.ChatMessageRealtimePayloadFactory;
 import molip.server.chat.event.ChatMessageSentCommittedEvent;
 import molip.server.chat.event.ChatMessageSentEvent;
 import molip.server.chat.facade.ChatRoomQueryFacade;
+import molip.server.chat.redis.presence.RedisChatParticipantPresenceStore;
 import molip.server.chat.service.ChatRoomParticipantService;
+import molip.server.common.enums.MessageType;
+import molip.server.notification.event.ChatMessageNotificationRequestedEvent;
 import molip.server.socket.dto.response.SocketUnreadChangedResponse;
+import molip.server.user.service.UserService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -30,6 +34,8 @@ public class ChatMessageSentEventHandler {
     private final ChatRoomParticipantService chatRoomParticipantService;
     private final ChatRoomQueryFacade chatRoomQueryFacade;
     private final ChatMessageRealtimePayloadFactory chatMessageRealtimePayloadFactory;
+    private final RedisChatParticipantPresenceStore redisChatParticipantPresenceStore;
+    private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
@@ -59,6 +65,12 @@ public class ChatMessageSentEventHandler {
                                                 participantsCount))
                         .toList();
 
+        publishChatMessageNotifications(
+                event.chatRoom().getId(),
+                activeParticipants,
+                event.message(),
+                event.senderUserId());
+
         eventPublisher.publishEvent(
                 new ChatMessageSentCommittedEvent(
                         event.chatRoom().getId(), messageCreated, unreadChanges));
@@ -87,5 +99,44 @@ public class ChatMessageSentEventHandler {
                 row.lastUserMessagePreview(),
                 row.lastUserMessageSentAt(),
                 row.participantsCount());
+    }
+
+    private void publishChatMessageNotifications(
+            Long roomId,
+            List<ChatRoomParticipant> activeParticipants,
+            ChatMessage message,
+            Long senderUserId) {
+        if (senderUserId == null) {
+            return;
+        }
+
+        String senderNickname = userService.getUser(senderUserId).getNickname();
+        String preview = resolveMessagePreview(message);
+
+        activeParticipants.forEach(
+                participant -> {
+                    Long targetUserId = participant.getUser().getId();
+                    if (targetUserId.equals(senderUserId)) {
+                        return;
+                    }
+
+                    if (redisChatParticipantPresenceStore.isOnline(roomId, participant.getId())) {
+                        return;
+                    }
+
+                    eventPublisher.publishEvent(
+                            new ChatMessageNotificationRequestedEvent(
+                                    targetUserId, roomId, senderNickname, preview));
+                });
+    }
+
+    private String resolveMessagePreview(ChatMessage message) {
+        if (message.getMessageType() == MessageType.TEXT
+                && message.getContent() != null
+                && !message.getContent().isBlank()) {
+            return message.getContent();
+        }
+
+        return "새 메시지가 도착했습니다.";
     }
 }

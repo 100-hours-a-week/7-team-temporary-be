@@ -229,3 +229,6 @@ webrtc:
   presence-ttl-seconds: ${WEBRTC_PRESENCE_TTL_SECONDS:45}
   log-verbose: ${WEBRTC_LOG_VERBOSE:false}
   metrics-enabled: ${WEBRTC_METRICS_ENABLED:true}
+
+chat:
+  presence-ttl-seconds: ${CHAT_PRESENCE_TTL_SECONDS:45}

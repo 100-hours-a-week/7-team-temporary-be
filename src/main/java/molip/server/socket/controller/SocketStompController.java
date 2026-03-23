@@ -3,6 +3,9 @@ package molip.server.socket.controller;
 import lombok.RequiredArgsConstructor;
 import molip.server.chat.dto.request.UpdateLastReadMessageRequest;
 import molip.server.chat.facade.ChatRoomCommandFacade;
+import molip.server.socket.dto.request.SocketChatParticipantHeartbeatRequest;
+import molip.server.socket.dto.request.SocketChatParticipantOfflineRequest;
+import molip.server.socket.dto.request.SocketChatParticipantOnlineRequest;
 import molip.server.socket.dto.request.SocketConnectRequest;
 import molip.server.socket.dto.request.SocketDisconnectRequest;
 import molip.server.socket.dto.request.SocketLastSeenUpdateRequest;
@@ -21,6 +24,7 @@ import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.dto.response.SocketVideoReconnectRequiredResponse;
 import molip.server.socket.service.SocketHandshakeService;
 import molip.server.socket.service.SocketReportMessageService;
+import molip.server.socket.service.SocketRoomChatPresenceService;
 import molip.server.socket.service.SocketRoomMessageService;
 import molip.server.socket.service.SocketRoomSubscriptionService;
 import molip.server.socket.service.SocketRoomVideoService;
@@ -40,6 +44,7 @@ public class SocketStompController {
     private final SocketRoomSubscriptionService socketRoomSubscriptionService;
     private final SocketRoomMessageService socketRoomMessageService;
     private final SocketRoomVideoService socketRoomVideoService;
+    private final SocketRoomChatPresenceService socketRoomChatPresenceService;
     private final SocketReportMessageService socketReportMessageService;
     private final SocketSessionSupport socketSessionSupport;
 
@@ -253,6 +258,48 @@ public class SocketStompController {
                         sessionContext ->
                                 socketRoomVideoService.markOffline(
                                         sessionContext.userId(), sessionId, request),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
+    }
+
+    @MessageMapping("/room/chat/online")
+    public void markChatParticipantOnline(
+            SocketChatParticipantOnlineRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresentOrElse(
+                        sessionContext ->
+                                socketRoomChatPresenceService.markOnline(
+                                        sessionContext.userId(), request),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
+    }
+
+    @MessageMapping("/room/chat/heartbeat")
+    public void heartbeatChatParticipant(
+            SocketChatParticipantHeartbeatRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresentOrElse(
+                        sessionContext ->
+                                socketRoomChatPresenceService.heartbeat(
+                                        sessionContext.userId(), request),
+                        () -> socketHandshakeService.requireReconnect(sessionId));
+    }
+
+    @MessageMapping("/room/chat/offline")
+    public void markChatParticipantOffline(
+            SocketChatParticipantOfflineRequest request,
+            @Header("simpSessionId") String sessionId,
+            SimpMessageHeaderAccessor headerAccessor) {
+        socketSessionSupport
+                .getSessionContext(headerAccessor)
+                .ifPresentOrElse(
+                        sessionContext ->
+                                socketRoomChatPresenceService.markOffline(
+                                        sessionContext.userId(), request),
                         () -> socketHandshakeService.requireReconnect(sessionId));
     }
 

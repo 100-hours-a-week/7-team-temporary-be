@@ -14,6 +14,7 @@ import molip.server.ai.dto.response.AiWeeklyReportFetchResponse;
 import molip.server.ai.dto.response.AiWeeklyReportFetchResponse.WeeklyReportFetchResult;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
+import molip.server.notification.event.ReportCreatedEvent;
 import molip.server.report.entity.Report;
 import molip.server.report.repository.ReportRepository;
 import molip.server.report.service.ReportChatMessageService;
@@ -24,6 +25,7 @@ import org.springframework.batch.core.step.StepContribution;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -40,6 +42,7 @@ public class WeeklyAiReportFetchTasklet implements Tasklet {
     private final AiWeeklyReportFetchClient aiWeeklyReportFetchClient;
     private final ReportRepository reportRepository;
     private final ReportChatMessageService reportChatMessageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${batch.weekly.report-fetch.initial-delay-ms:1800000}")
     private long initialDelayMs;
@@ -170,8 +173,14 @@ public class WeeklyAiReportFetchTasklet implements Tasklet {
                 Report report = reportById.get(result.reportId());
 
                 if (report != null) {
-                    reportChatMessageService.saveFirstAiSummaryMessage(report, result.content());
-                    successCount += 1;
+                    boolean created =
+                            reportChatMessageService.saveFirstAiSummaryMessage(
+                                    report, result.content());
+                    if (created) {
+                        eventPublisher.publishEvent(
+                                new ReportCreatedEvent(report.getUser().getId(), report.getId()));
+                    }
+                    successCount += created ? 1 : 0;
                     pendingTargets.remove(result.reportId());
                 }
 

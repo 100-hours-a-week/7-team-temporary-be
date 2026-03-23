@@ -154,6 +154,64 @@ public class NotificationService {
     }
 
     @Transactional
+    public void createPostLikedNotification(Users user, String likerNickname) {
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                null,
+                                NotificationType.POST_LIKED,
+                                buildPostLikedTitle(likerNickname),
+                                "회고를 확인해보세요.",
+                                NotificationStatus.PENDING,
+                                LocalDateTime.now()));
+
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
+    }
+
+    @Transactional
+    public void createReportCreatedNotification(Users user, Long reportId) {
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                reportId,
+                                NotificationType.REPORT_CREATED,
+                                NotificationTitle.REPORT_CREATED.getValue(),
+                                "새로운 주간 리포트가 생성되었습니다.",
+                                NotificationStatus.PENDING,
+                                LocalDateTime.now()));
+
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
+    }
+
+    @Transactional
+    public void createChatMessageNotification(
+            Users user, Long roomId, String senderNickname, String messagePreview) {
+        Notification notification =
+                notificationRepository.save(
+                        new Notification(
+                                user,
+                                roomId,
+                                NotificationType.CHAT_MESSAGE,
+                                buildChatMessageTitle(senderNickname),
+                                buildChatMessageContent(messagePreview),
+                                NotificationStatus.PENDING,
+                                LocalDateTime.now()));
+
+        outboxEventService.recordCreated(
+                AggregateType.NOTIFICATION,
+                notification.getId(),
+                OutboxPayloadMapper.notification(notification));
+    }
+
+    @Transactional
     public void markSent(Notification notification, LocalDateTime sentAt) {
 
         notification.markSent(sentAt);
@@ -218,5 +276,20 @@ public class NotificationService {
 
     private String buildFriendCreatedTitle(String accepterNickname) {
         return accepterNickname + "님이 친구 요청을 수락했습니다.";
+    }
+
+    private String buildPostLikedTitle(String likerNickname) {
+        return likerNickname + "님이 회고에 좋아요를 눌렀습니다.";
+    }
+
+    private String buildChatMessageTitle(String senderNickname) {
+        return senderNickname + "님의 새 메시지";
+    }
+
+    private String buildChatMessageContent(String messagePreview) {
+        if (messagePreview == null || messagePreview.isBlank()) {
+            return NotificationTitle.CHAT_MESSAGE.getValue();
+        }
+        return messagePreview;
     }
 }
