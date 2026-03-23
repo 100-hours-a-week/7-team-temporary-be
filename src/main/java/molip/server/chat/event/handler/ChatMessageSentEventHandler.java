@@ -2,6 +2,7 @@ package molip.server.chat.event.handler;
 
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import molip.server.chat.event.ChatMessageSentEvent;
 import molip.server.chat.facade.ChatRoomQueryFacade;
 import molip.server.chat.redis.presence.RedisChatParticipantPresenceStore;
 import molip.server.chat.service.ChatRoomParticipantService;
-import molip.server.common.enums.MessageType;
 import molip.server.notification.event.ChatMessageNotificationRequestedEvent;
 import molip.server.notification.metrics.ChatMessageAlertMetrics;
 import molip.server.socket.dto.response.SocketUnreadChangedResponse;
@@ -66,12 +66,20 @@ public class ChatMessageSentEventHandler {
                                                 event.message(),
                                                 participantsCount))
                         .toList();
+        Map<Long, Integer> unreadByUserId =
+                unreadChanges.stream()
+                        .collect(
+                                java.util.stream.Collectors.toMap(
+                                        SocketUnreadChangedResponse::userId,
+                                        SocketUnreadChangedResponse::unreadCount,
+                                        (left, right) -> right));
 
         publishChatMessageNotifications(
                 event.chatRoom().getId(),
                 activeParticipants,
                 event.message(),
-                event.senderUserId());
+                event.senderUserId(),
+                unreadByUserId);
 
         eventPublisher.publishEvent(
                 new ChatMessageSentCommittedEvent(
@@ -107,14 +115,14 @@ public class ChatMessageSentEventHandler {
             Long roomId,
             List<ChatRoomParticipant> activeParticipants,
             ChatMessage message,
-            Long senderUserId) {
+            Long senderUserId,
+            Map<Long, Integer> unreadByUserId) {
         if (senderUserId == null) {
             return;
         }
 
         String senderNickname = userService.getUser(senderUserId).getNickname();
         String preview = resolveMessagePreview(message);
-        int offlineTargets = 0;
         int requestedCount = 0;
 
         for (ChatRoomParticipant participant : activeParticipants) {
@@ -127,29 +135,30 @@ public class ChatMessageSentEventHandler {
                 continue;
             }
 
-            offlineTargets++;
             requestedCount++;
             eventPublisher.publishEvent(
                     new ChatMessageNotificationRequestedEvent(
-                            targetUserId, roomId, senderNickname, preview));
+                            targetUserId,
+                            roomId,
+                            message.getId(),
+                            unreadByUserId.getOrDefault(targetUserId, 0),
+                            senderUserId,
+                            senderNickname,
+                            preview));
         }
 
-        chatMessageAlertMetrics.recordMessageFanout(offlineTargets, requestedCount);
+        chatMessageAlertMetrics.recordMessageEvent();
         log.info(
-                "chat message alert fanout: roomId={}, messageId={}, offlineTargets={}, requested={}",
+                "chat message alert fanout: roomId={}, messageId={}, requested={}",
                 roomId,
                 message.getId(),
-                offlineTargets,
                 requestedCount);
     }
 
     private String resolveMessagePreview(ChatMessage message) {
-        if (message.getMessageType() == MessageType.TEXT
-                && message.getContent() != null
-                && !message.getContent().isBlank()) {
-            return message.getContent();
+        if (message == null || message.getContent() == null || message.getContent().isBlank()) {
+            return "새 메시지가 도착했습니다.";
         }
-
-        return "새 메시지가 도착했습니다.";
+        return message.getContent();
     }
 }

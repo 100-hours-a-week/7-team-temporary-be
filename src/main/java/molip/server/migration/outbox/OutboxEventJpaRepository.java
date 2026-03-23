@@ -17,6 +17,17 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEvent, Lon
 
     @Query(
             "select e from OutboxEvent e "
+                    + "where e.aggregateType = :aggregateType "
+                    + "and e.eventType = :eventType "
+                    + "and e.aggregateId in :aggregateIds "
+                    + "order by e.id desc")
+    List<OutboxEvent> findLatestByAggregateIds(
+            @Param("aggregateType") String aggregateType,
+            @Param("eventType") String eventType,
+            @Param("aggregateIds") List<String> aggregateIds);
+
+    @Query(
+            "select e from OutboxEvent e "
                     + "where e.status = :status and e.retryCount < :maxRetryCount and e.updatedAt <= :retryBefore "
                     + "order by e.id asc")
     List<OutboxEvent> findRetryableFailed(

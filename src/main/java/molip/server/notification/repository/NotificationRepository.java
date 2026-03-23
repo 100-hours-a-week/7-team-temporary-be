@@ -27,12 +27,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             "select n from Notification n "
                     + "where n.user.id = :userId "
                     + "and n.status = :status "
+                    + "and n.type <> :excludedType "
                     + "and n.sentAt is not null "
                     + "and n.deletedAt is null "
                     + "order by n.sentAt desc")
     Page<Notification> findSentNotifications(
             @Param("userId") Long userId,
             @Param("status") NotificationStatus status,
+            @Param("excludedType") NotificationType excludedType,
             Pageable pageable);
 
     @Query(

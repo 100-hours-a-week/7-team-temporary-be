@@ -5,6 +5,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.MulticastMessage;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,23 +20,25 @@ public class FcmNotificationSender implements NotificationSender {
     private final FirebaseMessaging firebaseMessaging;
 
     @Override
-    public void send(String title, String content, List<String> tokens) {
+    public void send(String title, String content, Map<String, String> data, List<String> tokens) {
 
         if (tokens == null || tokens.isEmpty()) {
             return;
         }
 
-        MulticastMessage message =
-                MulticastMessage.builder()
-                        .addAllTokens(tokens)
-                        .putData("title", title)
-                        .putData("content", content)
-                        .build();
+        MulticastMessage.Builder messageBuilder = MulticastMessage.builder().addAllTokens(tokens);
+        messageBuilder.putData("title", title);
+        messageBuilder.putData("content", content);
+        if (data != null && !data.isEmpty()) {
+            messageBuilder.putAllData(data);
+        }
+        MulticastMessage message = messageBuilder.build();
 
         try {
             log.info(
-                    "FCM send requested. tokensCount={}, dataKeys=[title, content], title=\"{}\", content=\"{}\"",
+                    "FCM send requested. tokensCount={}, dataKeys={}, title=\"{}\", content=\"{}\"",
                     tokens.size(),
+                    data == null ? List.of("title", "content") : data.keySet(),
                     title,
                     content);
             BatchResponse response = firebaseMessaging.sendEachForMulticast(message);

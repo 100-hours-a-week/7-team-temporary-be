@@ -194,6 +194,15 @@ public final class OutboxPayloadMapper {
         return payload;
     }
 
+    public static Map<String, Object> notification(
+            Notification notification, Map<String, Object> extraPayload) {
+        Map<String, Object> payload = notification(notification);
+        if (extraPayload != null && !extraPayload.isEmpty()) {
+            payload.putAll(extraPayload);
+        }
+        return payload;
+    }
+
     public static Map<String, Object> userFcmToken(UserFcmToken token) {
         Map<String, Object> payload = baseEntityPayload(token.getId(), token.getVersion());
         payload.put("user_id", token.getUser().getId());

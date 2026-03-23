@@ -1,7 +1,9 @@
 package molip.server.notification.metrics;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
@@ -20,83 +22,60 @@ public class ChatMessageAlertMetrics {
     private final MeterRegistry meterRegistry;
 
     private final LongAdder messageEventTotal = new LongAdder();
-    private final LongAdder offlineTargetTotal = new LongAdder();
-    private final LongAdder notificationRequestedTotal = new LongAdder();
     private final LongAdder notificationCreatedTotal = new LongAdder();
-    private final LongAdder dispatchPendingChatTotal = new LongAdder();
     private final LongAdder dispatchAttemptTotal = new LongAdder();
     private final LongAdder dispatchSentTotal = new LongAdder();
-    private final LongAdder dispatchFailedTotal = new LongAdder();
-    private final LongAdder dispatchNoTokenTotal = new LongAdder();
+    private final LongAdder dispatchLagTotalMs = new LongAdder();
+    private final LongAdder dispatchLagCount = new LongAdder();
 
     private volatile long lastLoggedAtMillis = System.currentTimeMillis();
+    private Counter messageEventCounter;
+    private Counter notificationCreatedCounter;
+    private Counter dispatchAttemptCounter;
+    private Counter dispatchSentCounter;
+    private Timer dispatchLagTimer;
 
-    public void recordMessageFanout(int offlineTargets, int requestedCount) {
+    @PostConstruct
+    void initMeters() {
+        messageEventCounter = meterRegistry.counter("chat_alert_message_event_total");
+        notificationCreatedCounter = meterRegistry.counter("chat_alert_notification_created_total");
+        dispatchAttemptCounter = meterRegistry.counter("chat_alert_dispatch_attempt_total");
+        dispatchSentCounter = meterRegistry.counter("chat_alert_dispatch_sent_total");
+        dispatchLagTimer =
+                Timer.builder("chat_alert_dispatch_lag_ms")
+                        .description(
+                                "Lag from notification scheduledAt to sentAt for chat message alert")
+                        .register(meterRegistry);
+    }
+
+    public void recordMessageEvent() {
         messageEventTotal.increment();
-        if (offlineTargets > 0) {
-            offlineTargetTotal.add(offlineTargets);
-        }
-        if (requestedCount > 0) {
-            notificationRequestedTotal.add(requestedCount);
-        }
-
-        meterRegistry.counter("chat_alert_message_event_total").increment();
-        if (offlineTargets > 0) {
-            meterRegistry.counter("chat_alert_offline_target_total").increment(offlineTargets);
-        }
-        if (requestedCount > 0) {
-            meterRegistry
-                    .counter("chat_alert_notification_requested_total")
-                    .increment(requestedCount);
-        }
+        messageEventCounter.increment();
         logIfNeeded();
     }
 
     public void recordNotificationCreated() {
         notificationCreatedTotal.increment();
-        meterRegistry.counter("chat_alert_notification_created_total").increment();
-        logIfNeeded();
-    }
-
-    public void recordDispatchPendingChat(int pendingChatCount) {
-        if (pendingChatCount <= 0) {
-            return;
-        }
-        dispatchPendingChatTotal.add(pendingChatCount);
-        meterRegistry.counter("chat_alert_dispatch_pending_chat_total").increment(pendingChatCount);
+        notificationCreatedCounter.increment();
         logIfNeeded();
     }
 
     public void recordDispatchAttempt() {
         dispatchAttemptTotal.increment();
-        meterRegistry.counter("chat_alert_dispatch_attempt_total").increment();
+        dispatchAttemptCounter.increment();
         logIfNeeded();
     }
 
     public void recordDispatchSent(LocalDateTime scheduledAt, LocalDateTime sentAt) {
         dispatchSentTotal.increment();
-        meterRegistry.counter("chat_alert_dispatch_sent_total").increment();
+        dispatchSentCounter.increment();
 
         if (scheduledAt != null && sentAt != null) {
             long lagMillis = Math.max(0L, Duration.between(scheduledAt, sentAt).toMillis());
-            Timer.builder("chat_alert_dispatch_lag_ms")
-                    .description(
-                            "Lag from notification scheduledAt to sentAt for chat message alert")
-                    .register(meterRegistry)
-                    .record(lagMillis, TimeUnit.MILLISECONDS);
+            dispatchLagTotalMs.add(lagMillis);
+            dispatchLagCount.increment();
+            dispatchLagTimer.record(lagMillis, TimeUnit.MILLISECONDS);
         }
-        logIfNeeded();
-    }
-
-    public void recordDispatchFailed() {
-        dispatchFailedTotal.increment();
-        meterRegistry.counter("chat_alert_dispatch_failed_total").increment();
-        logIfNeeded();
-    }
-
-    public void recordDispatchNoToken() {
-        dispatchNoTokenTotal.increment();
-        meterRegistry.counter("chat_alert_dispatch_no_token_total").increment();
         logIfNeeded();
     }
 
@@ -111,31 +90,23 @@ public class ChatMessageAlertMetrics {
             }
 
             long event = messageEventTotal.sum();
-            long offline = offlineTargetTotal.sum();
-            long requested = notificationRequestedTotal.sum();
             long created = notificationCreatedTotal.sum();
-            long pending = dispatchPendingChatTotal.sum();
             long attempt = dispatchAttemptTotal.sum();
             long sent = dispatchSentTotal.sum();
-            long failed = dispatchFailedTotal.sum();
-            long noToken = dispatchNoTokenTotal.sum();
+            long lagTotalMs = dispatchLagTotalMs.sum();
+            long lagCount = dispatchLagCount.sum();
 
-            double requestPerEvent = event == 0 ? 0.0 : requested * 1.0 / event;
             double sendRate = attempt == 0 ? 0.0 : (sent * 100.0 / attempt);
+            double avgLagMs = lagCount == 0 ? 0.0 : (lagTotalMs * 1.0 / lagCount);
 
             log.info(
-                    "ALERT_METRIC chat_message event={} offlineTarget={} requested={} created={} pending={} attempt={} sent={} failed={} noToken={} requestPerEvent={} sendRate={}",
+                    "ALERT_METRIC chat_message event={} created={} attempt={} sent={} sendRate={} lagAvgMs={}",
                     event,
-                    offline,
-                    requested,
                     created,
-                    pending,
                     attempt,
                     sent,
-                    failed,
-                    noToken,
-                    String.format("%.2f", requestPerEvent),
-                    String.format("%.2f", sendRate));
+                    String.format("%.2f", sendRate),
+                    String.format("%.2f", avgLagMs));
 
             lastLoggedAtMillis = now;
         }
