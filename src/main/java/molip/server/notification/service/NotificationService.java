@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.NotificationStatus;
 import molip.server.common.enums.NotificationTitle;
@@ -48,7 +49,10 @@ public class NotificationService {
         validatePage(page, size);
 
         return notificationRepository.findSentNotifications(
-                userId, NotificationStatus.SENT, PageRequest.of(page - 1, size));
+                userId,
+                NotificationStatus.SENT,
+                NotificationType.CHAT_MESSAGE,
+                PageRequest.of(page - 1, size));
     }
 
     @Transactional
@@ -156,12 +160,12 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createPostLikedNotification(Users user, String likerNickname) {
+    public void createPostLikedNotification(Users user, Long reflectionId, String likerNickname) {
         Notification notification =
                 notificationRepository.save(
                         new Notification(
                                 user,
-                                null,
+                                reflectionId,
                                 NotificationType.POST_LIKED,
                                 buildPostLikedTitle(likerNickname),
                                 "회고를 확인해보세요.",
@@ -171,7 +175,8 @@ public class NotificationService {
         outboxEventService.recordCreated(
                 AggregateType.NOTIFICATION,
                 notification.getId(),
-                OutboxPayloadMapper.notification(notification));
+                OutboxPayloadMapper.notification(
+                        notification, Map.of("reflection_id", reflectionId)));
     }
 
     @Transactional
@@ -195,7 +200,14 @@ public class NotificationService {
 
     @Transactional
     public void createChatMessageNotification(
-            Users user, Long roomId, String senderNickname, String messagePreview) {
+            Users user,
+            Long roomId,
+            Long messageId,
+            Integer unreadCount,
+            Long senderUserId,
+            String senderNickname,
+            String messagePreview) {
+        String content = buildChatMessageContent(messagePreview);
         Notification notification =
                 notificationRepository.save(
                         new Notification(
@@ -203,14 +215,21 @@ public class NotificationService {
                                 roomId,
                                 NotificationType.CHAT_MESSAGE,
                                 buildChatMessageTitle(senderNickname),
-                                buildChatMessageContent(messagePreview),
+                                content,
                                 NotificationStatus.PENDING,
                                 LocalDateTime.now()));
 
         outboxEventService.recordCreated(
                 AggregateType.NOTIFICATION,
                 notification.getId(),
-                OutboxPayloadMapper.notification(notification));
+                OutboxPayloadMapper.notification(
+                        notification,
+                        Map.of(
+                                "room_id", roomId,
+                                "message_id", messageId,
+                                "unread_count", unreadCount,
+                                "sender_user_id", senderUserId,
+                                "sender_nickname", senderNickname)));
         chatMessageAlertMetrics.recordNotificationCreated();
     }
 
@@ -286,7 +305,7 @@ public class NotificationService {
     }
 
     private String buildChatMessageTitle(String senderNickname) {
-        return senderNickname + "님의 새 메시지";
+        return NotificationTitle.CHAT_MESSAGE.getValue();
     }
 
     private String buildChatMessageContent(String messagePreview) {
