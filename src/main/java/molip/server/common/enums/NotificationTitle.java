@@ -6,8 +6,8 @@ public enum NotificationTitle {
     FRIEND_REQUESTED("친구 요청이 도착했습니다."),
     FRIEND_CREATED("친구 관계가 생성되었습니다."),
     POST_LIKED("회고 좋아요 알림"),
-    REPORT_CREATED("지난주 활동 요약 리포트가 생성되었습니다."),
-    CHAT_MESSAGE("새로운 채팅 메시지가 도착했습니다.");
+    REPORT_CREATED("주간 리포트가 생성되었습니다."),
+    CHAT_MESSAGE("새로운 메시지가 도착했습니다.");
 
     private final String value;
 

@@ -55,7 +55,8 @@ public class NotificationCommandFacade {
     @Transactional
     public void createPostLikedNotification(PostLikedEvent event) {
         Users user = userService.getUser(event.targetUserId());
-        notificationService.createPostLikedNotification(user, event.likerNickname());
+        notificationService.createPostLikedNotification(
+                user, event.reflectionId(), event.likerNickname());
     }
 
     @Transactional
@@ -69,6 +70,12 @@ public class NotificationCommandFacade {
         Users user = userService.getUser(event.targetUserId());
 
         notificationService.createChatMessageNotification(
-                user, event.roomId(), event.senderNickname(), event.messagePreview());
+                user,
+                event.roomId(),
+                event.messageId(),
+                event.unreadCount(),
+                event.senderUserId(),
+                event.senderNickname(),
+                event.messagePreview());
     }
 }

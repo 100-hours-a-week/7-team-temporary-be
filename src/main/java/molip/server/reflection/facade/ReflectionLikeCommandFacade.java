@@ -49,7 +49,8 @@ public class ReflectionLikeCommandFacade {
 
         if (!reflection.getUser().getId().equals(userId)) {
             eventPublisher.publishEvent(
-                    new PostLikedEvent(reflection.getUser().getId(), user.getNickname()));
+                    new PostLikedEvent(
+                            reflection.getUser().getId(), reflection.getId(), user.getNickname()));
         }
     }
 

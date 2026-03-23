@@ -1,6 +1,7 @@
 package molip.server.notification.sender;
 
 import java.util.List;
+import java.util.Map;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -9,5 +10,5 @@ import org.springframework.stereotype.Component;
 public class NoopNotificationSender implements NotificationSender {
 
     @Override
-    public void send(String title, String content, List<String> tokens) {}
+    public void send(String title, String content, Map<String, String> data, List<String> tokens) {}
 }
