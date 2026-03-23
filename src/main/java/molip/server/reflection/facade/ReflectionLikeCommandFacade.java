@@ -6,12 +6,14 @@ import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
+import molip.server.notification.event.PostLikedEvent;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.entity.ReflectionLike;
 import molip.server.reflection.service.ReflectionLikeService;
 import molip.server.reflection.service.ReflectionService;
 import molip.server.user.entity.Users;
 import molip.server.user.service.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class ReflectionLikeCommandFacade {
     private final ReflectionService reflectionService;
     private final UserService userService;
     private final OutboxEventService outboxEventService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void likeReflection(Long userId, Long reflectionId) {
@@ -43,6 +46,11 @@ public class ReflectionLikeCommandFacade {
                 AggregateType.REFLECTION_LIKE,
                 savedLike.getId(),
                 OutboxPayloadMapper.reflectionLike(savedLike));
+
+        if (!reflection.getUser().getId().equals(userId)) {
+            eventPublisher.publishEvent(
+                    new PostLikedEvent(reflection.getUser().getId(), user.getNickname()));
+        }
     }
 
     @Transactional

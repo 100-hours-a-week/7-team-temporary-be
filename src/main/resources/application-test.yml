@@ -129,3 +129,6 @@ webrtc:
   session-sync-backoff-ms: 500
   log-verbose: false
   metrics-enabled: false
+
+chat:
+  presence-ttl-seconds: 45
