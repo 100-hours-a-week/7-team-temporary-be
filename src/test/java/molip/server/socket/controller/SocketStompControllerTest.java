@@ -17,6 +17,7 @@ import molip.server.socket.dto.request.SocketUserSubscribeRequest;
 import molip.server.socket.dto.response.SocketEventResponse;
 import molip.server.socket.service.SocketHandshakeService;
 import molip.server.socket.service.SocketReportMessageService;
+import molip.server.socket.service.SocketRoomChatPresenceService;
 import molip.server.socket.service.SocketRoomMessageService;
 import molip.server.socket.service.SocketRoomSubscriptionService;
 import molip.server.socket.service.SocketRoomVideoService;
@@ -40,6 +41,7 @@ class SocketStompControllerTest {
     @Mock private SocketRoomSubscriptionService socketRoomSubscriptionService;
     @Mock private SocketRoomMessageService socketRoomMessageService;
     @Mock private SocketRoomVideoService socketRoomVideoService;
+    @Mock private SocketRoomChatPresenceService socketRoomChatPresenceService;
     @Mock private SocketReportMessageService socketReportMessageService;
     @Mock private SocketSessionSupport socketSessionSupport;
 
@@ -52,6 +54,7 @@ class SocketStompControllerTest {
                         socketRoomSubscriptionService,
                         socketRoomMessageService,
                         socketRoomVideoService,
+                        socketRoomChatPresenceService,
                         socketReportMessageService,
                         socketSessionSupport);
     }

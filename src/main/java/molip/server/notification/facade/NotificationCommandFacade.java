@@ -1,9 +1,12 @@
 package molip.server.notification.facade;
 
 import lombok.RequiredArgsConstructor;
+import molip.server.notification.event.ChatMessageNotificationRequestedEvent;
 import molip.server.notification.event.FriendCreatedEvent;
 import molip.server.notification.event.FriendRequestedEvent;
 import molip.server.notification.event.NotificationCreatedEvent;
+import molip.server.notification.event.PostLikedEvent;
+import molip.server.notification.event.ReportCreatedEvent;
 import molip.server.notification.event.ScheduleReminderResetEvent;
 import molip.server.notification.service.NotificationService;
 import molip.server.user.entity.Users;
@@ -47,5 +50,25 @@ public class NotificationCommandFacade {
         Users user = userService.getUser(event.targetUserId());
 
         notificationService.createFriendCreatedNotification(user, event.accepterNickname());
+    }
+
+    @Transactional
+    public void createPostLikedNotification(PostLikedEvent event) {
+        Users user = userService.getUser(event.targetUserId());
+        notificationService.createPostLikedNotification(user, event.likerNickname());
+    }
+
+    @Transactional
+    public void createReportCreatedNotification(ReportCreatedEvent event) {
+        Users user = userService.getUser(event.targetUserId());
+        notificationService.createReportCreatedNotification(user, event.reportId());
+    }
+
+    @Transactional
+    public void createChatMessageNotification(ChatMessageNotificationRequestedEvent event) {
+        Users user = userService.getUser(event.targetUserId());
+
+        notificationService.createChatMessageNotification(
+                user, event.roomId(), event.senderNickname(), event.messagePreview());
     }
 }

@@ -64,6 +64,7 @@ public class WeeklyScoreItemWriter implements ItemWriter<Users>, StepExecutionLi
                         scheduleRepository,
                         reportRepository,
                         reportDailyStatRepository);
+
                 trackingService.markStepFinished(stepRun.getId(), BatchStepStatus.SUCCESS, null);
             } catch (Exception e) {
                 trackingService.markStepFinished(
