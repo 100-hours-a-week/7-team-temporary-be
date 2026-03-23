@@ -188,7 +188,7 @@ public class NotificationService {
                                 reportId,
                                 NotificationType.REPORT_CREATED,
                                 NotificationTitle.REPORT_CREATED.getValue(),
-                                "새로운 주간 리포트가 생성되었습니다.",
+                                "새로운 리포트를 확인해보세요.",
                                 NotificationStatus.PENDING,
                                 LocalDateTime.now()));
 
