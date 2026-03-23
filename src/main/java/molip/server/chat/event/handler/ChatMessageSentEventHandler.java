@@ -17,6 +17,7 @@ import molip.server.chat.redis.presence.RedisChatParticipantPresenceStore;
 import molip.server.chat.service.ChatRoomParticipantService;
 import molip.server.common.enums.MessageType;
 import molip.server.notification.event.ChatMessageNotificationRequestedEvent;
+import molip.server.notification.metrics.ChatMessageAlertMetrics;
 import molip.server.socket.dto.response.SocketUnreadChangedResponse;
 import molip.server.user.service.UserService;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,6 +37,7 @@ public class ChatMessageSentEventHandler {
     private final ChatMessageRealtimePayloadFactory chatMessageRealtimePayloadFactory;
     private final RedisChatParticipantPresenceStore redisChatParticipantPresenceStore;
     private final UserService userService;
+    private final ChatMessageAlertMetrics chatMessageAlertMetrics;
     private final ApplicationEventPublisher eventPublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
@@ -112,22 +114,33 @@ public class ChatMessageSentEventHandler {
 
         String senderNickname = userService.getUser(senderUserId).getNickname();
         String preview = resolveMessagePreview(message);
+        int offlineTargets = 0;
+        int requestedCount = 0;
 
-        activeParticipants.forEach(
-                participant -> {
-                    Long targetUserId = participant.getUser().getId();
-                    if (targetUserId.equals(senderUserId)) {
-                        return;
-                    }
+        for (ChatRoomParticipant participant : activeParticipants) {
+            Long targetUserId = participant.getUser().getId();
+            if (targetUserId.equals(senderUserId)) {
+                continue;
+            }
 
-                    if (redisChatParticipantPresenceStore.isOnline(roomId, participant.getId())) {
-                        return;
-                    }
+            if (redisChatParticipantPresenceStore.isOnline(roomId, participant.getId())) {
+                continue;
+            }
 
-                    eventPublisher.publishEvent(
-                            new ChatMessageNotificationRequestedEvent(
-                                    targetUserId, roomId, senderNickname, preview));
-                });
+            offlineTargets++;
+            requestedCount++;
+            eventPublisher.publishEvent(
+                    new ChatMessageNotificationRequestedEvent(
+                            targetUserId, roomId, senderNickname, preview));
+        }
+
+        chatMessageAlertMetrics.recordMessageFanout(offlineTargets, requestedCount);
+        log.info(
+                "chat message alert fanout: roomId={}, messageId={}, offlineTargets={}, requested={}",
+                roomId,
+                message.getId(),
+                offlineTargets,
+                requestedCount);
     }
 
     private String resolveMessagePreview(ChatMessage message) {

@@ -17,6 +17,7 @@ import molip.server.migration.event.OutboxPayloadMapper;
 import molip.server.migration.outbox.OutboxEventService;
 import molip.server.notification.entity.Notification;
 import molip.server.notification.event.NotificationCreatedEvent;
+import molip.server.notification.metrics.ChatMessageAlertMetrics;
 import molip.server.notification.repository.NotificationRepository;
 import molip.server.user.entity.Users;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final OutboxEventService outboxEventService;
+    private final ChatMessageAlertMetrics chatMessageAlertMetrics;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 
@@ -209,6 +211,7 @@ public class NotificationService {
                 AggregateType.NOTIFICATION,
                 notification.getId(),
                 OutboxPayloadMapper.notification(notification));
+        chatMessageAlertMetrics.recordNotificationCreated();
     }
 
     @Transactional
