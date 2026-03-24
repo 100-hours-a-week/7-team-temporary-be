@@ -1,10 +1,11 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.core.service;
 
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.ChangeType;
 import molip.server.migration.event.DomainEvent;
+import molip.server.outbox.core.repository.OutboxRepository;
 import org.springframework.stereotype.Service;
 
 @Service

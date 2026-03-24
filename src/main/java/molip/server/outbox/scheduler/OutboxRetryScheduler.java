@@ -1,9 +1,11 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.scheduler;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import molip.server.outbox.core.model.OutboxRecord;
+import molip.server.outbox.core.repository.OutboxRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;

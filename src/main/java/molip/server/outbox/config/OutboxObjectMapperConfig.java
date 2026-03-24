@@ -1,4 +1,4 @@
-package molip.server.migration.outbox.config;
+package molip.server.outbox.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

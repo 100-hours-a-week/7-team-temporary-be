@@ -1,4 +1,4 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.core.model;
 
 public enum OutboxStatus {
     PENDING,

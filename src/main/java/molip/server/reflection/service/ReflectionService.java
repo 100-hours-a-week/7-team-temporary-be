@@ -11,7 +11,7 @@ import molip.server.common.exception.ErrorCode;
 import molip.server.image.entity.Image;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.reflection.dto.cache.ReflectionCachePayload;
 import molip.server.reflection.entity.DayReflection;
 import molip.server.reflection.event.DayReflectionImagesCreateEvent;

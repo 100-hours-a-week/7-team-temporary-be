@@ -14,13 +14,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import molip.server.common.enums.NotificationStatus;
 import molip.server.common.enums.NotificationType;
-import molip.server.migration.outbox.OutboxEvent;
-import molip.server.migration.outbox.OutboxEventJpaRepository;
 import molip.server.notification.entity.Notification;
 import molip.server.notification.metrics.ChatMessageAlertMetrics;
 import molip.server.notification.sender.NotificationSender;
 import molip.server.notification.service.NotificationService;
 import molip.server.notification.service.UserFcmTokenService;
+import molip.server.outbox.core.entity.OutboxEvent;
+import molip.server.outbox.core.repository.OutboxEventJpaRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 

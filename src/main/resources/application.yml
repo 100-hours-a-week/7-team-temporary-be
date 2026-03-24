@@ -137,15 +137,17 @@ fcm:
 
 notification:
   consumer:
-    enabled: ${NOTIFICATION_CONSUMER_ENABLED:false}
+    enabled: ${NOTIFICATION_CONSUMER_ENABLED}
+  producer:
+    enabled: ${NOTIFICATION_PRODUCER_ENABLED}
   dispatch:
     fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
     batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}
   kafka:
     consumer:
-      group-id: ${NOTIFICATION_KAFKA_CONSUMER_GROUP_ID:molip-notification-consumer}
+      group-id: ${NOTIFICATION_KAFKA_CONSUMER_GROUP_ID}
     topics:
-      requested: ${NOTIFICATION_KAFKA_TOPIC_REQUESTED:notification.requested.v1}
+      requested: ${NOTIFICATION_KAFKA_TOPIC_REQUESTED}
 
 batch:
   weekly:
