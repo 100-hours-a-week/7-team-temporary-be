@@ -14,7 +14,7 @@ import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.s3.PresignedUrlResult;
 import molip.server.s3.S3Service;
 import org.springframework.stereotype.Service;

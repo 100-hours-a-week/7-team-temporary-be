@@ -1,12 +1,17 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.publisher;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import molip.server.outbox.core.model.OutboxMessage;
+import molip.server.outbox.core.model.OutboxRecord;
+import molip.server.outbox.core.repository.OutboxRepository;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -17,7 +22,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(
         name = {"kafka.enabled", "kafka.producer.enabled"},
         havingValue = "true")
-public class OutboxPublisher {
+public class OutboxDlqPublisher {
 
     private static final int SCHEMA_VERSION = 1;
     private static final int MAX_ERROR_LENGTH = 1000;
@@ -26,21 +31,21 @@ public class OutboxPublisher {
     private final ObjectMapper objectMapper;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    @Value("${kafka.topics.domain-events}")
-    private String domainEventsTopic;
+    @Value("${kafka.topics.dlq}")
+    private String dlqTopic;
 
-    public void publishPending(int limit) {
-        List<OutboxRecord> records = outboxRepository.findPending(limit);
+    public void publishDlq(int limit, int maxRetryCount) {
+        List<OutboxRecord> records = outboxRepository.findDlqCandidates(limit, maxRetryCount);
         if (records.isEmpty()) {
             return;
         }
-        List<Long> sentIds = new ArrayList<>();
+        List<Long> dlqIds = new ArrayList<>();
         for (OutboxRecord record : records) {
             if (publish(record)) {
-                sentIds.add(record.id());
+                dlqIds.add(record.id());
             }
         }
-        outboxRepository.markSent(sentIds);
+        outboxRepository.markDlq(dlqIds);
     }
 
     private boolean publish(OutboxRecord record) {
@@ -57,10 +62,28 @@ public class OutboxPublisher {
                             SCHEMA_VERSION,
                             payload);
             String messageJson = objectMapper.writeValueAsString(message);
-            kafkaTemplate.send(domainEventsTopic, record.aggregateId(), messageJson).get();
+            ProducerRecord<String, String> producerRecord =
+                    new ProducerRecord<>(dlqTopic, record.aggregateId(), messageJson);
+            producerRecord
+                    .headers()
+                    .add(
+                            "dlqReason",
+                            normalizeError(record.lastError()).getBytes(StandardCharsets.UTF_8));
+            producerRecord
+                    .headers()
+                    .add(
+                            "failedAt",
+                            OffsetDateTime.now(ZoneOffset.UTC)
+                                    .toString()
+                                    .getBytes(StandardCharsets.UTF_8));
+            producerRecord
+                    .headers()
+                    .add(
+                            "retryCount",
+                            String.valueOf(record.retryCount()).getBytes(StandardCharsets.UTF_8));
+            kafkaTemplate.send(producerRecord).get();
             return true;
         } catch (Exception e) {
-            outboxRepository.markFailed(record.id(), normalizeError(e.getMessage()));
             return false;
         }
     }

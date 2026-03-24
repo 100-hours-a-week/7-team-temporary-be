@@ -1,4 +1,4 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.core.model;
 
 import java.time.OffsetDateTime;
 

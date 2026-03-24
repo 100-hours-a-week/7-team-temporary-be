@@ -1,6 +1,7 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.scheduler;
 
 import lombok.RequiredArgsConstructor;
+import molip.server.outbox.publisher.OutboxPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,18 +12,15 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(
         name = {"kafka.enabled", "kafka.producer.enabled"},
         havingValue = "true")
-public class OutboxDlqScheduler {
+public class OutboxScheduler {
 
-    private final OutboxDlqPublisher outboxDlqPublisher;
+    private final OutboxPublisher outboxPublisher;
 
-    @Value("${kafka.outbox.dlq.batch-size:200}")
+    @Value("${kafka.outbox.batch-size:200}")
     private int batchSize;
 
-    @Value("${kafka.outbox.retry.max-attempts:5}")
-    private int maxRetryAttempts;
-
-    @Scheduled(fixedDelayString = "${kafka.outbox.dlq.fixed-delay-ms:15000}")
-    public void publishDlq() {
-        outboxDlqPublisher.publishDlq(batchSize, maxRetryAttempts);
+    @Scheduled(fixedDelayString = "${kafka.outbox.fixed-delay-ms:5000}")
+    public void publishOutboxEvents() {
+        outboxPublisher.publishPending(batchSize);
     }
 }

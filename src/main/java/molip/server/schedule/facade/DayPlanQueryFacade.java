@@ -13,7 +13,7 @@ import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.schedule.dto.cache.DayPlanCachePayload;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse;
 import molip.server.schedule.dto.response.DayPlanScheduleExistResponse.DayPlanScheduleExistItem;

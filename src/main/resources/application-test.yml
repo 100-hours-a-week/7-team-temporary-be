@@ -90,6 +90,8 @@ fcm:
 notification:
   consumer:
     enabled: false
+  producer:
+    enabled: false
   dispatch:
     fixed-delay-ms: 60000
     batch-size: 100

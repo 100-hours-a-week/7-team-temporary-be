@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.ChangeType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.schedule.event.ScheduleOutboxEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;

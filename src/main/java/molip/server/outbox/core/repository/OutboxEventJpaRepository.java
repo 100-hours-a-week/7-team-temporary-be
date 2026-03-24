@@ -1,7 +1,9 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.core.repository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import molip.server.outbox.core.entity.OutboxEvent;
+import molip.server.outbox.core.model.OutboxStatus;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

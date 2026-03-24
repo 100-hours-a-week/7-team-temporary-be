@@ -9,7 +9,7 @@ import molip.server.image.entity.Image;
 import molip.server.image.repository.ImageRepository;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.user.dto.cache.UserCachePayload;
 import molip.server.user.entity.UserImage;
 import molip.server.user.entity.Users;

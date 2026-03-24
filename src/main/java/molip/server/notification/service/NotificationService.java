@@ -16,11 +16,12 @@ import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
 import molip.server.notification.entity.Notification;
 import molip.server.notification.event.NotificationCreatedEvent;
 import molip.server.notification.metrics.ChatMessageAlertMetrics;
+import molip.server.notification.producer.NotificationQueuePublisher;
 import molip.server.notification.repository.NotificationRepository;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.user.entity.Users;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final OutboxEventService outboxEventService;
     private final ChatMessageAlertMetrics chatMessageAlertMetrics;
+    private final NotificationQueuePublisher notificationQueuePublisher;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 
@@ -87,10 +89,7 @@ public class NotificationService {
         if (!notifications.isEmpty()) {
             List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
             for (Notification notification : savedNotifications) {
-                outboxEventService.recordCreated(
-                        AggregateType.NOTIFICATION,
-                        notification.getId(),
-                        OutboxPayloadMapper.notification(notification));
+                recordCreatedAndEnqueue(notification);
             }
         }
     }
@@ -121,10 +120,7 @@ public class NotificationService {
                                 buildReminderContent(title, startAt),
                                 NotificationStatus.PENDING,
                                 scheduledAt));
-        outboxEventService.recordCreated(
-                AggregateType.NOTIFICATION,
-                notification.getId(),
-                OutboxPayloadMapper.notification(notification));
+        recordCreatedAndEnqueue(notification);
     }
 
     @Transactional
@@ -140,10 +136,7 @@ public class NotificationService {
                                 NotificationStatus.PENDING,
                                 LocalDateTime.now()));
 
-        outboxEventService.recordCreated(
-                AggregateType.NOTIFICATION,
-                notification.getId(),
-                OutboxPayloadMapper.notification(notification));
+        recordCreatedAndEnqueue(notification);
     }
 
     @Transactional
@@ -159,10 +152,7 @@ public class NotificationService {
                                 NotificationStatus.PENDING,
                                 LocalDateTime.now()));
 
-        outboxEventService.recordCreated(
-                AggregateType.NOTIFICATION,
-                notification.getId(),
-                OutboxPayloadMapper.notification(notification));
+        recordCreatedAndEnqueue(notification);
     }
 
     @Transactional
@@ -178,9 +168,8 @@ public class NotificationService {
                                 NotificationStatus.PENDING,
                                 LocalDateTime.now()));
 
-        outboxEventService.recordCreated(
-                AggregateType.NOTIFICATION,
-                notification.getId(),
+        recordCreatedAndEnqueue(
+                notification,
                 OutboxPayloadMapper.notification(
                         notification, Map.of("reflection_id", reflectionId)));
     }
@@ -198,10 +187,7 @@ public class NotificationService {
                                 NotificationStatus.PENDING,
                                 LocalDateTime.now()));
 
-        outboxEventService.recordCreated(
-                AggregateType.NOTIFICATION,
-                notification.getId(),
-                OutboxPayloadMapper.notification(notification));
+        recordCreatedAndEnqueue(notification);
     }
 
     @Transactional
@@ -225,9 +211,8 @@ public class NotificationService {
                                 NotificationStatus.PENDING,
                                 LocalDateTime.now()));
 
-        outboxEventService.recordCreated(
-                AggregateType.NOTIFICATION,
-                notification.getId(),
+        recordCreatedAndEnqueue(
+                notification,
                 OutboxPayloadMapper.notification(
                         notification,
                         Map.of(
@@ -319,5 +304,14 @@ public class NotificationService {
             return NotificationTitle.CHAT_MESSAGE.getValue();
         }
         return messagePreview;
+    }
+
+    private void recordCreatedAndEnqueue(Notification notification) {
+        recordCreatedAndEnqueue(notification, OutboxPayloadMapper.notification(notification));
+    }
+
+    private void recordCreatedAndEnqueue(Notification notification, Map<String, Object> payload) {
+        outboxEventService.recordCreated(AggregateType.NOTIFICATION, notification.getId(), payload);
+        notificationQueuePublisher.publishRequested(notification.getId());
     }
 }

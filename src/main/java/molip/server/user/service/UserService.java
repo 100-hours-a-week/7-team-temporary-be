@@ -12,7 +12,7 @@ import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.terms.event.UserTermsAgreedEvent;
 import molip.server.user.dto.cache.UserCachePayload;
 import molip.server.user.dto.request.TermsAgreementRequest;
