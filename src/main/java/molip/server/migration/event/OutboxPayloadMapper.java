@@ -179,7 +179,7 @@ public final class OutboxPayloadMapper {
         Map<String, Object> payload =
                 baseEntityPayload(notification.getId(), notification.getVersion());
         payload.put("user_id", notification.getUser().getId());
-        payload.put("schedule_id", notification.getScheduleId());
+        payload.put("target_id", notification.getScheduleId());
         payload.put("type", notification.getType().name());
         payload.put("title", notification.getTitle());
         payload.put("content", notification.getContent());

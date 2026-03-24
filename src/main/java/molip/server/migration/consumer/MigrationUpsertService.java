@@ -337,7 +337,7 @@ public class MigrationUpsertService {
                 sql,
                 getLong(payload, "id"),
                 getLong(payload, "user_id"),
-                getLong(payload, "schedule_id"),
+                getLong(payload, "target_id"),
                 getText(payload, "type"),
                 getText(payload, "title"),
                 getText(payload, "content"),
