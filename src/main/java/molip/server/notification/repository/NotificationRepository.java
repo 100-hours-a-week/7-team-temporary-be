@@ -2,6 +2,7 @@ package molip.server.notification.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import molip.server.common.enums.NotificationStatus;
 import molip.server.common.enums.NotificationType;
 import molip.server.notification.entity.Notification;
@@ -44,4 +45,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                     + "and n.deletedAt is null")
     List<Notification> findByScheduleIdAndTypeAndDeletedAtIsNull(
             @Param("scheduleId") Long scheduleId, @Param("type") NotificationType type);
+
+    Optional<Notification> findByIdAndDeletedAtIsNull(Long id);
 }

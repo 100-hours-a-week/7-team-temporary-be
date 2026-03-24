@@ -1,4 +1,4 @@
-package molip.server.migration.outbox;
+package molip.server.outbox.core.repository;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import molip.server.common.exception.BaseException;
 import molip.server.common.exception.ErrorCode;
 import molip.server.migration.event.DomainEvent;
+import molip.server.outbox.core.entity.OutboxEvent;
+import molip.server.outbox.core.model.OutboxRecord;
+import molip.server.outbox.core.model.OutboxStatus;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

@@ -7,7 +7,7 @@ import molip.server.issue.entity.Issue;
 import molip.server.issue.repository.IssueRepository;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.user.entity.Users;
 import molip.server.user.repository.UserRepository;
 import org.springframework.stereotype.Service;

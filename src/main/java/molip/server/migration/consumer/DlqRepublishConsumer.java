@@ -14,7 +14,12 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        name = {"kafka.enabled", "kafka.consumer.enabled", "kafka.consumer.dlq.republish-enabled"},
+        name = {
+            "kafka.enabled",
+            "kafka.consumer.enabled",
+            "migration.consumer.enabled",
+            "kafka.consumer.dlq.republish-enabled"
+        },
         havingValue = "true")
 public class DlqRepublishConsumer {
 

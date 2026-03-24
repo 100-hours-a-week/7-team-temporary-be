@@ -2,7 +2,7 @@ package molip.server.migration.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import molip.server.migration.outbox.OutboxMessage;
+import molip.server.outbox.core.model.OutboxMessage;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,12 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        name = {"kafka.enabled", "kafka.consumer.enabled", "migration.enabled"},
+        name = {
+            "kafka.enabled",
+            "kafka.consumer.enabled",
+            "migration.enabled",
+            "migration.consumer.enabled"
+        },
         havingValue = "true")
 public class MigrationEventConsumer {
 

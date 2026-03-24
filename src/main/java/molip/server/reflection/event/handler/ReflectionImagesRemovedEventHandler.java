@@ -6,7 +6,7 @@ import molip.server.image.entity.Image;
 import molip.server.image.service.ImageService;
 import molip.server.migration.event.AggregateType;
 import molip.server.migration.event.OutboxPayloadMapper;
-import molip.server.migration.outbox.OutboxEventService;
+import molip.server.outbox.core.service.OutboxEventService;
 import molip.server.reflection.entity.DayReflectionImage;
 import molip.server.reflection.event.ReflectionImagesRemovedEvent;
 import molip.server.reflection.repository.DayReflectionImageRepository;

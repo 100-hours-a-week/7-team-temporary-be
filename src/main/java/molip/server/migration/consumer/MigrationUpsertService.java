@@ -10,7 +10,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
 import molip.server.migration.event.AggregateType;
-import molip.server.migration.outbox.OutboxMessage;
+import molip.server.outbox.core.model.OutboxMessage;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -337,7 +337,7 @@ public class MigrationUpsertService {
                 sql,
                 getLong(payload, "id"),
                 getLong(payload, "user_id"),
-                getLong(payload, "schedule_id"),
+                getLong(payload, "target_id"),
                 getText(payload, "type"),
                 getText(payload, "title"),
                 getText(payload, "content"),

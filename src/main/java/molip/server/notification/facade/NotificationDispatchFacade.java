@@ -5,19 +5,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import molip.server.common.enums.NotificationStatus;
 import molip.server.common.enums.NotificationType;
-import molip.server.migration.outbox.OutboxEvent;
-import molip.server.migration.outbox.OutboxEventJpaRepository;
 import molip.server.notification.entity.Notification;
 import molip.server.notification.metrics.ChatMessageAlertMetrics;
 import molip.server.notification.sender.NotificationSender;
 import molip.server.notification.service.NotificationService;
 import molip.server.notification.service.UserFcmTokenService;
+import molip.server.outbox.core.entity.OutboxEvent;
+import molip.server.outbox.core.repository.OutboxEventJpaRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,44 +51,31 @@ public class NotificationDispatchFacade {
                 loadNotificationOutboxPayloads(notifications);
 
         for (Notification notification : notifications) {
-
-            Long userId = notification.getUser().getId();
-            boolean isChatMessage = notification.getType() == NotificationType.CHAT_MESSAGE;
-            if (isChatMessage) {
-                chatMessageAlertMetrics.recordDispatchAttempt();
-            }
-
-            List<String> tokens = userFcmTokenService.getActiveTokens(userId);
-
-            if (tokens.isEmpty()) {
-                notificationService.markFailed(notification);
-                continue;
-            }
-
-            try {
-                Map<String, String> payload =
-                        buildFcmPayload(
-                                notification,
-                                outboxPayloadByNotificationId.get(notification.getId()),
-                                now);
-                notificationSender.send(
-                        notification.getTitle(), notification.getContent(), payload, tokens);
-
-                notificationService.markSent(notification, now);
-                if (isChatMessage) {
-                    chatMessageAlertMetrics.recordDispatchSent(notification.getScheduledAt(), now);
-                }
-            } catch (Exception e) {
-                log.warn(
-                        "notification dispatch failed: notificationId={}, type={}, userId={}, reason={}",
-                        notification.getId(),
-                        notification.getType(),
-                        userId,
-                        e.getMessage());
-
-                notificationService.markFailed(notification);
-            }
+            dispatchSingle(
+                    notification, outboxPayloadByNotificationId.get(notification.getId()), now);
         }
+    }
+
+    @Transactional
+    public boolean dispatchNotificationById(Long notificationId) {
+        Optional<Notification> notificationOpt =
+                notificationService.getDispatchableNotification(notificationId);
+        if (notificationOpt.isEmpty()) {
+            return false;
+        }
+
+        Notification notification = notificationOpt.get();
+        if (notification.getStatus() != NotificationStatus.PENDING) {
+            return false;
+        }
+
+        Map<String, Object> payload =
+                loadNotificationOutboxPayloads(List.of(notification)).values().stream()
+                        .findFirst()
+                        .orElse(Map.of());
+
+        dispatchSingle(notification, payload, LocalDateTime.now());
+        return true;
     }
 
     private Map<Long, Map<String, Object>> loadNotificationOutboxPayloads(
@@ -101,6 +91,7 @@ public class NotificationDispatchFacade {
         List<OutboxEvent> outboxEvents =
                 outboxEventJpaRepository.findLatestByAggregateIds(
                         "NOTIFICATION", "CREATED", aggregateIds);
+        outboxEvents.sort(Comparator.comparing(OutboxEvent::getUpdatedAt).reversed());
 
         Map<Long, Map<String, Object>> result = new LinkedHashMap<>();
         for (OutboxEvent outboxEvent : outboxEvents) {
@@ -111,6 +102,39 @@ public class NotificationDispatchFacade {
             result.put(notificationId, parsePayload(outboxEvent.getPayload()));
         }
         return result;
+    }
+
+    private void dispatchSingle(
+            Notification notification, Map<String, Object> outboxPayload, LocalDateTime now) {
+        Long userId = notification.getUser().getId();
+        boolean isChatMessage = notification.getType() == NotificationType.CHAT_MESSAGE;
+        if (isChatMessage) {
+            chatMessageAlertMetrics.recordDispatchAttempt();
+        }
+
+        List<String> tokens = userFcmTokenService.getActiveTokens(userId);
+        if (tokens.isEmpty()) {
+            notificationService.markFailed(notification);
+            return;
+        }
+
+        try {
+            Map<String, String> payload = buildFcmPayload(notification, outboxPayload, now);
+            notificationSender.send(
+                    notification.getTitle(), notification.getContent(), payload, tokens);
+            notificationService.markSent(notification, now);
+            if (isChatMessage) {
+                chatMessageAlertMetrics.recordDispatchSent(notification.getScheduledAt(), now);
+            }
+        } catch (Exception e) {
+            log.warn(
+                    "notification dispatch failed: notificationId={}, type={}, userId={}, reason={}",
+                    notification.getId(),
+                    notification.getType(),
+                    userId,
+                    e.getMessage());
+            notificationService.markFailed(notification);
+        }
     }
 
     private Map<String, Object> parsePayload(String payloadJson) {

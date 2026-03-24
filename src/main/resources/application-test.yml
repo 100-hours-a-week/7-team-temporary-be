@@ -48,6 +48,8 @@ app:
 
 migration:
   enabled: false
+  consumer:
+    enabled: false
 
 jwt:
   secret: test-secret-key-test-secret-key-test-secret-key-test-secret-key
@@ -86,9 +88,18 @@ fcm:
   credentials-json: test-json
 
 notification:
+  consumer:
+    enabled: false
+  producer:
+    enabled: false
   dispatch:
     fixed-delay-ms: 60000
     batch-size: 100
+  kafka:
+    consumer:
+      group-id: test-notification-consumer
+    topics:
+      requested: notification.requested.v1
 
 batch:
   weekly:
