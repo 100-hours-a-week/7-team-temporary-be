@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import molip.server.common.enums.NotificationStatus;
 import molip.server.common.enums.NotificationTitle;
@@ -41,6 +42,11 @@ public class NotificationService {
 
         return notificationRepository.findPendingNotifications(
                 NotificationStatus.PENDING, now, PageRequest.of(0, batchSize));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Notification> getDispatchableNotification(Long notificationId) {
+        return notificationRepository.findByIdAndDeletedAtIsNull(notificationId);
     }
 
     @Transactional(readOnly = true)

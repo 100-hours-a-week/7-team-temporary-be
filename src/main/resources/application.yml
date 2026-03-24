@@ -136,9 +136,16 @@ fcm:
   credentials-json: ${FCM_CREDENTIALS_JSON}
 
 notification:
+  consumer:
+    enabled: ${NOTIFICATION_CONSUMER_ENABLED:false}
   dispatch:
     fixed-delay-ms: ${NOTIFICATION_DISPATCH_DELAY_MS}
     batch-size: ${NOTIFICATION_DISPATCH_BATCH_SIZE}
+  kafka:
+    consumer:
+      group-id: ${NOTIFICATION_KAFKA_CONSUMER_GROUP_ID:molip-notification-consumer}
+    topics:
+      requested: ${NOTIFICATION_KAFKA_TOPIC_REQUESTED:notification.requested.v1}
 
 batch:
   weekly:
@@ -150,6 +157,8 @@ batch:
 
 migration:
   enabled: ${MIGRATION_ENABLED}
+  consumer:
+    enabled: ${MIGRATION_CONSUMER_ENABLED:false}
   datasource:
     url: ${MIGRATION_DB_URL}
     username: ${MIGRATION_DB_USERNAME}
